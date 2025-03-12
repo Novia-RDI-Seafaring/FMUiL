@@ -1,5 +1,0 @@
-fmu_files: # list of fmu files
-  ["../FMUs/LOC_CNTRL_custom_linux.fmu",
-  "../FMUs/LOC_SYSTEM_linux.fmu"]
-
-
