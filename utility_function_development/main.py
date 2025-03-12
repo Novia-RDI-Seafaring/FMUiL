@@ -2,6 +2,7 @@ import asyncio
 from headers.server_setup_dev import OPCUAFMUServerSetup
 from headers.config_loader import DataLoaderClass
 from asyncua import Client, ua
+import asyncua
 import sys
 
 class TestSystem:
@@ -14,10 +15,6 @@ class TestSystem:
         self.system_servers = {}
         self.system_clients = {}
 
-
-    # async def read_value(self, client:Client, var_name:str):
-    #     node = client.get_node(self.node_constructor(var_name))
-    #     return await node.read_value()  
     async def tranfer_value(self, transfer_list):
         node_from = self.system_clients[transfer_list[0][0]].get_node(ua.NodeId(transfer_list[0][1]))
         value = await node_from.read_value()  
@@ -25,32 +22,28 @@ class TestSystem:
         await node_to.write_value(value)
 
     ################### SYSTEM UPDATES ########################
-    # async def update_value(self, client, var_name, value):
-    #     variable = client.get_node(self.node_constructor(var_name))
-    #     await variable.write_value(value)
-
-    async def run_single_loop(self, loop):
-        for step in loop:
-            print(f"loop step {step}")
-            await self.tranfer_value(transfer_list=step)
-
-
-
+    async def run_single_loop(self, test_loops):
+        print("looop = ",test_loops)
+        for loop in test_loops:
+            print(self.system_clients[loop]) 
+            client = self.system_clients[loop]
+            object_node = client.get_node(ua.NodeId(1, 1))
+            result = await object_node.call_method(ua.NodeId(2, 3), 1)
+            
     async def run_single_step_test(self, test: dict): 
-        await self.run_single_loop(loop=test["system_loop"])
-        # check if reading conditions are met
-        # check output
-
+        await self.run_single_loop(test_loops=test["system_loop"])
+        # check outputs
+        # pass
     async def run_test(self, test: dict) -> None:
         """
         check_test_type
         call corresponding test
         """
         await self.initialize_system_variables(test=test)
-        # if test["test_type"] == "single_step": 
-        #     await self.run_single_step_test(test)
-        # else: 
-        #     print(f"unknown test type {test["test_type"]}")
+        if test["test_type"] == "single_step": 
+            await self.run_single_step_test(test)
+        else: 
+            print(f"unknown test type {test["test_type"]}")
         
 
     async def initialize_fmu_opc_servers(self):
@@ -71,7 +64,6 @@ class TestSystem:
 
             self.system_servers[server.fmu.fmu_name] = server
             tasklist.append(server_task)
-            # tasklist.append(asyncio.create_task(server.main_loop()))
 
         return tasklist
 
@@ -122,18 +114,12 @@ class TestSystem:
         for test in self.tests:
             await self.run_test(self.tests[test])
         await asyncio.gather(*tasklist)
-        # for i in tasklist:
-        #     await i
-
-
         
 async def main(funciton):
     conf = "TESTS/system_config.yaml"
     tests = TestSystem(config_file=conf)
-    if funciton == "test":
-        await tests.main_testing_loop()
-    elif funciton == "describe":
-        await tests.describe_system()
+    if   funciton == "test":     await tests.main_testing_loop()
+    elif funciton == "describe": await tests.describe_system()
 
 if __name__ == "__main__":
     args = sys.argv[1:]

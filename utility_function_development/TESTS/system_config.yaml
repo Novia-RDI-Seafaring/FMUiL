@@ -24,10 +24,15 @@ tests:
     start_readings_conditions:
 
     system_loop:
-      [
-        LOC_SYSTEM: [[OUTPUT_temperature_cold_circuit_outlet], [LOC_CNTRL_v2_customPI, INPUT_temperature_lube_oil]]
-      ]
-
+        LOC_SYSTEM: [
+          [[OUTPUT_temperature_cold_circuit_outlet1], [LOC_CNTRL_v2_customPI, INPUT_temperature_lube_oil]]
+        ]
+        
+        # LOC_SYSTEM2: [
+        #   [[OUTPUT_temperature_cold_circuit_outlet1], [LOC_CNTRL_v2_customPI, INPUT_temperature_lube_oil]]
+        #   # [[OUTPUT_temperature_cold_circuit_outlet2], [LOC_CNTRL_v2_customPI, INPUT_temperature_lube_oil]],
+        #   # [[OUTPUT_temperature_cold_circuit_outlet3], [LOC_CNTRL_v2_customPI, INPUT_temperature_lube_oil]]
+        #   ]
     conditions: # SIMPLE CHECK
       [[LOC_CNTRL_v2_customPI, OUTPUT_control_valve_position], ">", 10 ]
       

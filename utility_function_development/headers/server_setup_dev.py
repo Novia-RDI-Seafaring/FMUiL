@@ -2,6 +2,7 @@ from .fmu_loader import FmuLoader
 from asyncua import Server, ua
 import asyncio
 import datetime
+from asyncua.common.methods import uamethod
 
 class OPCUAFMUServerSetup:
     def __init__(self) -> None:
@@ -10,6 +11,8 @@ class OPCUAFMUServerSetup:
         self.url = None
         self.server_variables = []
         self.fmu = None
+        self.fmu_time = 0
+        self.idx = None
 
     @classmethod
     async def async_server_init(cls, fmu:str, port:int):
@@ -17,6 +20,7 @@ class OPCUAFMUServerSetup:
         self.fmu:FmuLoader = FmuLoader(fmu_file=fmu)
         self.url = self.construct_server_url(port)
         await self.setup_sequence()
+        self.idx = int(await self.server.register_namespace(self.url))
         return self
     
     def construct_server_url(self, port):
@@ -46,7 +50,26 @@ class OPCUAFMUServerSetup:
             self.server_variables.append(var)
             var = await obj.add_variable(nodeid=ua.NodeId(var), bname=var, val=0.0)
             await var.set_writable()
+        # idx = await self.server.register_namespace(uri)
 
+        await obj.add_method(
+            ua.NodeId(2, 3),   
+            "simulate",          
+            self.test,           
+        )
+
+    @uamethod
+    def simulate_fmu(self, value):
+        time_step = 0.5
+        # Updating fmu for the timestep
+        self.fmu.fmu.doStep(currentCommunicationPoint=self.fmu_time, communicationStepSize=time_step)
+        print("here 1l")
+        self.fmu_time += time_step
+        print("here 2l")
+
+    @uamethod
+    def test(self, parent: None, value:None):
+        print("test method")
 
     def get_server_description(self):
         return {self.fmu.fmu_name: self.server_variables}
@@ -64,7 +87,6 @@ class OPCUAFMUServerSetup:
         pass
 
     async def main_loop(self):
-        # await self.setup_sequence()
         async with self.server:
             self.server_started.set()
             while True:
