@@ -26,10 +26,18 @@ class FmuLoader:
             "id" : variable.valueReference,
             "type" : variable.type
         }
+        self.fmu_parameters[variable.name] = {
+            "id" : variable.valueReference,
+            "type" : variable.type
+        }
         return
 
     def _add_output(self, variable:fmpy.model_description.ScalarVariable):
         self.fmu_outputs[variable.name] = {
+            "id" : variable.valueReference,
+            "type" : variable.type
+        }
+        self.fmu_parameters[variable.name] = {
             "id" : variable.valueReference,
             "type" : variable.type
         }

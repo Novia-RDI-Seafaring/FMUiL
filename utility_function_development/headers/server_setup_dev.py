@@ -13,6 +13,7 @@ class OPCUAFMUServerSetup:
         self.fmu = None
         self.fmu_time = 0
         self.idx = None
+        self.server_variable_ids = {}
 
     @classmethod
     async def async_server_init(cls, fmu:str, port:int):
@@ -39,37 +40,64 @@ class OPCUAFMUServerSetup:
 
     async def setup_server_variables(self):
 
-        obj = await self.server.nodes.objects.add_object(bname = self.fmu.fmu_name, nodeid= ua.NodeId(Identifier=1, NamespaceIndex=1)) 
+        obj = await self.server.nodes.objects.add_object(bname = self.fmu.fmu_name, 
+                                                         nodeid= ua.NodeId(Identifier=1, NamespaceIndex=1)) 
+        
+        self.server_variable_ids[self.fmu.fmu_name] = ua.NodeId(Identifier=1, NamespaceIndex=1)
 
         for var in self.fmu.fmu_inputs:
             self.server_variables.append(var)
-            var = await obj.add_variable(nodeid=ua.NodeId(var), bname=var, val=0.0)
-            await var.set_writable()
+            variable = await obj.add_variable(nodeid=ua.NodeId(var), bname=var, val=0.0)
+            self.server_variable_ids[var] = ua.NodeId(var)
+            await variable.set_writable()
 
         for var in self.fmu.fmu_outputs:
             self.server_variables.append(var)
-            var = await obj.add_variable(nodeid=ua.NodeId(var), bname=var, val=0.0)
-            await var.set_writable()
-        # idx = await self.server.register_namespace(uri)
+            variable = await obj.add_variable(nodeid=ua.NodeId(var), bname=var, val=0.0)
+            self.server_variable_ids[var] = ua.NodeId(var)
+            await variable.set_writable()
 
+        # idx = await self.server.register_namespace(uri)
+        #######################################################
+        ####### STANDARD METHODS FOR ALL OFJBECTS #############
+        #######################################################
+        ######### simulation #########
         await obj.add_method(
-            ua.NodeId(2, 3),   
+            ua.NodeId(1, 2),   
             "simulate",          
-            self.test,           
+            self.simulate_fmu,           
+        )
+
+        ######### value update for fmu and opc #########
+        await obj.add_method(
+            ua.NodeId(1, 3),   
+            "update",          
+            self.update_value_opc_and_fmu,           
         )
 
     @uamethod
-    def simulate_fmu(self, value):
-        time_step = 0.5
+    async def simulate_fmu(self, parent:None, value:None):
+        time_step = 1.0
         # Updating fmu for the timestep
         self.fmu.fmu.doStep(currentCommunicationPoint=self.fmu_time, communicationStepSize=time_step)
-        print("here 1l")
+        # ADD READ FROM THE FMU, SO AFTER THE SIMULATION THE OUTPUTS ARE ON THE OPCUA SERVER
         self.fmu_time += time_step
-        print("here 2l")
+        for output in self.fmu.fmu_outputs:
+            fmu_output = self.fmu.fmu.getReal([int(self.fmu.fmu_outputs[output]["id"])])
+            node = self.server.get_node(self.server_variable_ids[output])
+            await node.set_value(float(fmu_output[0]))
+
 
     @uamethod
     def test(self, parent: None, value:None):
         print("test method")
+
+    @uamethod
+    async def update_value_opc_and_fmu(self, parent: None, value:None):
+        value = eval(value)
+        node = self.server.get_node(self.server_variable_ids[value["variable"]])
+        await node.set_value(float(value["value"]))
+        self.fmu.fmu.setReal([self.fmu.fmu_parameters[value["variable"]]["id"]], [float(value["value"])])
 
     def get_server_description(self):
         return {self.fmu.fmu_name: self.server_variables}
