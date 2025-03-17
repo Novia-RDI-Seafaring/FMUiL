@@ -4,6 +4,18 @@ from headers.config_loader import DataLoaderClass
 from asyncua import Client, ua
 import asyncua
 import sys
+import operator
+# import colorama
+from colorama import Fore, Back, Style
+
+ops = { 
+    "+": operator.add, 
+    "-": operator.sub, 
+    "<": operator.lt,
+    "<=": operator.le,
+    ">": operator.gt,
+    ">=": operator.ge
+} 
 
 class TestSystem:
     def __init__(self, config_file:str):
@@ -43,13 +55,39 @@ class TestSystem:
                 value = await node_from.read_value()  
                 node_id = self.system_servers[io_update[1][0]].server_variable_ids[io_update[1][1]]
                 node_to = self.system_clients[io_update[1][0]].get_node(node_id)
-                await node_to.write_value(value)
+                await node_to.write_value(value)    
 
     async def run_single_step_test(self, test: dict): 
         await self.run_single_loop(test_loops=test["system_loop"])
+        # print(f"\n\n\n\n HEHEEEEEEEEEEEEEEEEEEE {test} \n\n\n\n")
+        await self.check_outputs(evaluation=test["evaluation"])
         # check outputs
+        # exit()
         # pass
 
+    async def check_outputs(self, evaluation: dict[list[dict]]):
+        # print(f"\n\n\n\n\n\n\nevaluation {evaluation}\n ")
+
+        for criterea in evaluation:
+            print(evaluation[criterea], "\n", f"crite rea {criterea} end")
+            node = self.system_servers[evaluation[criterea]["system_value"]["fmu"]].server_variable_ids[evaluation[criterea]["system_value"]["variable"]]
+            measured_value = self.system_clients[evaluation[criterea]["system_value"]["fmu"]].get_node(node)
+            measured_value = await measured_value.read_value()
+
+            print(f"checking {measured_value} {evaluation[criterea]["operator"]} {evaluation[criterea]["target"]}")
+            eval_criterea = evaluation[criterea]["target"] 
+            op =evaluation[criterea]["operator"] 
+            result = ops[op](measured_value, eval_criterea)
+            variable = evaluation[criterea]["system_value"]["variable"]
+
+            if result:
+                print(Fore.GREEN + f"test  {variable} {op} {eval_criterea} PASSED \nwith value: {measured_value}")
+            else:
+                print(Fore.RED + f"test {variable} {op} {eval_criterea} FAILED \nwith value: {measured_value}")
+            
+            print(Style.RESET_ALL)
+
+            # print(f"result {ops[evaluation[criterea]["operator"]](measured_value, evaluation[criterea]["target"])} ")
 
     async def run_multi_step_test(self, test: dict): 
         await self.run_single_loop(test_loops=test["system_loop"])
@@ -145,7 +183,9 @@ class TestSystem:
         print(f"TESTS = {self.tests}, \n type {type(self.tests)} \n {self.tests.keys()} \n\n")        
         for test in self.tests:
             await self.run_test(self.tests[test])
+        
         await asyncio.gather(*tasklist)
+
         
 async def main(funciton):
     conf = "TESTS/system_config.yaml"
