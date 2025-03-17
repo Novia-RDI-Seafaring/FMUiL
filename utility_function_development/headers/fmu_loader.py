@@ -13,6 +13,7 @@ class FmuLoader:
                         unzipDirectory=self.unzipdir,
                         modelIdentifier=self.model_description.coSimulation.modelIdentifier,
                         instanceName='instance1')
+
         self.fmu.instantiate()
         self.fmu.enterInitializationMode()      
         self.fmu.exitInitializationMode()
@@ -62,9 +63,3 @@ class FmuLoader:
     def get_fmu_outputs(self):
         return list(self.fmu_outputs.keys())
 
-# # simulation loop 1
-# fmu = FmuLoader(fmu_file="../FMUs/LOC_CNTRL_custom_linux.fmu") 
-# fmu.fmu.setReal([fmu.fmu_inputs["SETPOINT_temperature_lube_oil"]["id"]], [0])  
-# fmu.fmu.setReal([fmu.fmu_inputs["INPUT_temperature_lube_oil"]["id"]], [10])  
-# fmu.fmu.doStep(currentCommunicationPoint=0, communicationStepSize=5.0) 
-# fmu.fmu.getReal([fmu.fmu_outputs["OUTPUT_control_valve_position"]["id"]])

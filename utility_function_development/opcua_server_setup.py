@@ -26,8 +26,6 @@ class CentralSetup:
     
     async def add_opcua_object_variable(self, obj, var_name:str, var_val, var_type) -> None:
         var = await obj.add_variable(self.node_constructor(var_name), var_name, val= var_val, varianttype= var_type)  
-        if var_name == "input_control_valve_position":
-            print(f"\n\n\n variable was set to writable {var_name}\n\n\n")
         await var.set_writable()
         self.registered_nodes[var_name] = var
 
@@ -70,7 +68,6 @@ class CentralSetup:
             for key, value in nested_dict.items():
                 result = self.find_key(value, target_key)
                 if result is not None:
-                    # print(f"resut = {result}, target key = {target_key} ")
                     return result
         return None
 

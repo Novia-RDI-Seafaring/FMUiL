@@ -23,21 +23,15 @@ class TestSystem:
 
     ################### SYSTEM UPDATES ########################
     async def run_single_loop(self, test_loops):
-        # print("looop = ",test_loops)
         for obj in test_loops:
             # doing 1 update to the object fmu
-            # print(f" updatring {obj}\n\n") 
             client = self.system_clients[obj]
             object_node = client.get_node(ua.NodeId(1, 1))
             await object_node.call_method(ua.NodeId(1, 2), 1) # update fmu before updating values
             
             # updating I/Os after system update
             for io_update in test_loops[obj]:
-                # print(f"io_update[0]from {obj} reading {io_update[0][0]}")
-                # node_from = self.system_clients[obj].get_node(ua.NodeId(io_update[0][0]))
-                # print("var ids", self.system_servers[obj].server_variable_ids)
                 node_from = self.system_clients[obj].get_node(self.system_servers[obj].server_variable_ids[io_update[0][0]])
-                # print(f"node {node_from}")
                 val = await node_from.read_value()
 
                 object_node = self.system_clients[obj].get_node(ua.NodeId(1, 1))
@@ -46,16 +40,10 @@ class TestSystem:
                     "value": float(val)
                 }
                 await object_node.call_method(ua.NodeId(1, 3), str(update_values))
-                # await object_node.call_method(ua.NodeId(1, 3), str(update_values)) # update fmu before updating values
-
-
                 value = await node_from.read_value()  
-                # print(f"node from = {node_from} value {value} \n\n\n")
                 node_id = self.system_servers[io_update[1][0]].server_variable_ids[io_update[1][1]]
-
                 node_to = self.system_clients[io_update[1][0]].get_node(node_id)
                 await node_to.write_value(value)
-
 
     async def run_single_step_test(self, test: dict): 
         await self.run_single_loop(test_loops=test["system_loop"])
@@ -96,11 +84,6 @@ class TestSystem:
                     "value": float(initial_system_state[server][variable])
                 }
                 await object_node.call_method(ua.NodeId(1, 3), str(update_values)) # update fmu before updating values
-                # exit()
-                # await self.update_value(client= self.system_clients[server], 
-                                        # var_name= variable, 
-                                        # value= float(initial_system_state[server][variable]))
-
 
     ############################################################################
     ########################   SERVER INIT   ###################################
@@ -176,12 +159,4 @@ if __name__ == "__main__":
         asyncio.run(main(funciton=args[1]))
     else:
         print("args reuqired '-func' and it can be rither 'test' or 'describe' ")
-            
-"""
-
-var ids {'LOC_SYSTEM': NodeId(Identifier=1, NamespaceIndex=1, NodeIdType=<NodeIdType.FourByte: 1>), 
-'INPUT_temperature_cold_circuit_inlet': NodeId(Identifier='INPUT_temperature_cold_circuit_inlet', NamespaceIndex=0, 
-NodeIdType=<NodeIdType.String: 3>), 'INPUT_massflow_cold_circuit': NodeId(Identifier='INPUT_massflow_cold_circuit', NamespaceIndex=0, NodeIdType=<NodeIdType.String: 3>), 'INPUT_engine_load_0_1': NodeId(Identifier='INPUT_engine_load_0_1', NamespaceIndex=0, NodeIdType=<NodeIdType.String: 3>), 'INPUT_control_valve_position': NodeId(Identifier='INPUT_control_valve_position', NamespaceIndex=0, NodeIdType=<NodeIdType.String: 3>), 'OUTPUT_temperature_cold_circuit_outlet': NodeId(Identifier='OUTPUT_temperature_cold_circuit_outlet', NamespaceIndex=0, NodeIdType=<NodeIdType.String: 3>), 'OUTPUT_massflow_cold_circuit': NodeId(Identifier='OUTPUT_massflow_cold_circuit', NamespaceIndex=0, NodeIdType=<NodeIdType.String: 3>), 
-'OUTPUT_temperature_lube_oil': NodeId(Identifier='OUTPUT_temperature_lube_oil', NamespaceIndex=0, NodeIdType=<NodeIdType.String: 3>)}
-
-"""
+   

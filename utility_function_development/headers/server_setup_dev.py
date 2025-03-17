@@ -25,7 +25,6 @@ class OPCUAFMUServerSetup:
         return self
     
     def construct_server_url(self, port):
-        # return f"opc.tcp://0.0.0.0:{port}/{self.fmu.fmu_name}/"
         return f"opc.tcp://localhost:{port}/{self.fmu.fmu_name}/"
 
     async def setup_sequence(self) -> None:
@@ -57,7 +56,6 @@ class OPCUAFMUServerSetup:
             self.server_variable_ids[var] = ua.NodeId(var)
             await variable.set_writable()
 
-        # idx = await self.server.register_namespace(uri)
         #######################################################
         ####### STANDARD METHODS FOR ALL OFJBECTS #############
         #######################################################
