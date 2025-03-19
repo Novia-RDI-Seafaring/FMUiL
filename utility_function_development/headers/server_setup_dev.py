@@ -1,4 +1,4 @@
-from .fmu_loader import FmuLoader
+from headers.fmu_loader import FmuLoader
 from asyncua import Server, ua
 import asyncio
 import datetime
@@ -85,17 +85,16 @@ class OPCUAFMUServerSetup:
             node = self.server.get_node(self.server_variable_ids[output])
             await node.set_value(float(fmu_output[0]))
 
-
-    @uamethod
-    def test(self, parent: None, value:None):
-        print("test method")
-
     @uamethod
     async def update_value_opc_and_fmu(self, parent: None, value:None):
         value = eval(value)
         node = self.server.get_node(self.server_variable_ids[value["variable"]])
         await node.set_value(float(value["value"]))
         self.fmu.fmu.setReal([self.fmu.fmu_parameters[value["variable"]]["id"]], [float(value["value"])])
+
+    @uamethod
+    def test(self, parent: None, value:None):
+        print("test method")
 
     def get_server_description(self):
         return {self.fmu.fmu_name: self.server_variables}

@@ -13,14 +13,9 @@ tests:
         INPUT_engine_load_0_1: 1
         INPUT_control_valve_position: 0 # CONRROLLED VARIABLE
 
-        # OUTPUT_temperature_cold_circuit_outlet: 1
-        # OUTPUT_massflow_cold_circuit: 1
-        # OUTPUT_temperature_lube_oil: 1
-
       LOC_CNTRL_v2_customPI:
         SETPOINT_temperature_lube_oil: 60
         INPUT_temperature_lube_oil: 1
-        # OUTPUT_control_valve_position
 
     start_readings_conditions:
 
