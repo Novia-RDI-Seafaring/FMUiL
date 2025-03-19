@@ -21,14 +21,22 @@ tests:
 
     system_loop:
         LOC_SYSTEM: [
-          [[OUTPUT_temperature_cold_circuit_outlet], [LOC_CNTRL_v2_customPI, INPUT_temperature_lube_oil]]
+          {
+            variable_output: OUTPUT_temperature_cold_circuit_outlet,
+            variable_input: INPUT_temperature_lube_oil,
+            object_input: LOC_CNTRL_v2_customPI
+          }
         ]
-        LOC_CNTRL_v2_customPI: [ # PLACEHODER TO FORCE UDPATE
-
+        LOC_CNTRL_v2_customPI: [ 
+          # PLACEHODER TO FORCE UDPATE
         ]
 
-    evaluation: # SIMPLE CHECK
-      eval_1: {system_value: {  
+
+    #########################################
+    ################# TESTS #################
+    #########################################
+    evaluation: 
+      eval_1: {system_value: {
         fmu: LOC_CNTRL_v2_customPI, 
         variable: OUTPUT_control_valve_position}, 
         operator: "<", 
@@ -54,41 +62,3 @@ tests:
 
 
 
-
-
-
-
-
-  # test01:
-  #   timestep: 1.0 # seconds
-  #   test_type: "single_step"
-  #   initial_system_state:
-  #     LOC_SYSTEM: 
-  #       INPUT_temperature_cold_circuit_inlet: 100
-  #       INPUT_massflow_cold_circuit: 100
-  #       INPUT_engine_load_0_1: 1
-  #       INPUT_control_valve_position: 0 # CONRROLLED VARIABLE
-  #       # OUTPUT_temperature_cold_circuit_outlet: 1 
-  #       # OUTPUT_massflow_cold_circuit: 1
-  #       # OUTPUT_temperature_lube_oil: 1
-
-  #     LOC_CNTRL_v2_customPI:
-  #       SETPOINT_temperature_lube_oil: 10
-  #       INPUT_temperature_lube_oil: 1
-  #       # OUTPUT_control_valve_position
-
-  #   start_readings_conditions:
-
-  #   system_loop:
-  #       LOC_SYSTEM: [
-  #         [[OUTPUT_temperature_cold_circuit_outlet], [LOC_CNTRL_v2_customPI, INPUT_temperature_lube_oil]]
-        
-  #       ]
-  #       LOC_CNTRL_v2_customPI: [ ]
-  #       # LOC_SYSTEM2: [
-  #       #   [[OUTPUT_temperature_cold_circuit_outlet1], [LOC_CNTRL_v2_customPI, INPUT_temperature_lube_oil]]
-  #       #   # [[OUTPUT_temperature_cold_circuit_outlet2], [LOC_CNTRL_v2_customPI, INPUT_temperature_lube_oil]],
-  #       #   # [[OUTPUT_temperature_cold_circuit_outlet3], [LOC_CNTRL_v2_customPI, INPUT_temperature_lube_oil]]
-  #       #   ]
-  #   conditions: # SIMPLE CHECK
-  #     [[LOC_CNTRL_v2_customPI, OUTPUT_control_valve_position], ">", 10 ]

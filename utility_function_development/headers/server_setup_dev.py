@@ -4,6 +4,7 @@ import asyncio
 import datetime
 from asyncua.common.methods import uamethod
 
+
 class OPCUAFMUServerSetup:
     def __init__(self) -> None:
         self.server_started = asyncio.Event()
@@ -59,6 +60,7 @@ class OPCUAFMUServerSetup:
         #######################################################
         ####### STANDARD METHODS FOR ALL OFJBECTS #############
         #######################################################
+        
         ######### simulation #########
         await obj.add_method(
             ua.NodeId(1, 2),   
@@ -73,8 +75,22 @@ class OPCUAFMUServerSetup:
             self.update_value_opc_and_fmu,           
         )
 
+        ######### value update for fmu and opc #########
+        await obj.add_method(
+            ua.NodeId(1, 4),   
+            "reset_fmu",          
+            self.reset_fmu,           
+        )
+
+        await obj.add_method(
+            ua.NodeId(1, 5),   
+            "reset_fmu",          
+            self.test,           
+        )
+
     @uamethod
     async def simulate_fmu(self, parent:None, value:None):
+        # TODO: make the "value" variable the one in the timestep 
         time_step = 1.0
         # Updating fmu for the timestep
         self.fmu.fmu.doStep(currentCommunicationPoint=self.fmu_time, communicationStepSize=time_step)
@@ -86,15 +102,24 @@ class OPCUAFMUServerSetup:
             await node.set_value(float(fmu_output[0]))
 
     @uamethod
-    async def update_value_opc_and_fmu(self, parent: None, value:None):
+    async def update_value_opc_and_fmu(self, parent= None, value= None):
         value = eval(value)
         node = self.server.get_node(self.server_variable_ids[value["variable"]])
         await node.set_value(float(value["value"]))
         self.fmu.fmu.setReal([self.fmu.fmu_parameters[value["variable"]]["id"]], [float(value["value"])])
 
     @uamethod
-    def test(self, parent: None, value:None):
+    def test(self, parent= None, value= None):
         print("test method")
+
+    @uamethod
+    async def reset_fmu(self, parent= None, value = None):
+        self.fmu_time = 0
+        self.fmu.fmu.reset()
+        self.fmu.fmu.instantiate()
+        self.fmu.fmu.enterInitializationMode()
+        self.fmu.fmu.exitInitializationMode()
+        print(f"fmu {self.fmu.fmu_name} was resetted")
 
     def get_server_description(self):
         return {self.fmu.fmu_name: self.server_variables}
