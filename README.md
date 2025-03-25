@@ -2,6 +2,21 @@
 
 
 
+# dev notes
+
+
+1) universal clock
+2) zero order hold, signals hold their value constant until changed
+3) state machines
+4) add to value
+
+
+
+
+
+
+
+
 # test definition
 
 
@@ -33,4 +48,15 @@ loop:
 
 
 alllow multiple of the same fmu by adding id's to the end
+
+# system
+
+System Diagram
+
+<img src="./readme_resources/LOC.drawio.svg"/>
+
+FMU architecture and IOs
+
+<img src="./readme_resources/system_diagram.png"  />
+
 

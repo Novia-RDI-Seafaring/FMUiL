@@ -107,6 +107,7 @@ class OPCUAFMUServerSetup:
         node = self.server.get_node(self.server_variable_ids[value["variable"]])
         await node.set_value(float(value["value"]))
         self.fmu.fmu.setReal([self.fmu.fmu_parameters[value["variable"]]["id"]], [float(value["value"])])
+        print(f"\n\n\n\n server {self.fmu.fmu_name} WAS UPDATED")
 
     @uamethod
     def test(self, parent= None, value= None):

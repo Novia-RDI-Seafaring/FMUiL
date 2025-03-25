@@ -25,11 +25,12 @@ class TestSystem:
         return await node.read_value() 
 
     async def write_value(self, client_name:str, variable:str, value:str)->None:
-        # get target vairable node id
+        """
+            write value to specific node in the system
+            clinet_name = client to desired server
+        """
         node_id = self.system_servers[client_name].server_variable_ids[variable]
-        # get node we're writing to 
         node_to = self.system_clients[client_name].get_node(node_id)        
-        # write the value
         await node_to.write_value(value)    
 
 
@@ -48,39 +49,94 @@ class TestSystem:
         """
 
         for obj in test_loops:
-
+            
             # doing 1 update to the object fmu
             client = self.system_clients[obj]
 
             # update fmu before updating values
             object_node = client.get_node(ua.NodeId(1, 1))
             await object_node.call_method(ua.NodeId(1, 2), 1) 
-            
+            print(f"updated {obj}, client {client}")
             # updating I/Os after system update
             for io_update in test_loops[obj]:
                 
                 # Read the value we want to pass to the next fmu server
                 value = await self.get_value(client_name= obj, variable= self.system_servers[obj].server_variable_ids[io_update["variable_output"]])
 
+                # write value to other server
                 await self.write_value(
                     client_name = io_update["object_input"],
                     variable    = io_update["variable_input"],
                     value       = value
                 )
 
+                print(f"passed {value}, to {io_update["object_input"]},{io_update["variable_input"]}")
+
+    def check_time(self, sim_time, max_time):
+        return sim_time >= max_time
+
+    async def check_reading_conditions(self, conditions):
+        for condition in conditions:
+            print(f"criterea {condition} end")
+            node = self.system_servers[conditions[condition]["system_value"]["fmu"]].server_variable_ids[conditions[condition]["system_value"]["variable"]]
+            measured_value = self.system_clients[conditions[condition]["system_value"]["fmu"]].get_node(node)
+            measured_value = await measured_value.read_value()
+
+            print(f"checking {measured_value} {conditions[condition]["operator"]} {conditions[condition]["target"]}")
+            eval_criterea = conditions[condition]["target"] 
+            op =conditions[condition]["operator"] 
+            result = ops[op](measured_value, eval_criterea)
+            
+
+            variable = conditions[condition]["system_value"]["variable"]
+
+            if result:
+                print(Fore.GREEN + f"test  {variable} {op} {eval_criterea} PASSED \nwith value: {measured_value}")
+            else:
+                print(Fore.RED + f"test {variable} {op} {eval_criterea} FAILED \nwith value: {measured_value}")
+                return False
+            # variable = evaluation[criterea]["system_value"]["variable"]
+            # if result: print(Fore.GREEN + f"test  {variable} {op} {eval_criterea} PASSED \nwith value: {measured_value}")
+            # else:      print(Fore.RED + f"test {variable} {op} {eval_criterea} FAILED \nwith value: {measured_value}")
+            # print(Style.RESET_ALL)
+
+        return True
+
+
+
+    ################################################
+    ############### SYSTEM TESTS ###################
+    ################################################
     async def run_single_step_test(self, test: dict) -> None:
+        print("single loop here1 ")
         await self.run_single_loop(test_loops=test["system_loop"])
+
+        print("single loop here2 ")
         await self.check_outputs(evaluation=test["evaluation"])
         # exit()
 
     async def run_multi_step_test(self, test: dict): 
         """
         TODO: LOOP while the test has not completed, with some termination criterea
-
         for example, the user wants to read after 
-        
         """
-        await self.run_single_loop(test_loops=test["system_loop"])
+        print(f"test time {test["stop_time"]}")
+        sim_time = 0
+
+        simulation_status = True
+        while simulation_status:
+            sim_time += test["timestep"]
+    
+            print("single loop here1 ")
+            await self.run_single_loop(test_loops=test["system_loop"])
+            print("single loop here2 ")
+
+            if await self.check_reading_conditions(test["start_readings_conditions"]):
+                await self.check_outputs(test["evaluation"])
+
+            if(self.check_time(sim_time, test["stop_time"])):
+                print("HEEEEEEEEEEEEEEHEHEHHEHEEH")
+                simulation_status = False
 
     async def run_test(self, test: dict) -> None:
         """
@@ -91,16 +147,18 @@ class TestSystem:
         await self.initialize_system_variables(test=test)
         if test["test_type"] == "single_step": 
             await self.run_single_step_test(test)
+        elif test["test_type"] == "multi_step": 
+            await self.run_multi_step_test(test=test)
         else: 
             print(f"unknown test type {test["test_type"]}")
 
 
-    async def reset_system(self):
+    async def reset_system(self) -> None:
         for client_name in self.system_clients:
             object_node = self.system_clients[client_name].get_node(ua.NodeId(1, 1))
             await object_node.call_method(ua.NodeId(1, 4))#, str(1)) # update fmu before updating values
 
-    async def check_outputs(self, evaluation: dict[list[dict]]):
+    async def check_outputs(self, evaluation: dict[list[dict]]) -> None:
 
         for criterea in evaluation:
             print(evaluation[criterea], "\n", f"criterea {criterea} end")
@@ -119,13 +177,12 @@ class TestSystem:
             print(Style.RESET_ALL)
 
     #######################################################################
-    #####################   SYSTEM INIT   #################################
+    ################   SYSTEM VARIABLE INIT   #############################
     #######################################################################
     async def initialize_system_variables(self, test:dict):
         initial_system_state = test["initial_system_state"]
         for server in initial_system_state:
             for variable in initial_system_state[server]:
-                
                 object_node = self.system_clients[server].get_node(ua.NodeId(1, 1))
                 update_values = {
                     "variable": variable,
@@ -170,7 +227,18 @@ class TestSystem:
             self.system_clients[server_name] = client
 
         print(f"system clients clients setup: {self.system_clients}")
-
+    
+    ################################################################################
+    ###########################   MAIN LOOP   ######################################
+    ################################################################################
+    async def main_testing_loop(self):
+        tasklist = await self.initialize_fmu_opc_servers()
+        await self.create_system_clients()
+        print(f"TESTS = {self.tests}, \n type {type(self.tests)} \n {self.tests.keys()} \n\n")        
+        for test in self.tests:
+            await self.run_test(self.tests[test])
+        return
+        await asyncio.gather(*tasklist)
 
     #################################################################################
     ########################   UTILITY FUNCTION   ###################################
@@ -183,17 +251,3 @@ class TestSystem:
         print(f"system description = {self.system_description}")
         for task in tasklist:
             await task
-    
-    ################################################################################
-    ###########################   MAIN LOOP   ######################################
-    ################################################################################
-    async def main_testing_loop(self):
-        tasklist = await self.initialize_fmu_opc_servers()
-        await self.create_system_clients()
-        print(f"TESTS = {self.tests}, \n type {type(self.tests)} \n {self.tests.keys()} \n\n")        
-        for test in self.tests:
-            await self.run_test(self.tests[test])
-        
-        await asyncio.gather(*tasklist)
-
-        
