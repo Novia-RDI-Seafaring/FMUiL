@@ -4,13 +4,37 @@
 
 # dev notes
 
-
+## tasks
 1) universal clock
-2) zero order hold, signals hold their value constant until changed
 3) state machines
 4) add to value
 
+## in progress
 
+2) zero order hold, signals hold their value constant until changed
+goal: make the fmus work with a universal time
+for example fmu1 has a timestep of 0.5 seconds while fmu2 has a step of t=1sec
+
+we have a universal clock and timestep
+
+it should loop around the whole thing and whenever enough time has passed we update our values
+
+solution:
+
+every server should have 
+- server time
+- fmu time
+- receive system time
+
+through these we can get the time from the system and update server time
+then we check if (server time - fmu time >= step) if that's true we make a step to the fmu 
+
+to do this we'll be calling the fmu step function while passing in the server time variable
+
+
+
+
+## done
 
 
 

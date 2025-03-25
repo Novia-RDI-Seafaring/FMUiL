@@ -108,12 +108,8 @@ class TestSystem:
     ############### SYSTEM TESTS ###################
     ################################################
     async def run_single_step_test(self, test: dict) -> None:
-        print("single loop here1 ")
         await self.run_single_loop(test_loops=test["system_loop"])
-
-        print("single loop here2 ")
         await self.check_outputs(evaluation=test["evaluation"])
-        # exit()
 
     async def run_multi_step_test(self, test: dict): 
         """
@@ -127,15 +123,12 @@ class TestSystem:
         while simulation_status:
             sim_time += test["timestep"]
     
-            print("single loop here1 ")
             await self.run_single_loop(test_loops=test["system_loop"])
-            print("single loop here2 ")
 
             if await self.check_reading_conditions(test["start_readings_conditions"]):
                 await self.check_outputs(test["evaluation"])
-
+                
             if(self.check_time(sim_time, test["stop_time"])):
-                print("HEEEEEEEEEEEEEEHEHEHHEHEEH")
                 simulation_status = False
 
     async def run_test(self, test: dict) -> None:
