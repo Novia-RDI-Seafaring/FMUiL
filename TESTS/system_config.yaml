@@ -1,6 +1,6 @@
 fmu_files: # list of fmu files
-  ["../FMUs/LOC_CNTRL_custom_linux.fmu",
-   "../FMUs/LOC_SYSTEM_linux.fmu"]
+  ["FMUs/LOC_CNTRL_custom_linux.fmu",
+   "FMUs/LOC_SYSTEM_linux.fmu"]
 
 tests:
   test01:
@@ -8,12 +8,14 @@ tests:
     test_type: "single_step"
     initial_system_state:
       LOC_SYSTEM: 
+        timestep: 0.1
         INPUT_temperature_cold_circuit_inlet: 1 
         INPUT_massflow_cold_circuit: 1
         INPUT_engine_load_0_1: 1
         INPUT_control_valve_position: 0 # CONRROLLED VARIABLE
 
       LOC_CNTRL_v2_customPI:
+        timestep: 0.2
         SETPOINT_temperature_lube_oil: 60
         INPUT_temperature_lube_oil: 1
 
@@ -72,12 +74,14 @@ tests:
 
     initial_system_state:
       LOC_SYSTEM: 
+        timestep: 0.1
         INPUT_temperature_cold_circuit_inlet: 1 
         INPUT_massflow_cold_circuit: 1
         INPUT_engine_load_0_1: 1
         INPUT_control_valve_position: 0 # CONRROLLED VARIABLE
 
       LOC_CNTRL_v2_customPI:
+        timestep: 0.2
         SETPOINT_temperature_lube_oil: 2
         INPUT_temperature_lube_oil: 10
 

@@ -4,12 +4,17 @@
 
 # dev notes
 
+try making parent in function calls the server itself, then we only need to pass in the variable
+
 ## tasks
 1) universal clock
 3) state machines
 4) add to value
 
 ## in progress
+
+minor: add setters and getters to the server itself and clean it up a bit 
+
 
 2) zero order hold, signals hold their value constant until changed
 goal: make the fmus work with a universal time

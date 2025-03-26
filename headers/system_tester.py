@@ -55,7 +55,7 @@ class TestSystem:
 
             # update fmu before updating values
             object_node = client.get_node(ua.NodeId(1, 1))
-            await object_node.call_method(ua.NodeId(1, 2), 1) 
+            await object_node.call_method(ua.NodeId(1, 2), 0.1) 
             print(f"updated {obj}, client {client}")
             # updating I/Os after system update
             for io_update in test_loops[obj]:
@@ -136,8 +136,10 @@ class TestSystem:
         check_test_type
         call corresponding test
         """
-        await self.reset_system()
+        # reset and initialize system for every test
+        await self.reset_system() 
         await self.initialize_system_variables(test=test)
+        
         if test["test_type"] == "single_step": 
             await self.run_single_step_test(test)
         elif test["test_type"] == "multi_step": 
@@ -152,7 +154,6 @@ class TestSystem:
             await object_node.call_method(ua.NodeId(1, 4))#, str(1)) # update fmu before updating values
 
     async def check_outputs(self, evaluation: dict[list[dict]]) -> None:
-
         for criterea in evaluation:
             print(evaluation[criterea], "\n", f"criterea {criterea} end")
             node = self.system_servers[evaluation[criterea]["system_value"]["fmu"]].server_variable_ids[evaluation[criterea]["system_value"]["variable"]]
@@ -181,6 +182,7 @@ class TestSystem:
                     "variable": variable,
                     "value": float(initial_system_state[server][variable])
                 }
+                print(f"values beeing updates {update_values}")
                 await object_node.call_method(ua.NodeId(1, 3), str(update_values)) # update fmu before updating values
 
     ############################################################################
@@ -225,13 +227,13 @@ class TestSystem:
     ###########################   MAIN LOOP   ######################################
     ################################################################################
     async def main_testing_loop(self):
-        tasklist = await self.initialize_fmu_opc_servers()
+        servers = await self.initialize_fmu_opc_servers()
         await self.create_system_clients()
         print(f"TESTS = {self.tests}, \n type {type(self.tests)} \n {self.tests.keys()} \n\n")        
         for test in self.tests:
             await self.run_test(self.tests[test])
-        return
-        await asyncio.gather(*tasklist)
+        # return
+        await asyncio.gather(*servers)
 
     #################################################################################
     ########################   UTILITY FUNCTION   ###################################

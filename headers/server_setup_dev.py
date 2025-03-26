@@ -13,9 +13,30 @@ class OPCUAFMUServerSetup:
         self.server_variables = []
         self.fmu = None
         self.fmu_time = 0
+        self.server_time = 0
         self.idx = None
         self.server_variable_ids = {}
+        self.opc_server_only_variables = ["timestep"] # variables reserved only for the server not fmu
+        self.last_simulation_timestamp = 0
+        
+        # resrved vairabled have a namespace=2 
+        self.reserved_variable_ids = {
+            "timestep": ua.NodeId(2,1),
+            "server_time": ua.NodeId(2,2)
+        }
 
+    ########### SETTERS & GETTERS ########### 
+    async def get_value(self, variable: str) -> None:
+        node =  self.server.get_node(self.server_variable_ids[variable])
+        return await node.read_value() 
+    
+    async def write_value(self, variable:str, value:str)->None:
+        # write value to specific node in the system
+        # clinet_name = client to desired server
+        node_id = self.server_variable_ids[variable]
+        node_to = self.server.get_node(node_id)        
+        await node_to.write_value(value)    
+    
     @classmethod
     async def async_server_init(cls, fmu:str, port:int):
         self = cls()
@@ -44,6 +65,12 @@ class OPCUAFMUServerSetup:
                                                          nodeid= ua.NodeId(Identifier=1, NamespaceIndex=1)) 
         
         self.server_variable_ids[self.fmu.fmu_name] = ua.NodeId(Identifier=1, NamespaceIndex=1)
+        
+        for var in self.reserved_variable_ids:
+            self.server_variables.append(var)
+            variable = await obj.add_variable(nodeid=self.reserved_variable_ids[var], bname=var, val=0.0)
+            self.server_variable_ids[var] = self.reserved_variable_ids[var]
+            await variable.set_writable()
 
         for var in self.fmu.fmu_inputs:
             self.server_variables.append(var)
@@ -88,33 +115,114 @@ class OPCUAFMUServerSetup:
             self.test,           
         )
 
-    @uamethod
-    async def simulate_fmu(self, parent:None, value:None):
-        # TODO: make the "value" variable the one in the timestep 
-        time_step = 1.0
-        # Updating fmu for the timestep
-        self.fmu.fmu.doStep(currentCommunicationPoint=self.fmu_time, communicationStepSize=time_step)
-        # ADD READ FROM THE FMU, SO AFTER THE SIMULATION THE OUTPUTS ARE ON THE OPCUA SERVER
+
+    async def simulation_loop(self, server_time: float, time_step: float):
+        print("1")
+        
+        self.fmu.fmu.doStep(currentCommunicationPoint=server_time, communicationStepSize=time_step)        
+        # # ADD READ FROM THE FMU, SO AFTER THE SIMULATION THE OUTPUTS ARE ON THE OPCUA SERVER
+
+        print("2")
         self.fmu_time += time_step
+        
+        print("3")
+
         for output in self.fmu.fmu_outputs:
             fmu_output = self.fmu.fmu.getReal([int(self.fmu.fmu_outputs[output]["id"])])
             node = self.server.get_node(self.server_variable_ids[output])
             await node.set_value(float(fmu_output[0]))
+        print("end")
+
 
     @uamethod
-    async def update_value_opc_and_fmu(self, parent= None, value= None):
-        value = eval(value)
+    async def simulate_fmu(self, parent=None, value=None):
+        # system_timestep = value
+        # time_step = await self.get_value(variable= "timestep")
+        # server_time = await self.get_value(variable= "server_time")
+        # server_time = float(server_time)
+        # server_time+=time_step
+        # print(f"server = {server_time}, timestep {time_step}")
+        # if(server_time - self.last_simulation_timestamp > system_timestep):
+        #     print("start sim")
+        #     await self.simulation_loop(server_time= server_time, time_step= time_step)
+        #     print("\n\nSTEP DID OCCURed BECAUSE TIME WAS NOT ENOUGH!!!\n\n")
+        # else:
+        #     print("STEP DID NOT OCCUR BECAUSE TIME WAS NOT ENOUGH")
+        # await self.write_value(variable= "server_time", value= server_time)
+        
+        system_timestep = round(float(value), 8)  # Round to 8 decimal places
+        time_step       = round(float(await self.get_value(variable="timestep")), 8)
+        self.server_time = round(self.server_time + system_timestep, 8)
+        self.fmu_time = round(self.fmu_time, 8)
+        
+        # system_timestep = float(value)
+        # time_step = await self.get_value(variable= "timestep")
+        # time_step = float(time_step)
+        # self.server_time += system_timestep
+
+        print(f"\n\n EQUATION = {self.server_time} - {self.fmu_time} ? {time_step}\n\n")
+        
+        if(self.server_time - self.fmu_time > 0.5 ):
+            print("\n\n\nSHITS WRONG\n\n\n")
+        
+        if(self.server_time - self.fmu_time >= time_step):
+            print(f"DID !update! due to {self.server_time} - {self.fmu_time} >{time_step}")
+            self.fmu.fmu.doStep(currentCommunicationPoint=self.fmu_time, communicationStepSize=time_step)
+            print(f" fmu time {self.fmu_time}, timestep {time_step}")
+            self.fmu_time += time_step
+            print(f" fmu time {self.fmu_time}, timestep {time_step}")
+            for output in self.fmu.fmu_outputs:
+                fmu_output = self.fmu.fmu.getReal([int(self.fmu.fmu_outputs[output]["id"])])
+                node = self.server.get_node(self.server_variable_ids[output])
+                await node.set_value(float(fmu_output[0]))
+        else:
+            print(f"\n\nDID !NOT! update due to {self.server_time} - {self.fmu_time} < {time_step}\n\n")
+
+        # # old 
+        # time_step = 1.0
+        # # Updating fmu for the timestep
+        # self.fmu.fmu.doStep(currentCommunicationPoint=self.fmu_time, communicationStepSize=time_step)
+        # # ADD READ FROM THE FMU, SO AFTER THE SIMULATION THE OUTPUTS ARE ON THE OPCUA SERVER
+        # self.fmu_time += time_step
+        # for output in self.fmu.fmu_outputs:
+        #     fmu_output = self.fmu.fmu.getReal([int(self.fmu.fmu_outputs[output]["id"])])
+        #     node = self.server.get_node(self.server_variable_ids[output])
+        #     await node.set_value(float(fmu_output[0]))
+
+    async def update_opc_and_fmu(self, parent, value):
         node = self.server.get_node(self.server_variable_ids[value["variable"]])
         await node.set_value(float(value["value"]))
         self.fmu.fmu.setReal([self.fmu.fmu_parameters[value["variable"]]["id"]], [float(value["value"])])
         print(f"\n\n\n\n server {self.fmu.fmu_name} WAS UPDATED")
 
+    
+    async def update_opc(self, parent, value):
+        node = self.server.get_node(self.server_variable_ids[value["variable"]])
+        await node.set_value(float(value["value"]))
+        print(f"\n\n\n\n server {self.fmu.fmu_name} WAS UPDATED")
+
+    @uamethod
+    async def update_value_opc_and_fmu(self, parent= None, value= None):        
+        value = eval(value)
+        if value["variable"] in self.opc_server_only_variables:
+            await self.update_opc(parent= parent, value= value)
+        else:
+            await self.update_opc_and_fmu(parent= parent, value= value)
+            
     @uamethod
     def test(self, parent= None, value= None):
         print("test method")
 
+    # async def reset_opc_vars(self):
+    #     for variable in self.reserved_variable_ids:
+    #         await self.write_value(variable= variable, value=0.0)
+
+
     @uamethod
     async def reset_fmu(self, parent= None, value = None):
+        await self.write_value(variable= "server_time", value=0.0)
+        self.server_time = 0
+        
         self.fmu_time = 0
         self.fmu.fmu.reset()
         self.fmu.fmu.instantiate()
