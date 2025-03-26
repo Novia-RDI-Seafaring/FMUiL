@@ -4,8 +4,14 @@ import asyncio
 import datetime
 from asyncua.common.methods import uamethod
 from decimal import Decimal, getcontext
+import logging
 
-getcontext().prec = 8
+logger = logging.getLogger(__name__)
+
+PRECISION = 8
+getcontext().prec = PRECISION
+PRECISION_STR = "0." + "".join(["0" for i in range(PRECISION)]) # if PRECISION = 5 then PRECISION_STR = "0.00000", and so on
+
 
 
 class OPCUAFMUServerSetup:
@@ -15,12 +21,12 @@ class OPCUAFMUServerSetup:
         self.url = None
         self.server_variables = []
         self.fmu = None
-        self.fmu_time = 0
-        self.server_time = 0
+        self.fmu_time    = Decimal("0.0")
+        self.server_time = Decimal("0.0")
         self.idx = None
         self.server_variable_ids = {}
         self.opc_server_only_variables = ["timestep"] # variables reserved only for the server not fmu
-        self.last_simulation_timestamp = 0
+        self.last_simulation_timestamp = 0.0
         
         # resrved vairabled have a namespace=2 
         self.reserved_variable_ids = {
@@ -87,10 +93,12 @@ class OPCUAFMUServerSetup:
             self.server_variable_ids[var] = ua.NodeId(var)
             await variable.set_writable()
 
-        #######################################################
-        ####### STANDARD METHODS FOR ALL OFJBECTS #############
-        #######################################################
-        
+        await self.setup_standard_methods(obj= obj)
+    
+    #######################################################
+    ####### STANDARD METHODS FOR ALL OFJBECTS #############
+    #######################################################
+    async def setup_standard_methods(self, obj):
         ######### simulation #########
         await obj.add_method(
             ua.NodeId(1, 2),   
@@ -119,47 +127,39 @@ class OPCUAFMUServerSetup:
         )
 
 
-    async def simulation_loop(self, server_time: float, time_step: float):
-        print("1")
-        
-        self.fmu.fmu.doStep(currentCommunicationPoint=server_time, communicationStepSize=time_step)        
-        # # ADD READ FROM THE FMU, SO AFTER THE SIMULATION THE OUTPUTS ARE ON THE OPCUA SERVER
+    async def simulation_loop(self):
+        time_step        = Decimal(await self.get_value(variable="timestep")).quantize(Decimal(PRECISION_STR))
 
-        print("2")
+        logger.info(f"DID update due to {self.server_time} - {self.fmu_time}:  >{time_step}")
+        self.fmu.fmu.doStep(
+            currentCommunicationPoint=self.fmu_time, 
+            communicationStepSize=time_step
+            )
         self.fmu_time += time_step
-        
-        print("3")
-
+    
         for output in self.fmu.fmu_outputs:
-            fmu_output = self.fmu.fmu.getReal([int(self.fmu.fmu_outputs[output]["id"])])
+            output_id = int(self.fmu.fmu_outputs[output]["id"])
+            fmu_output = self.fmu.fmu.getReal([output_id])
             node = self.server.get_node(self.server_variable_ids[output])
             await node.set_value(float(fmu_output[0]))
-        print("end")
-
 
     @uamethod
-    async def simulate_fmu(self, parent=None, value=None):
-        system_timestep = value
-        if value == None:
-            system_timestep =Decimal(str(value))    
-        system_timestep  = round(float(value), 8)  # Round to 8 decimal places
-        time_step        = round(float(await self.get_value(variable="timestep")), 8)
-        self.server_time = round(self.server_time + system_timestep, 8)
-        self.fmu_time    = round(self.fmu_time, 8)
+    async def simulate_fmu(self, parent=None, value:str= None):
+        print("\n\n\n\n here ", value)
         
-        if(self.server_time - self.fmu_time > 2 * time_step):
-            print("\n\n\nSHITS WRONG\n\n\n")
-        
-        if(self.server_time - self.fmu_time >= time_step):
-            print(f"DID !update! due to {self.server_time} - {self.fmu_time} >{time_step}")
-            self.fmu.fmu.doStep(currentCommunicationPoint=self.fmu_time, communicationStepSize=time_step)
-            self.fmu_time += time_step
-            for output in self.fmu.fmu_outputs:
-                fmu_output = self.fmu.fmu.getReal([int(self.fmu.fmu_outputs[output]["id"])])
-                node = self.server.get_node(self.server_variable_ids[output])
-                await node.set_value(float(fmu_output[0]))
+        system_timestep  = Decimal(value).quantize(Decimal(PRECISION_STR)) # Round to 8 decimal places, convert from string
+        time_step        = Decimal(await self.get_value(variable="timestep")).quantize(Decimal(PRECISION_STR))
+        self.server_time += system_timestep
+
+        print(f"system_timestep = {system_timestep}, time_Step {time_step}, server_time = {self.server_time}, fmu_time = {self.fmu_time}")
+
+        if round((self.server_time - self.fmu_time), 8) > round(float(2 * time_step), 6): 
+            logger.warning(f"\n\n\SOMETHING IS WRONG with timing the gap is double the step time {round((self.server_time - self.fmu_time), 8)} > {round((float(2 * time_step)), 6)}\n\n\n")
+            
+        if(round(float(self.server_time - self.fmu_time), 8) >= time_step):
+            await self.simulation_loop()
         else:
-            print(f"\n\nDID !NOT! update due to {self.server_time} - {self.fmu_time} < {time_step}\n\n")
+            logger.info(f"\n\nDID !NOT! update due to {self.server_time} - {self.fmu_time}: {self.server_time - self.fmu_time} < {time_step}\n\n")
 
     async def update_opc_and_fmu(self, parent, value):
         node = self.server.get_node(self.server_variable_ids[value["variable"]])

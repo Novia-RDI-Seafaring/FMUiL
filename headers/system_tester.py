@@ -6,6 +6,9 @@ import asyncua
 import sys
 from colorama import Fore, Back, Style
 from headers import ops
+from decimal import Decimal, getcontext
+
+getcontext().prec = 8 
 
 
 class TestSystem:
@@ -55,7 +58,7 @@ class TestSystem:
 
             # update fmu before updating values
             object_node = client.get_node(ua.NodeId(1, 1))
-            await object_node.call_method(ua.NodeId(1, 2), 0.1) 
+            await object_node.call_method(ua.NodeId(1, 2), str(0.1)) 
             print(f"updated {obj}, client {client}")
             # updating I/Os after system update
             for io_update in test_loops[obj]:
