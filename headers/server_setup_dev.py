@@ -5,7 +5,7 @@ import datetime
 from asyncua.common.methods import uamethod
 from decimal import Decimal, getcontext
 import logging
-
+# logging.basicConfig(level=logging.INFO) # required to get messages printed out
 logger = logging.getLogger(__name__)
 
 PRECISION = 8
@@ -127,8 +127,8 @@ class OPCUAFMUServerSetup:
         )
 
 
-    async def simulation_loop(self):
-        time_step        = Decimal(await self.get_value(variable="timestep")).quantize(Decimal(PRECISION_STR))
+    async def single_simulation_loop(self):
+        time_step = Decimal(await self.get_value(variable="timestep")).quantize(Decimal(PRECISION_STR))
 
         logger.info(f"DID update due to {self.server_time} - {self.fmu_time}:  >{time_step}")
         self.fmu.fmu.doStep(
@@ -145,7 +145,6 @@ class OPCUAFMUServerSetup:
 
     @uamethod
     async def simulate_fmu(self, parent=None, value:str= None):
-        print("\n\n\n\n here ", value)
         
         system_timestep  = Decimal(value).quantize(Decimal(PRECISION_STR)) # Round to 8 decimal places, convert from string
         time_step        = Decimal(await self.get_value(variable="timestep")).quantize(Decimal(PRECISION_STR))
@@ -157,9 +156,9 @@ class OPCUAFMUServerSetup:
             logger.warning(f"\n\n\SOMETHING IS WRONG with timing the gap is double the step time {round((self.server_time - self.fmu_time), 8)} > {round((float(2 * time_step)), 6)}\n\n\n")
             
         if(round(float(self.server_time - self.fmu_time), 8) >= time_step):
-            await self.simulation_loop()
+            await self.single_simulation_loop()
         else:
-            logger.info(f"\n\nDID !NOT! update due to {self.server_time} - {self.fmu_time}: {self.server_time - self.fmu_time} < {time_step}\n\n")
+            logger.info(f"DID !NOT! update due to {self.server_time} - {self.fmu_time}: {self.server_time - self.fmu_time} < {time_step}")
 
     async def update_opc_and_fmu(self, parent, value):
         node = self.server.get_node(self.server_variable_ids[value["variable"]])
@@ -184,11 +183,6 @@ class OPCUAFMUServerSetup:
     @uamethod
     def test(self, parent= None, value= None):
         print("test method")
-
-    # async def reset_opc_vars(self):
-    #     for variable in self.reserved_variable_ids:
-    #         await self.write_value(variable= variable, value=0.0)
-
 
     @uamethod
     async def reset_fmu(self, parent= None, value = None):

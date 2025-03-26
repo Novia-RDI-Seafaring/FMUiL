@@ -7,7 +7,8 @@ import sys
 from colorama import Fore, Back, Style
 from headers import ops
 from decimal import Decimal, getcontext
-
+import logging
+logging.basicConfig(level=logging.INFO) # required to get messages printed out
 getcontext().prec = 8 
 
 
