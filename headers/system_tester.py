@@ -3,42 +3,74 @@ from headers.server_setup_dev import OPCUAFMUServerSetup
 from headers.config_loader import DataLoaderClass
 from asyncua import Client, ua
 import asyncua
-import sys
+import sys, os
+from pathlib import Path
 from colorama import Fore, Back, Style
 from headers import ops
 from decimal import Decimal, getcontext
 import logging
 logging.basicConfig(level=logging.INFO) # required to get messages printed out
-getcontext().prec = 8 
+
+getcontext().prec = 8
 
 import time
 
 class TestSystem:
-    def __init__(self, config_file:str) -> None:
+    def __init__(self, config_file:str, remote_servers:str = None) -> None:
         self.config = DataLoaderClass(config_file)
+        self.remote_servers = self.construct_remote_servers(remote_servers)
         self.fmu_files = self.config.data["fmu_files"]
-        self.tests     = self.config.data["tests"]        
+        self.tests     = self.config.data["tests"]
         self.base_port = 7000
 
         self.system_description = {}
         self.system_servers     = {}
         self.system_clients     = {}
+        self.external_clients   = {}
         
         self.system_node_ids    = {} # this is meant to take in all of the systems node id's
 
+
+    def construct_remote_servers(self, remote_servers):
+        """
+        remote_servers = path to directory with remote server definitions
+        this function iterates through all of them and adds them to a dictionaty in a structured manner
+        """
+        server_dict = {}
+        server_files = [os.path.join(remote_servers, i) for i in os.listdir(remote_servers)]
+
+        for server_name in server_files:
+            server_desription = DataLoaderClass(server_name).data
+            print(server_desription)
+            print(server_name)
+            name = Path(server_name).stem
+            server_dict[name] = server_desription
+        
+        return server_dict
+
+    def fetch_appropriacte_client(self, client_name)->Client:
+        if client_name in self.system_clients.keys():
+            return self.system_clients[client_name]
+        elif client_name in self.external_clients.keys():
+            return self.external_clients[client_name]
+        else:
+            raise Exception(f"UNKNOWN CLIENT {client_name}")
+    
     ########### SETTERS & GETTERS ########### 
     async def get_value(self, client_name: str, variable: ua.NodeId) -> None:
-        node = self.system_clients[client_name].get_node(variable)
+        client = self.fetch_appropriacte_client(client_name=client_name)
+        node = client.get_node(variable)
         return await node.read_value() 
 
     async def write_value(self, client_name:str, variable:str, value:str)->None:
         """
             write value to specific node in the system
-            clinet_name = client to desired server
+            clienet_name = client to desired server
         """
-        node_id = self.system_servers[client_name].server_variable_ids[variable]
-        node_to = self.system_clients[client_name].get_node(node_id)        
-        await node_to.write_value(value)    
+        node_id = self.system_node_ids[client_name][variable]
+        client = self.fetch_appropriacte_client(client_name=client_name)
+        node = client.get_node(node_id)
+        await node.write_value(value)    
 
 
     ################### SYSTEM UPDATES ########################
@@ -61,15 +93,16 @@ class TestSystem:
             client = self.system_clients[obj]
 
             # update fmu before updating values
-            object_node = client.get_node(ua.NodeId(1, 1))
-            await object_node.call_method(ua.NodeId(1, 2), str(0.1)) 
+            if obj in self.system_clients.keys():
+                object_node = client.get_node(ua.NodeId(1, 1))
+                await object_node.call_method(ua.NodeId(1, 2), str(0.1)) 
+
             print(f"updated {obj}, client {client}")
             # updating I/Os after system update
             for io_update in test_loops[obj]:
                                 
                 # Read the value we want to pass to the next fmu server                
-                value_nodid = self.system_servers[obj].server_variable_ids[io_update["variable_output"]]
-                # value_nodid = self.system_node_ids[obj][io_update["variable_output"]]
+                value_nodid = self.system_node_ids[obj][io_update["variable_output"]]
                 value = await self.get_value(client_name= obj, variable= value_nodid)
 
                 # write value to other server
@@ -88,7 +121,10 @@ class TestSystem:
         for condition in conditions:
             print(f"criterea {condition} end")
             
-            node = self.system_servers[conditions[condition]["system_value"]["fmu"]].server_variable_ids[conditions[condition]["system_value"]["variable"]]
+            fmu_name = conditions[condition]["system_value"]["fmu"]
+            variable_name = conditions[condition]["system_value"]["variable"]
+            node = self.system_node_ids[fmu_name][variable_name]
+            
             measured_value = self.system_clients[conditions[condition]["system_value"]["fmu"]].get_node(node)
             measured_value = await measured_value.read_value()
 
@@ -169,7 +205,7 @@ class TestSystem:
             fmu_variable = evaluation_condition["system_value"]["fmu"]
             variable_name = evaluation_condition["system_value"]["variable"]
             
-            node = self.system_servers[fmu_variable].server_variable_ids[variable_name]
+            node = self.system_node_ids[fmu_variable][variable_name]
             measured_value = self.system_clients[fmu_variable].get_node(node)
             measured_value = await measured_value.read_value()
 
@@ -229,7 +265,9 @@ class TestSystem:
 
         return tasklist
 
-
+    ###########################################################################
+    #####################   INIT SYSTEM IDS   #################################
+    ###########################################################################
     def gather_system_ids(self):
         for server_name in self.system_servers:
             self.system_node_ids[server_name] = self.system_servers[server_name].server_variable_ids
@@ -237,16 +275,29 @@ class TestSystem:
     ############################################################################
     #######################   CLIENTS INIT   ###################################
     ############################################################################
-    async def create_system_clients(self):
-
+    async def creat_internal_clients(self):
+        
         for server_name in self.system_servers:
             server = self.system_servers[server_name]
             client = Client(url=server.url)
             await client.connect()
             self.system_clients[server_name] = client
-            
+        
         print(f"system clients clients setup: {self.system_clients}")
-    
+        
+    async def create_external_clients(self):
+        
+        for server in self.remote_servers:
+            
+            server_url = self.remote_servers[server]["url"]
+            client = Client(url=server_url)
+            await client.connect()
+            self.external_clients[server] = client
+            
+    async def create_system_clients(self):
+        await self.creat_internal_clients()
+        await self.create_external_clients()
+
     ################################################################################
     ###########################   MAIN LOOP   ######################################
     ################################################################################
