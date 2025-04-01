@@ -1,19 +1,29 @@
 # fmu-opcua-test-platform
 
 
-
 # dev notes
 
 try making parent in function calls the server itself, then we only need to pass in the variable
 
 ## tasks
-1) universal clock
-3) state machines
-4) add to value
+
+universal update loop: update the whole system evey timestep, each component updates based on its internal ts and we make the passes also
+
+3) state machines:
+    give initial and final system state, check whether or not it was reached in a given time window
+
+4) add to value:
+    when and what: user defines under which conditions the value is added in a filed called "value modifications"
 
 ## in progress
 
+
+
+
+## done
+
 minor: add setters and getters to the server itself and clean it up a bit 
+1) universal clock
 
 
 2) zero order hold, signals hold their value constant until changed
@@ -35,11 +45,6 @@ through these we can get the time from the system and update server time
 then we check if (server time - fmu time >= step) if that's true we make a step to the fmu 
 
 to do this we'll be calling the fmu step function while passing in the server time variable
-
-
-
-
-## done
 
 
 

@@ -132,7 +132,7 @@ class OPCUAFMUServerSetup:
 
         logger.info(f"DID update due to {self.server_time} - {self.fmu_time}:  >{time_step}")
         self.fmu.fmu.doStep(
-            currentCommunicationPoint=self.fmu_time, 
+            currentCommunicationPoint=self.fmu_time,
             communicationStepSize=time_step
             )
         self.fmu_time += time_step
@@ -165,7 +165,6 @@ class OPCUAFMUServerSetup:
         await node.set_value(float(value["value"]))
         self.fmu.fmu.setReal([self.fmu.fmu_parameters[value["variable"]]["id"]], [float(value["value"])])
         print(f"\n\n\n\n server {self.fmu.fmu_name} WAS UPDATED")
-
     
     async def update_opc(self, parent, value):
         node = self.server.get_node(self.server_variable_ids[value["variable"]])

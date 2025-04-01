@@ -7,6 +7,7 @@ tests:
     timestep: 1.0 # seconds
     test_type: "single_step"
     initial_system_state:
+    
       LOC_SYSTEM: 
         timestep: 0.1
         INPUT_temperature_cold_circuit_inlet: 1 
@@ -25,6 +26,7 @@ tests:
         LOC_SYSTEM: [
           {
             variable_output: OUTPUT_temperature_cold_circuit_outlet,
+
             variable_input: INPUT_temperature_lube_oil,
             object_input: LOC_CNTRL_v2_customPI
           }
@@ -33,10 +35,7 @@ tests:
           # PLACEHODER TO FORCE UDPATE
         ]
 
-
-    #########################################
-    ################# TESTS #################
-    #########################################
+    ################# evaluation #################
     evaluation: 
       eval_1: {system_value: {
         fmu: LOC_CNTRL_v2_customPI, 
@@ -62,18 +61,16 @@ tests:
         operator: ">", 
         target: 70 }
 
-
     #########################################
     #########################################
-    #########################################
-
   test02:
     timestep: 1     # seconds
     test_type: "multi_step"
     stop_time: 20.0 # seconds 
 
     initial_system_state:
-      LOC_SYSTEM: 
+
+      LOC_SYSTEM:
         timestep: 0.1
         INPUT_temperature_cold_circuit_inlet: 1 
         INPUT_massflow_cold_circuit: 1
@@ -81,14 +78,16 @@ tests:
         INPUT_control_valve_position: 0 # CONRROLLED VARIABLE
 
       LOC_CNTRL_v2_customPI:
-        timestep: 0.2
+        timestep: 0.5
         SETPOINT_temperature_lube_oil: 2
         INPUT_temperature_lube_oil: 10
 
     start_readings_conditions:
-      condition_01: {system_value: {
+      condition_01: {system_value: 
+        {
         fmu: LOC_CNTRL_v2_customPI, 
-        variable: OUTPUT_control_valve_position}, 
+        variable: OUTPUT_control_valve_position
+        }, 
         operator: ">", 
         target: 0.20 }
 
@@ -96,22 +95,21 @@ tests:
         LOC_SYSTEM: [
           {
             variable_output: OUTPUT_temperature_cold_circuit_outlet,
+
             variable_input:  INPUT_temperature_lube_oil,
             object_input:    LOC_CNTRL_v2_customPI
           }
         ]
-        LOC_CNTRL_v2_customPI: [ 
+        LOC_CNTRL_v2_customPI: [
           {
             variable_output: OUTPUT_control_valve_position,
+            
             variable_input: INPUT_control_valve_position,
             object_input: LOC_SYSTEM
           }
         ]
 
-
-    #########################################
-    ################# TESTS #################
-    #########################################
+    ################# evaluation #################
     evaluation: 
       eval_1: {system_value: {
         fmu: LOC_CNTRL_v2_customPI, 
@@ -139,6 +137,8 @@ tests:
 
 
 
+    #########################################
+    #########################################
   test03:
     timestep: 0.5 # seconds
     test_type: "multi_step"
@@ -186,9 +186,7 @@ tests:
         ]
 
 
-    #########################################
-    ################# TESTS #################
-    #########################################
+    ################# evaluation #################
     evaluation: 
       eval_1: {system_value: {
         fmu: LOC_CNTRL_v2_customPI, 

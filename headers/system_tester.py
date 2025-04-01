@@ -11,10 +11,11 @@ import logging
 logging.basicConfig(level=logging.INFO) # required to get messages printed out
 getcontext().prec = 8 
 
+import time
 
 class TestSystem:
     def __init__(self, config_file:str) -> None:
-        self.config = DataLoaderClass("TESTS/system_config.yaml")
+        self.config = DataLoaderClass(config_file)
         self.fmu_files = self.config.data["fmu_files"]
         self.tests     = self.config.data["tests"]        
         self.base_port = 7000
@@ -22,9 +23,11 @@ class TestSystem:
         self.system_description = {}
         self.system_servers     = {}
         self.system_clients     = {}
+        
+        self.system_node_ids    = {} # this is meant to take in all of the systems node id's
 
     ########### SETTERS & GETTERS ########### 
-    async def get_value(self, client_name: str, variable: str) -> None:
+    async def get_value(self, client_name: str, variable: ua.NodeId) -> None:
         node = self.system_clients[client_name].get_node(variable)
         return await node.read_value() 
 
@@ -63,9 +66,11 @@ class TestSystem:
             print(f"updated {obj}, client {client}")
             # updating I/Os after system update
             for io_update in test_loops[obj]:
-                
-                # Read the value we want to pass to the next fmu server
-                value = await self.get_value(client_name= obj, variable= self.system_servers[obj].server_variable_ids[io_update["variable_output"]])
+                                
+                # Read the value we want to pass to the next fmu server                
+                value_nodid = self.system_servers[obj].server_variable_ids[io_update["variable_output"]]
+                # value_nodid = self.system_node_ids[obj][io_update["variable_output"]]
+                value = await self.get_value(client_name= obj, variable= value_nodid)
 
                 # write value to other server
                 await self.write_value(
@@ -82,6 +87,7 @@ class TestSystem:
     async def check_reading_conditions(self, conditions):
         for condition in conditions:
             print(f"criterea {condition} end")
+            
             node = self.system_servers[conditions[condition]["system_value"]["fmu"]].server_variable_ids[conditions[condition]["system_value"]["variable"]]
             measured_value = self.system_clients[conditions[condition]["system_value"]["fmu"]].get_node(node)
             measured_value = await measured_value.read_value()
@@ -99,10 +105,6 @@ class TestSystem:
             else:
                 print(Fore.RED + f"test {variable} {op} {eval_criterea} FAILED \nwith value: {measured_value}")
                 return False
-            # variable = evaluation[criterea]["system_value"]["variable"]
-            # if result: print(Fore.GREEN + f"test  {variable} {op} {eval_criterea} PASSED \nwith value: {measured_value}")
-            # else:      print(Fore.RED + f"test {variable} {op} {eval_criterea} FAILED \nwith value: {measured_value}")
-            # print(Style.RESET_ALL)
 
         return True
 
@@ -134,7 +136,7 @@ class TestSystem:
                 
             if(self.check_time(sim_time, test["stop_time"])):
                 simulation_status = False
-
+            
     async def run_test(self, test: dict) -> None:
         """
         check_test_type
@@ -157,22 +159,35 @@ class TestSystem:
             object_node = self.system_clients[client_name].get_node(ua.NodeId(1, 1))
             await object_node.call_method(ua.NodeId(1, 4))#, str(1)) # update fmu before updating values
 
+
     async def check_outputs(self, evaluation: dict[list[dict]]) -> None:
+        """
+        evaluation of system outputs, this function reads the "evaluation" section of the yaml file
+        """
         for criterea in evaluation:
-            print(evaluation[criterea], "\n", f"criterea {criterea} end")
-            node = self.system_servers[evaluation[criterea]["system_value"]["fmu"]].server_variable_ids[evaluation[criterea]["system_value"]["variable"]]
-            measured_value = self.system_clients[evaluation[criterea]["system_value"]["fmu"]].get_node(node)
+            evaluation_condition = evaluation[criterea]
+            fmu_variable = evaluation_condition["system_value"]["fmu"]
+            variable_name = evaluation_condition["system_value"]["variable"]
+            
+            node = self.system_servers[fmu_variable].server_variable_ids[variable_name]
+            measured_value = self.system_clients[fmu_variable].get_node(node)
             measured_value = await measured_value.read_value()
 
-            print(f"checking {measured_value} {evaluation[criterea]["operator"]} {evaluation[criterea]["target"]}")
-            eval_criterea = evaluation[criterea]["target"] 
-            op =evaluation[criterea]["operator"] 
-            result = ops[op](measured_value, eval_criterea)
+            print(f"test for {fmu_variable}, {variable_name}")
+            print(f"checking {measured_value} {evaluation_condition["operator"]} {evaluation_condition["target"]}")
+
+            target_value = evaluation_condition["target"] 
+            op = evaluation_condition["operator"] 
+            
+            # compare the two values
+            evaluation_result = ops[op](measured_value, target_value)
             variable = evaluation[criterea]["system_value"]["variable"]
 
-            if result: print(Fore.GREEN + f"test  {variable} {op} {eval_criterea} PASSED \nwith value: {measured_value}")
-            else:      print(Fore.RED + f"test {variable} {op} {eval_criterea} FAILED \nwith value: {measured_value}")
+            if evaluation_result: print(Fore.GREEN + f"test {variable} {op} {evaluation_result} PASSED \nwith value: {measured_value}")
+            else:                 print(Fore.RED   + f"test {variable} {op} {evaluation_result} FAILED \nwith value: {measured_value}")
             print(Style.RESET_ALL)
+
+
 
     #######################################################################
     ################   SYSTEM VARIABLE INIT   #############################
@@ -214,6 +229,11 @@ class TestSystem:
 
         return tasklist
 
+
+    def gather_system_ids(self):
+        for server_name in self.system_servers:
+            self.system_node_ids[server_name] = self.system_servers[server_name].server_variable_ids
+
     ############################################################################
     #######################   CLIENTS INIT   ###################################
     ############################################################################
@@ -224,7 +244,7 @@ class TestSystem:
             client = Client(url=server.url)
             await client.connect()
             self.system_clients[server_name] = client
-
+            
         print(f"system clients clients setup: {self.system_clients}")
     
     ################################################################################
@@ -233,11 +253,13 @@ class TestSystem:
     async def main_testing_loop(self):
         servers = await self.initialize_fmu_opc_servers()
         await self.create_system_clients()
+        self.gather_system_ids()
         print(f"TESTS = {self.tests}, \n type {type(self.tests)} \n {self.tests.keys()} \n\n")        
         for test in self.tests:
             await self.run_test(self.tests[test])
         # return
-        await asyncio.gather(*servers)
+        return await asyncio.gather(*servers)
+        # return asyncio.gather(*servers)
 
     #################################################################################
     ########################   UTILITY FUNCTION   ###################################
