@@ -153,6 +153,18 @@ class TestSystem:
         await self.run_single_loop(test_loops=test["system_loop"])
         await self.check_outputs(evaluation=test["evaluation"])
 
+    def increment_time(self, sim_time, timestep):
+        if self.timing == "real_time":
+            current = sim_time
+            while (sim_time - current) < timestep:
+                time.sleep(0.1)
+                sim_time += 0.1
+            
+        elif self.timing == "simulation_time":
+            sim_time += timestep
+        
+        return sim_time
+
     async def run_multi_step_test(self, test: dict): 
         """
         TODO: LOOP while the test has not completed, with some termination criterea
@@ -163,7 +175,9 @@ class TestSystem:
 
         simulation_status = True
         while simulation_status:
-            sim_time += test["timestep"]
+            
+            
+            sim_time = self.increment_time(sim_time = sim_time, timestep = test["timestep"])
     
             await self.run_single_loop(test_loops=test["system_loop"])
 
@@ -229,6 +243,7 @@ class TestSystem:
     ################   SYSTEM VARIABLE INIT   #############################
     #######################################################################
     async def initialize_system_variables(self, test:dict):
+        self.timing = test["timing"]
         initial_system_state = test["initial_system_state"]
         for server in initial_system_state:
             for variable in initial_system_state[server]:

@@ -5,6 +5,7 @@ fmu_files: # list of fmu files
 tests:
   test01:
     timestep: 1.0 # seconds
+    timing: "simulation_time" # simulation or real_time 
     test_type: "single_step"
     initial_system_state:
     
@@ -65,6 +66,7 @@ tests:
     #########################################
   test02:
     timestep: 1     # seconds
+    timing: "simulation_time" # simulation or real_time 
     test_type: "multi_step"
     stop_time: 20.0 # seconds 
 
@@ -141,6 +143,7 @@ tests:
     #########################################
   test03:
     timestep: 0.5 # seconds
+    timing: "real_time" # simulation or real_time 
     test_type: "multi_step"
     stop_time: 12.0 # seconds
     initial_system_state:
