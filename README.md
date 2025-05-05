@@ -1,6 +1,18 @@
 # fmu-opcua-test-platform
 
 
+
+
+# real time application 
+
+sleep till stepsize is met
+loop timestep = 1 sec, if loop takes 0.2 sleep for 0.8
+raise exception if system time is more than timestep
+
+make tests as files = one test is one file not all in one 
+
+
+
 # dev notes
 
 try making parent in function calls the server itself, then we only need to pass in the variable
@@ -14,10 +26,6 @@ universal update loop: update the whole system evey timestep, each component upd
 
 4) add to value:
     when and what: user defines under which conditions the value is added in a filed called "value modifications"
-
-## in progress
-
-
 
 
 ## done
@@ -47,7 +55,10 @@ then we check if (server time - fmu time >= step) if that's true we make a step 
 to do this we'll be calling the fmu step function while passing in the server time variable
 
 
+3) distinguish between internal and external clients
 
+
+5) add manual testing mode where delays are always equal to the system time
 
 
 

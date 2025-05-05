@@ -72,7 +72,11 @@ class TestSystem:
         node = client.get_node(node_id)
         await node.write_value(value)    
 
-
+    async def get_system_values(self) -> dict:
+        
+        
+        return
+    
     ################### SYSTEM UPDATES ########################
     async def run_single_loop(self, test_loops:dict):
         """
@@ -144,8 +148,6 @@ class TestSystem:
 
         return True
 
-
-
     ################################################
     ############### SYSTEM TESTS ###################
     ################################################
@@ -165,28 +167,29 @@ class TestSystem:
         
         return sim_time
 
-    async def run_multi_step_test(self, test: dict): 
+    async def run_multi_step_test(self, test: dict):
         """
         TODO: LOOP while the test has not completed, with some termination criterea
-        for example, the user wants to read after 
+        for example, the user wants to read after
         """
         print(f"test time {test["stop_time"]}")
         sim_time = 0
-
         simulation_status = True
+
         while simulation_status:
-            
-            
+
+            # system timestep
             sim_time = self.increment_time(sim_time = sim_time, timestep = test["timestep"])
-    
+
+            # update system
             await self.run_single_loop(test_loops=test["system_loop"])
 
-            if await self.check_reading_conditions(test["start_readings_conditions"]):
+            if await self.check_reading_conditions(test["start_readings_conditions"]): 
                 await self.check_outputs(test["evaluation"])
-                
+
             if(self.check_time(sim_time, test["stop_time"])):
                 simulation_status = False
-            
+
     async def run_test(self, test: dict) -> None:
         """
         check_test_type
@@ -195,7 +198,7 @@ class TestSystem:
         # reset and initialize system for every test
         await self.reset_system() 
         await self.initialize_system_variables(test=test)
-        
+
         if test["test_type"] == "single_step": 
             await self.run_single_step_test(test)
         elif test["test_type"] == "multi_step": 
@@ -321,6 +324,8 @@ class TestSystem:
         await self.create_system_clients()
         self.gather_system_ids()
         print(f"TESTS = {self.tests}, \n type {type(self.tests)} \n {self.tests.keys()} \n\n")        
+        # print("node ids = ",self.system_node_ids)
+        # exit()
         for test in self.tests:
             await self.run_test(self.tests[test])
         # return
