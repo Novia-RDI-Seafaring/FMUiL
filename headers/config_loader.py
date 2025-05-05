@@ -8,4 +8,3 @@ class DataLoaderClass:
         with open(file_path) as file:
             return yaml.safe_load(file)
         
-        

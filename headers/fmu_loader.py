@@ -19,7 +19,7 @@ class FmuLoader:
         self.fmu.exitInitializationMode()
         self.fmu_inputs = {}
         self.fmu_outputs = {}
-        self.fmu_parameters = {}
+        self.fmu_parameters = {} # contains both inputs and outputs
         self.locate_variable_names()
 
     def _add_input(self, variable:fmpy.model_description.ScalarVariable):
@@ -44,7 +44,9 @@ class FmuLoader:
         }
         
     def locate_variable_names(self):
-
+        """
+        adds fmu I/Os to object
+        """
         # Setting up
         _logger.info("Run simulation \n")            
 
