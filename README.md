@@ -5,11 +5,6 @@
 
 
 
-UPdate single loop upate so that the system updates outside of that function
-
-the funciton should only perform IOs no updates, 
-
-
 # real time application 
 
 sleep till stepsize is met

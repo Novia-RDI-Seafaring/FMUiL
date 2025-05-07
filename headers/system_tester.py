@@ -43,8 +43,7 @@ class TestSystem:
 
         for server_name in server_files:
             server_desription = DataLoaderClass(server_name).data
-            print(server_desription)
-            print(server_name)
+            print("description: {server_desription}, name: {server_name}")
             name = Path(server_name).stem
             server_dict[name] = server_desription
         
@@ -76,19 +75,17 @@ class TestSystem:
 
     async def get_system_values(self) -> dict:
         self.system_clients.keys()
-        
-        return
+
     
     
-    async def run_system_updates(self):
-        # return
-        print("\n\n\n\n\n\n\n\nHEEEEEEEEEEREEEEEEEEEEEEEE\n\n\n\n")
+    async def run_system_updates(self, timestep = 0.1):
+        # update servers one timestep into the future
         for key in self.system_clients.keys():
             print(f"updating {key} ")
             client = self.system_clients[key]
             print(f"CLIENT {client}")
             object_node = client.get_node(ua.NodeId(1, 1))
-            await object_node.call_method(ua.NodeId(1, 2), str(0.1))
+            await object_node.call_method(ua.NodeId(1, 2), str(float(timestep)))
         return
     
     ################### SYSTEM UPDATES ########################
@@ -130,31 +127,27 @@ class TestSystem:
             variable_name = conditions[condition]["system_value"]["variable"]
             node = self.system_node_ids[fmu_name][variable_name]
             
-            measured_value = self.system_clients[conditions[condition]["system_value"]["fmu"]].get_node(node)
+            measured_value = self.system_clients[fmu_name].get_node(node)
             measured_value = await measured_value.read_value()
 
             print(f"checking {measured_value} {conditions[condition]["operator"]} {conditions[condition]["target"]}")
             eval_criterea = conditions[condition]["target"] 
-            op =conditions[condition]["operator"] 
-            result = ops[op](measured_value, eval_criterea)
+            operator = conditions[condition]["operator"] 
+            result = ops[operator](measured_value, eval_criterea)
             
             variable = conditions[condition]["system_value"]["variable"]
 
             if result:
-                print(Fore.GREEN + f"test  {variable} {op} {eval_criterea} PASSED \nwith value: {measured_value}")
+                print(Fore.GREEN + f"test  {variable} {operator} {eval_criterea} PASSED \nwith value: {measured_value}")
+                return True
             else:
-                print(Fore.RED + f"test {variable} {op} {eval_criterea} FAILED \nwith value: {measured_value}")
+                print(Fore.RED + f"test {variable} {operator} {eval_criterea} FAILED \nwith value: {measured_value}")
                 return False
-
-        return True
 
     ################################################
     ############### SYSTEM TESTS ###################
     ################################################
-    async def run_single_step_test(self, test: dict) -> None:
-        await self.run_single_loop(test_loops=test["system_loop"])
-        await self.check_outputs(evaluation=test["evaluation"])
-
+    
     def increment_time(self, sim_time, timestep):
         if self.timing == "real_time":
             current = sim_time
@@ -167,6 +160,13 @@ class TestSystem:
         
         return sim_time
 
+
+    async def reset_system(self) -> None:
+        for client_name in self.system_clients:
+            object_node = self.system_clients[client_name].get_node(ua.NodeId(1, 1))
+            await object_node.call_method(ua.NodeId(1, 4)) # update fmu before updating values
+
+
     async def run_multi_step_test(self, test: dict):
         """
         TODO: LOOP while the test has not completed, with some termination criterea
@@ -176,9 +176,10 @@ class TestSystem:
         sim_time = 0
         simulation_status = True
 
+        # run test loop until the simulation reaches its end time
         while simulation_status:
             
-            await self.run_system_updates()
+            await self.run_system_updates(test['timestep'])
             
             # system timestep
             sim_time = self.increment_time(sim_time = sim_time, timestep = test["timestep"])
@@ -186,11 +187,14 @@ class TestSystem:
             # update system
             await self.run_single_loop(test_loops=test["system_loop"])
 
+            # if the reading conditions the evaluation of the system begins
             if await self.check_reading_conditions(test["start_readings_conditions"]): 
                 await self.check_outputs(test["evaluation"])
 
+            # if the simulation reaches the specified stop time, the test ends
             if(self.check_time(sim_time, test["stop_time"])):
                 simulation_status = False
+                
 
     async def run_test(self, test: dict) -> None:
         """
@@ -203,15 +207,13 @@ class TestSystem:
         
         # parses system_loop section of the test and stores it to use it as the system loop 
         self.connections = parse_connections(test["system_loop"])
-        # 
+        
+        # run testing loop
         await self.run_multi_step_test(test=test)
 
-    async def reset_system(self) -> None:
-        for client_name in self.system_clients:
-            object_node = self.system_clients[client_name].get_node(ua.NodeId(1, 1))
-            await object_node.call_method(ua.NodeId(1, 4))#, str(1)) # update fmu before updating values
-
-
+    ####################################################################
+    ################   OUTPUT EVALUATION   #############################
+    ####################################################################
     async def check_outputs(self, evaluation: dict[list[dict]]) -> None:
         """
         evaluation of system outputs, this function reads the "evaluation" section of the yaml file
@@ -239,8 +241,6 @@ class TestSystem:
             else:                 print(Fore.RED   + f"test {variable} {op} {evaluation_result} FAILED \nwith value: {measured_value}")
             print(Style.RESET_ALL)
 
-
-
     #######################################################################
     ################   SYSTEM VARIABLE INIT   #############################
     #######################################################################
@@ -265,18 +265,17 @@ class TestSystem:
         tasklist = []
         
         for fmu_file in self.fmu_files:
-            print("intializing : ", fmu_file)
-            self.base_port+=1
             
+            print("intializing : ", fmu_file)
+            
+            self.base_port+=1
             server =  await OPCUAFMUServerSetup.async_server_init(
                 fmu=fmu_file, 
                 port=self.base_port
             )
-
             server_task = asyncio.create_task(server.main_loop())
             await server.server_started.wait()
             server.server_started.clear()
-
             self.system_servers[server.fmu.fmu_name] = server
             tasklist.append(server_task)
 
@@ -293,7 +292,6 @@ class TestSystem:
     #######################   CLIENTS INIT   ###################################
     ############################################################################
     async def creat_internal_clients(self):
-        
         for server_name in self.system_servers:
             server = self.system_servers[server_name]
             client = Client(url=server.url)
@@ -303,9 +301,7 @@ class TestSystem:
         print(f"system clients clients setup: {self.system_clients}")
         
     async def create_external_clients(self):
-        
         for server in self.remote_servers:
-            
             server_url = self.remote_servers[server]["url"]
             client = Client(url=server_url)
             await client.connect()
@@ -315,23 +311,25 @@ class TestSystem:
         await self.creat_internal_clients()
         await self.create_external_clients()
 
+    async def initialize_system(self):
+        """
+        initializes system servers, clients and stores server IDs
+        """
+        servers = await self.initialize_fmu_opc_servers()
+        await self.create_system_clients()
+        self.gather_system_ids()
+        return servers
+    
     ################################################################################
     ###########################   MAIN LOOP   ######################################
     ################################################################################
     async def main_testing_loop(self):
-        servers = await self.initialize_fmu_opc_servers()
-        await self.create_system_clients()
-        self.gather_system_ids()
+        servers = await self.initialize_system()
         print(f"TESTS = {self.tests}, \n type {type(self.tests)} \n {self.tests.keys()} \n\n")        
-        # print("node ids = ",self.system_node_ids)
-        # exit()
         for test in self.tests:
             print("RUNNING TESTS")
-            # exit()
             await self.run_test(self.tests[test])
-        # return
         return await asyncio.gather(*servers)
-        # return asyncio.gather(*servers)
 
     #################################################################################
     ########################   UTILITY FUNCTION   ###################################

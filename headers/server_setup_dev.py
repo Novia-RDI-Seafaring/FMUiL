@@ -96,7 +96,7 @@ class OPCUAFMUServerSetup:
         await self.setup_standard_methods(obj= obj)
     
     #######################################################
-    ####### STANDARD METHODS FOR ALL OFJBECTS #############
+    ####### STANDARD METHODS FOR ALL OBJBECTS #############
     #######################################################
     async def setup_standard_methods(self, obj):
         ######### simulation #########
@@ -164,12 +164,12 @@ class OPCUAFMUServerSetup:
         node = self.server.get_node(self.server_variable_ids[value["variable"]])
         await node.set_value(float(value["value"]))
         self.fmu.fmu.setReal([self.fmu.fmu_parameters[value["variable"]]["id"]], [float(value["value"])])
-        print(f"\n\n\n\n server {self.fmu.fmu_name} WAS UPDATED")
+        print(f"server {self.fmu.fmu_name} WAS UPDATED")
     
     async def update_opc(self, parent, value):
         node = self.server.get_node(self.server_variable_ids[value["variable"]])
         await node.set_value(float(value["value"]))
-        print(f"\n\n\n\n server {self.fmu.fmu_name} WAS UPDATED")
+        print(f"server {self.fmu.fmu_name} WAS UPDATED")
 
     @uamethod
     async def update_value_opc_and_fmu(self, parent= None, value= None):        
