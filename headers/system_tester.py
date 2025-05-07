@@ -106,14 +106,6 @@ class TestSystem:
         """
         
         for update in self.connections:
-            
-            
-            # update fmu before updating values
-            # if update.from_fmu in self.system_clients.keys():
-            #     client = self.system_clients[update.from_fmu]
-            #     print(f"CLIENT 02 {client}")
-            #     object_node = client.get_node(ua.NodeId(1, 1))
-            #     await object_node.call_method(ua.NodeId(1, 2), str(0.1)) 
                 
             print(f"\n\n\n node ids: {update.from_fmu} var = {update.from_var}")
             value_nodid = self.system_node_ids[update.from_fmu][update.from_var]
@@ -126,33 +118,6 @@ class TestSystem:
             )
             
             print(f"passed {update.from_var} with {value}, to {update.from_var}, {update.to_var}")
-
-        # for obj in test_loops:
-            
-        #     # doing 1 update to the object fmu
-        #     client = self.system_clients[obj]
-
-        #     # update fmu before updating values
-        #     if obj in self.system_clients.keys():
-        #         object_node = client.get_node(ua.NodeId(1, 1))
-        #         await object_node.call_method(ua.NodeId(1, 2), str(0.1)) 
-
-        #     print(f"updated {obj}, client {client}")
-        #     # updating I/Os after system update
-        #     for io_update in test_loops[obj]:
-                                
-        #         # Read the value we want to pass to the next fmu server                
-        #         value_nodid = self.system_node_ids[obj][io_update["variable_output"]]
-        #         value = await self.get_value(client_name= obj, variable= value_nodid)
-
-        #         # write value to other server
-        #         await self.write_value(
-        #             client_name = io_update["object_input"],
-        #             variable    = io_update["variable_input"],
-        #             value       = value
-        #         )
-
-        #         print(f"passed {value}, to {io_update["object_input"]},{io_update["variable_input"]}")
 
     def check_time(self, sim_time, max_time):
         return sim_time >= max_time
@@ -173,7 +138,6 @@ class TestSystem:
             op =conditions[condition]["operator"] 
             result = ops[op](measured_value, eval_criterea)
             
-
             variable = conditions[condition]["system_value"]["variable"]
 
             if result:
@@ -233,22 +197,14 @@ class TestSystem:
         check_test_type
         call corresponding test
         """
-        # reset and initialize system for every test
+        # reset and initialize system variables for every test
         await self.reset_system() 
         await self.initialize_system_variables(test=test)
-
-        self.connections = parse_connections(test["system_loop"])
-        # print("BEFORE UPDATE")
-        # await self.run_system_updates()
-        # print("AFTER UPDATE")
-        # exit()
         
-        if test["test_type"] == "single_step": 
-            await self.run_single_step_test(test)
-        elif test["test_type"] == "multi_step": 
-            await self.run_multi_step_test(test=test)
-        else: 
-            print(f"unknown test type {test["test_type"]}")
+        # parses system_loop section of the test and stores it to use it as the system loop 
+        self.connections = parse_connections(test["system_loop"])
+        # 
+        await self.run_multi_step_test(test=test)
 
     async def reset_system(self) -> None:
         for client_name in self.system_clients:

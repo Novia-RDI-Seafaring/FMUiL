@@ -1,6 +1,9 @@
 # fmu-opcua-test-platform
 
 
+# current:
+
+
 
 UPdate single loop upate so that the system updates outside of that function
 
@@ -14,34 +17,6 @@ loop timestep = 1 sec, if loop takes 0.2 sleep for 0.8
 raise exception if system time is more than timestep
 
 make tests as files = one test is one file not all in one 
-
-
-
-work on this funciton....
-
-
-
-    async def run_multi_step_test(self, test: dict):
-        """
-        TODO: LOOP while the test has not completed, with some termination criterea
-        for example, the user wants to read after
-        """
-        print(f"test time {test["stop_time"]}")
-        sim_time = 0
-        simulation_status = True
-
-        while simulation_status:
-
-            # system timestep
-            sim_time = self.increment_time(sim_time = sim_time, timestep = test["timestep"])
-
-            # update system
-            await self.run_single_loop(test_loops=test["system_loop"])
-
-            if await self.check_reading_conditions(test["start_readings_conditions"]): 
-                await self.check_outputs(test["evaluation"])
-
-            if(self.check_time(sim_time, test["stop_t
 
 
 # dev notes
