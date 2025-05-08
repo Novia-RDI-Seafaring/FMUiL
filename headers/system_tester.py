@@ -31,7 +31,7 @@ class TestSystem:
         
         self.system_node_ids    = {} # this is meant to take in all of the systems node id's
 
-        self.connections = None
+        self.connections = None # description of system loop definition from test
 
     def construct_remote_servers(self, remote_servers):
         """
@@ -81,8 +81,6 @@ class TestSystem:
     
     
     async def run_system_updates(self):
-        # return
-        print("\n\n\n\n\n\n\n\nHEEEEEEEEEEREEEEEEEEEEEEEE\n\n\n\n")
         for key in self.system_clients.keys():
             print(f"updating {key} ")
             client = self.system_clients[key]
@@ -92,7 +90,7 @@ class TestSystem:
         return
     
     ################### SYSTEM UPDATES ########################
-    async def run_single_loop(self, test_loops:dict):
+    async def run_single_loop(self):
         """
         update loop, passing outputs from one fmu to another
         1) Updates fmu1 to get the most recent values
@@ -127,7 +125,8 @@ class TestSystem:
         checks that the conditions required to start readings are met
         """
         for condition in conditions:
-            print(f"criterea {condition} end")
+            
+            print(f"\n\n\n criterea {condition} end \n\n\n")
             
             fmu_name = conditions[condition]["system_value"]["fmu"]
             variable_name = conditions[condition]["system_value"]["variable"]
@@ -154,9 +153,6 @@ class TestSystem:
     ################################################
     ############### SYSTEM TESTS ###################
     ################################################
-    async def run_single_step_test(self, test: dict) -> None:
-        await self.run_single_loop(test_loops=test["system_loop"])
-        await self.check_outputs(evaluation=test["evaluation"])
 
     def increment_time(self, sim_time, timestep):
         if self.timing == "real_time":
@@ -187,7 +183,7 @@ class TestSystem:
             sim_time = self.increment_time(sim_time = sim_time, timestep = test["timestep"])
 
             # update system
-            await self.run_single_loop(test_loops=test["system_loop"])
+            await self.run_single_loop()
 
             if await self.check_reading_conditions(test["start_readings_conditions"]): 
                 await self.check_outputs(test["evaluation"])
@@ -214,7 +210,9 @@ class TestSystem:
             object_node = self.system_clients[client_name].get_node(ua.NodeId(1, 1))
             await object_node.call_method(ua.NodeId(1, 4))#, str(1)) # update fmu before updating values
 
-
+    #######################################################################
+    ################   CHECK SYSTEM OUTPUTS   #############################
+    #######################################################################
     async def check_outputs(self, evaluation: dict[list[dict]]) -> None:
         """
         evaluation of system outputs, this function reads the "evaluation" section of the yaml file
@@ -242,8 +240,6 @@ class TestSystem:
             else:                 print(Fore.RED   + f"test {variable} {op} {evaluation_condition["target"]} = {evaluation_result} \n FAILED with value: {measured_value}")
             
             print(Style.RESET_ALL)
-
-
 
     #######################################################################
     ################   SYSTEM VARIABLE INIT   #############################
@@ -327,15 +323,10 @@ class TestSystem:
         await self.create_system_clients()
         self.gather_system_ids()
         print(f"TESTS = {self.tests}, \n type {type(self.tests)} \n {self.tests.keys()} \n\n")        
-        # print("node ids = ",self.system_node_ids)
-        # exit()
         for test in self.tests:
             print("RUNNING TESTS")
-            # exit()
             await self.run_test(self.tests[test])
-        # return
         return await asyncio.gather(*servers)
-        # return asyncio.gather(*servers)
 
     #################################################################################
     ########################   UTILITY FUNCTION   ###################################

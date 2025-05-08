@@ -1,70 +1,19 @@
 # fmu-opcua-test-platform
 
-
-# current:
-
+# ongoing task:
 
 
-UPdate single loop upate so that the system updates outside of that function
+# tasks:
 
-the funciton should only perform IOs no updates, 
+add real time option
 
+add logging
 
-# real time application 
+separate tests into different files
 
-sleep till stepsize is met
-loop timestep = 1 sec, if loop takes 0.2 sleep for 0.8
-raise exception if system time is more than timestep
+improve logging on screen
 
-make tests as files = one test is one file not all in one 
-
-
-# dev notes
-
-try making parent in function calls the server itself, then we only need to pass in the variable
-
-## tasks
-
-universal update loop: update the whole system evey timestep, each component updates based on its internal ts and we make the passes also
-
-3) state machines:
-    give initial and final system state, check whether or not it was reached in a given time window
-
-4) add to value:
-    when and what: user defines under which conditions the value is added in a filed called "value modifications"
-
-
-## done
-
-minor: add setters and getters to the server itself and clean it up a bit 
-1) universal clock
-
-
-2) zero order hold, signals hold their value constant until changed
-goal: make the fmus work with a universal time
-for example fmu1 has a timestep of 0.5 seconds while fmu2 has a step of t=1sec
-
-we have a universal clock and timestep
-
-it should loop around the whole thing and whenever enough time has passed we update our values
-
-solution:
-
-every server should have 
-- server time
-- fmu time
-- receive system time
-
-through these we can get the time from the system and update server time
-then we check if (server time - fmu time >= step) if that's true we make a step to the fmu 
-
-to do this we'll be calling the fmu step function while passing in the server time variable
-
-
-3) distinguish between internal and external clients
-
-
-5) add manual testing mode where delays are always equal to the system time
+update reading_conditions, and evaluation
 
 
 
@@ -73,18 +22,37 @@ to do this we'll be calling the fmu step function while passing in the server ti
 
     tests:
         test_name:
-            test_type: 
 
             test_description: "a description of the test"
 
             initial_system_state:
+                fmu_name:
+                    timestep: 0.1 # seconds
+                    variable_01: 1 
+                    variable_02: 2
+                    variable_03: 4
+                    variable_04: 54
 
-            start_readings_conditions:
-
-            system_loop:
-
-    
-
+            start_readings_conditions:  # will be improved to "fmu.variable operator value"
+                condition_01: {system_value: 
+                    {
+                    fmu: LOC_CNTRL_v2_customPI, 
+                    variable: OUTPUT_control_valve_position
+                    }, 
+                    operator: ">", 
+                    target: 0.20 }
+            
+            system_loop: # describes 1 copmlete system cycle
+                - from: fmu.variable_name
+                    to: fmu.variable_name
+                
+            evaluation"
+                evaluation: 
+                    eval_1: {system_value: {
+                        fmu: LOC_CNTRL_v2_customPI, 
+                        variable: OUTPUT_control_valve_position}, 
+                        operator: "<", 
+                        target: 0.1 }
 
 
 simply loop after first fmu inputs
