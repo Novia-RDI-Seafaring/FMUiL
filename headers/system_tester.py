@@ -123,6 +123,9 @@ class TestSystem:
         return sim_time >= max_time
 
     async def check_reading_conditions(self, conditions):
+        """
+        checks that the conditions required to start readings are met
+        """
         for condition in conditions:
             print(f"criterea {condition} end")
             
@@ -141,9 +144,9 @@ class TestSystem:
             variable = conditions[condition]["system_value"]["variable"]
 
             if result:
-                print(Fore.GREEN + f"test  {variable} {op} {eval_criterea} PASSED \nwith value: {measured_value}")
+                print(Fore.GREEN + f"condition  {variable} {op} {eval_criterea} PASSED \nwith value: {measured_value}")
             else:
-                print(Fore.RED + f"test {variable} {op} {eval_criterea} FAILED \nwith value: {measured_value}")
+                print(Fore.RED + f"condition {variable} {op} {eval_criterea} FAILED \nwith value: {measured_value}")
                 return False
 
         return True
@@ -235,8 +238,9 @@ class TestSystem:
             evaluation_result = ops[op](measured_value, target_value)
             variable = evaluation[criterea]["system_value"]["variable"]
 
-            if evaluation_result: print(Fore.GREEN + f"test {variable} {op} {evaluation_result} PASSED \nwith value: {measured_value}")
-            else:                 print(Fore.RED   + f"test {variable} {op} {evaluation_result} FAILED \nwith value: {measured_value}")
+            if evaluation_result: print(Fore.GREEN + f"test {variable} {op} {evaluation_condition["target"]} = {evaluation_result} \n PASSED with value: {measured_value}")
+            else:                 print(Fore.RED   + f"test {variable} {op} {evaluation_condition["target"]} = {evaluation_result} \n FAILED with value: {measured_value}")
+            
             print(Style.RESET_ALL)
 
 
