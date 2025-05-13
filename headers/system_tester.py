@@ -78,13 +78,14 @@ class TestSystem:
         self.system_clients.keys()
         return
     
-    async def run_system_updates(self):
+    async def run_system_updates(self, timestep):
+        print(f"TIMESTEP = {timestep}, type {type(timestep)}")
         for key in self.system_clients.keys():
             print(f"updating {key} ")
             client = self.system_clients[key]
             print(f"CLIENT {client}")
             object_node = client.get_node(ua.NodeId(1, 1))
-            await object_node.call_method(ua.NodeId(1, 2), str(0.1))
+            await object_node.call_method(ua.NodeId(1, 2), str(float(timestep)))
         return
     
     ################### SYSTEM UPDATES ########################
@@ -174,7 +175,7 @@ class TestSystem:
 
         while simulation_status:
             
-            await self.run_system_updates()
+            await self.run_system_updates(timestep = test["timestep"])
             
             # system timestep
             sim_time = self.increment_time(sim_time = sim_time, timestep = test["timestep"])

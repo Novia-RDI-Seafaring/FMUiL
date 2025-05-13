@@ -14,7 +14,6 @@ add real time option:
         constant delta:
             wait until delta is reached
 
-
 add logging
 
 separate tests into different files

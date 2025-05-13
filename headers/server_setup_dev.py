@@ -3,14 +3,14 @@ from asyncua import Server, ua
 import asyncio
 import datetime
 from asyncua.common.methods import uamethod
-from decimal import Decimal, getcontext
 import logging
 # logging.basicConfig(level=logging.INFO) # required to get messages printed out
 logger = logging.getLogger(__name__)
+from decimal import Decimal, getcontext, ROUND_HALF_UP
 
-PRECISION = 8
-getcontext().prec = PRECISION
-PRECISION_STR = "0." + "".join(["0" for i in range(PRECISION)]) # if PRECISION = 5 then PRECISION_STR = "0.00000", and so on
+getcontext().prec = 8
+PRECISION_STR = "0.000001"
+COMPARISON_PRECISION = Decimal("0.000001")
 
 
 
@@ -130,7 +130,7 @@ class OPCUAFMUServerSetup:
     async def single_simulation_loop(self):
         time_step = Decimal(await self.get_value(variable="timestep")).quantize(Decimal(PRECISION_STR))
 
-        logger.info(f"DID update due to {self.server_time} - {self.fmu_time}:  >{time_step}")
+        logger.info(f"DID update due to {self.server_time} - {self.fmu_time}:  > {time_step}")
         self.fmu.fmu.doStep(
             currentCommunicationPoint=self.fmu_time,
             communicationStepSize=time_step
@@ -142,23 +142,37 @@ class OPCUAFMUServerSetup:
             fmu_output = self.fmu.fmu.getReal([output_id])
             node = self.server.get_node(self.server_variable_ids[output])
             await node.set_value(float(fmu_output[0]))
+            
 
     @uamethod
-    async def simulate_fmu(self, parent=None, value:str= None):
-        
-        system_timestep  = Decimal(value).quantize(Decimal(PRECISION_STR)) # Round to 8 decimal places, convert from string
-        time_step        = Decimal(await self.get_value(variable="timestep")).quantize(Decimal(PRECISION_STR))
-        self.server_time += system_timestep
+    async def simulate_fmu(self, parent=None, value: str = None):
+        try:
+            # Convert inputs to Decimal with defined precision
+            system_timestep = Decimal(value).quantize(Decimal(PRECISION_STR), rounding=ROUND_HALF_UP)
+            time_step = Decimal(await self.get_value(variable="timestep")).quantize(Decimal(PRECISION_STR), rounding=ROUND_HALF_UP)
+            self.server_time += system_timestep
 
-        print(f"system_timestep = {system_timestep}, time_Step {time_step}, server_time = {self.server_time}, fmu_time = {self.fmu_time}")
+            print(f"system_timestep = {system_timestep}, time_step = {time_step}, server_time = {self.server_time}, fmu_time = {self.fmu_time}")
 
-        if round((self.server_time - self.fmu_time), 8) > round(float(2 * time_step), 6): 
-            logger.warning(f"\n\n\SOMETHING IS WRONG with timing the gap is double the step time {round((self.server_time - self.fmu_time), 8)} > {round((float(2 * time_step)), 6)}\n\n\n")
-            
-        if(round(float(self.server_time - self.fmu_time), 8) >= time_step):
-            await self.single_simulation_loop()
-        else:
-            logger.info(f"DID !NOT! update due to {self.server_time} - {self.fmu_time}: {self.server_time - self.fmu_time} < {time_step}")
+            time_diff = (self.server_time - self.fmu_time).quantize(Decimal(PRECISION_STR), rounding=ROUND_HALF_UP)
+            double_step = (2 * time_step).quantize(Decimal(PRECISION_STR), rounding=ROUND_HALF_UP)
+
+            if time_diff > double_step:
+                logger.warning(
+                    f"\n\n\\SOMETHING IS WRONG with timing: the gap is double the step time "
+                    f"{time_diff} > {double_step}\n\n"
+                )
+
+            if time_diff >= time_step:
+                await self.single_simulation_loop()
+            else:
+                logger.info(
+                    f"DID !NOT! update due to {self.server_time} - {self.fmu_time}: "
+                    f"{self.server_time - self.fmu_time} < {time_step}"
+                )
+        except Exception as e:
+            logger.error(f"Exception in simulate_fmu: {e}")
+
 
     async def update_opc_and_fmu(self, parent, value):
         node = self.server.get_node(self.server_variable_ids[value["variable"]])

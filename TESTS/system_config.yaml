@@ -12,7 +12,7 @@ tests:
     initial_system_state:
 
       LOC_SYSTEM:
-        timestep: 0.1
+        timestep: 0.2
         INPUT_temperature_cold_circuit_inlet: 1 
         INPUT_massflow_cold_circuit: 1
         INPUT_engine_load_0_1: 1
@@ -70,7 +70,7 @@ tests:
 
   test03:
     save_logs: false
-    timestep: 1     # seconds
+    timestep: 0.1     # seconds
     timing: "simulation_time" # simulation_time or real_time 
     stop_time: 20.0 # seconds 
 
