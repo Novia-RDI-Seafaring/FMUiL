@@ -15,4 +15,3 @@ if __name__ == "__main__":
         asyncio.run(main(funciton=args[1]))
     else:
         print("args reuqired '-func' and it can be rither 'test' or 'describe' ")
-        

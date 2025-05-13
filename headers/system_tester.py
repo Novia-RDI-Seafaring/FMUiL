@@ -2,19 +2,20 @@ import asyncio
 from headers.server_setup_dev import OPCUAFMUServerSetup
 from headers.config_loader import DataLoaderClass
 from asyncua import Client, ua
-import asyncua
-import sys, os
+# import asyncua
+# import sys 
+import os
 from pathlib import Path
-from colorama import Fore, Back, Style
+from colorama import Fore, Style # Back
 from headers import ops
-from decimal import Decimal, getcontext
+from decimal import getcontext # Decimal
 import logging
-from headers.connections import Connection, parse_connections
+from headers.connections import parse_connections # Connection
+import time
+
 logging.basicConfig(level=logging.INFO) # required to get messages printed out
 
 getcontext().prec = 8
-
-import time
 
 class TestSystem:
     def __init__(self, config_file:str, remote_servers:str = None) -> None:
@@ -28,7 +29,6 @@ class TestSystem:
         self.system_servers     = {}
         self.system_clients     = {}
         self.external_clients   = {}
-        
         self.system_node_ids    = {} # this is meant to take in all of the systems node id's
 
         self.connections = None # description of system loop definition from test
@@ -76,9 +76,7 @@ class TestSystem:
 
     async def get_system_values(self) -> dict:
         self.system_clients.keys()
-        
         return
-    
     
     async def run_system_updates(self):
         for key in self.system_clients.keys():
@@ -137,10 +135,9 @@ class TestSystem:
 
             print(f"checking {measured_value} {conditions[condition]["operator"]} {conditions[condition]["target"]}")
             eval_criterea = conditions[condition]["target"] 
-            op =conditions[condition]["operator"] 
-            result = ops[op](measured_value, eval_criterea)
-            
-            variable = conditions[condition]["system_value"]["variable"]
+            op            = conditions[condition]["operator"] 
+            result        = ops[op](measured_value, eval_criterea) 
+            variable      = conditions[condition]["system_value"]["variable"]
 
             if result:
                 print(Fore.GREEN + f"condition  {variable} {op} {eval_criterea} PASSED \nwith value: {measured_value}")
@@ -185,6 +182,7 @@ class TestSystem:
             # update system
             await self.run_single_loop()
 
+            # set reading conds to true after theyre met once
             if await self.check_reading_conditions(test["start_readings_conditions"]): 
                 await self.check_outputs(test["evaluation"])
 
@@ -319,13 +317,17 @@ class TestSystem:
     ###########################   MAIN LOOP   ######################################
     ################################################################################
     async def main_testing_loop(self):
+        
+        # system initialization
         servers = await self.initialize_fmu_opc_servers()
         await self.create_system_clients()
         self.gather_system_ids()
+        
         print(f"TESTS = {self.tests}, \n type {type(self.tests)} \n {self.tests.keys()} \n\n")        
         for test in self.tests:
             print("RUNNING TESTS")
             await self.run_test(self.tests[test])
+            
         return await asyncio.gather(*servers)
 
     #################################################################################

@@ -27,10 +27,10 @@ class FmuLoader:
             "id" : variable.valueReference,
             "type" : variable.type
         }
-        self.fmu_parameters[variable.name] = {
-            "id" : variable.valueReference,
-            "type" : variable.type
-        }
+        # self.fmu_parameters[variable.name] = {
+        #     "id" : variable.valueReference,
+        #     "type" : variable.type
+        # }
         return
 
     def _add_output(self, variable:fmpy.model_description.ScalarVariable):
@@ -38,11 +38,18 @@ class FmuLoader:
             "id" : variable.valueReference,
             "type" : variable.type
         }
+        # self.fmu_parameters[variable.name] = {
+        #     "id" : variable.valueReference,
+        #     "type" : variable.type
+        # }
+    
+    def _add_parameter(self, variable:fmpy.model_description.ScalarVariable):
         self.fmu_parameters[variable.name] = {
-            "id" : variable.valueReference,
-            "type" : variable.type
-        }
-        
+                "id" : variable.valueReference,
+                "type" : variable.type
+            }
+            
+    
     def locate_variable_names(self):
         """
         adds fmu I/Os to object
@@ -52,11 +59,13 @@ class FmuLoader:
 
         # Gathering the I/Os references TODO: Outside of simulation loop
         for variable in self.model_description.modelVariables:
-            if variable.causality == "input":
+            if variable.causality == "input":    
                 self._add_input(variable=variable)
-            elif variable.causality == "output":
+            elif variable.causality == "output": 
                 self._add_output(variable=variable)
-                
+            
+            self._add_parameter(variable=variable)
+
         print(f"inp = {self.fmu_inputs}, \nout = {self.fmu_outputs}, \npar = {self.fmu_parameters}")
 
     def get_fmu_inputs(self):
