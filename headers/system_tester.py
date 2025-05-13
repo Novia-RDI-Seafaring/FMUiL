@@ -2,13 +2,11 @@ import asyncio
 from headers.server_setup_dev import OPCUAFMUServerSetup
 from headers.config_loader import DataLoaderClass
 from asyncua import Client, ua
-# import asyncua
-# import sys 
 import os
 from pathlib import Path
-from colorama import Fore, Style # Back
+from colorama import Fore, Style
 from headers import ops
-from decimal import getcontext # Decimal
+from decimal import getcontext
 import logging
 from headers.connections import parse_connections # Connection
 import time
@@ -151,44 +149,45 @@ class TestSystem:
     ################################################
     ############### SYSTEM TESTS ###################
     ################################################
-
-    def increment_time(self, sim_time, timestep):
-        if self.timing == "real_time":
-            current = sim_time
-            while (sim_time - current) < timestep:
-                time.sleep(0.1)
-                sim_time += 0.1
-            
-        elif self.timing == "simulation_time":
-            sim_time += timestep
-        
-        return sim_time
-
+    
     async def run_multi_step_test(self, test: dict):
         """
-        TODO: LOOP while the test has not completed, with some termination criterea
-        for example, the user wants to read after
+        Executes the test while regulating time according to test["timing"]:
+        - "simulation_time": advances time instantly
+        - "real_time": waits so each step aligns with real wall-clock time
         """
-        print(f"test time {test["stop_time"]}")
-        sim_time = 0
+        print(f"test time {test['stop_time']}")
+        sim_time = 0.0
         simulation_status = True
+        timestep = float(test["timestep"])  # assumed constant across system
 
         while simulation_status:
-            
-            await self.run_system_updates(timestep = test["timestep"])
-            
-            # system timestep
-            sim_time = self.increment_time(sim_time = sim_time, timestep = test["timestep"])
+            start_wall_time = time.time()
 
-            # update system
+            # Update all FMUs with one timestep into the future
+            await self.run_system_updates(timestep=timestep)
+
+            # Pass data between FMUs
             await self.run_single_loop()
 
-            # set reading conds to true after theyre met once
-            if await self.check_reading_conditions(test["start_readings_conditions"]): 
+            # Evaluation logic
+            if await self.check_reading_conditions(test["start_readings_conditions"]):
                 await self.check_outputs(test["evaluation"])
 
-            if(self.check_time(sim_time, test["stop_time"])):
+            # Time advancement
+            sim_time += timestep
+
+            if self.timing == "real_time":
+                await self.regulate_timestep(start_time= start_wall_time, timestep= timestep)
+            
+            if self.check_time(sim_time, test["stop_time"]):
                 simulation_status = False
+
+    async def regulate_timestep(self, start_time: float, timestep: float):
+        elapsed = time.time() - start_time
+        sleep_duration = timestep - elapsed
+        if sleep_duration > 0:
+            await asyncio.sleep(sleep_duration)
 
     async def run_test(self, test: dict) -> None:
         """
