@@ -4,8 +4,8 @@ from headers import TestSystem
 
 async def main(funciton):
     conf = "TESTS_DEV/"
-    remote_servers = "TESTS/remote_servers/" # SERVERRS ARE INDIVIDUAL FILES!!!
-    tests = TestSystem(config_folder= conf, remote_servers= remote_servers)
+    remote_servers = "test_servers/" # SERVERRS ARE INDIVIDUAL FILES!!!
+    tests = TestSystem(config_folder= conf, remote_server_directory=remote_servers )#, remote_servers= remote_servers)
     if   funciton == "test":     await tests.main_testing_loop()
     elif funciton == "describe": await tests.describe_system()
 

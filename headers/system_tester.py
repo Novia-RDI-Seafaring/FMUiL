@@ -16,10 +16,11 @@ logging.basicConfig(level=logging.INFO) # required to get messages printed out
 getcontext().prec = 8
 
 class TestSystem:
-    def __init__(self, config_folder:str, remote_servers:str = None) -> None:
+    def __init__(self, config_folder:str, remote_server_directory:str = None) -> None:
         self.config = None #DataLoaderClass(config_file)
         self.config_directory = config_folder
-        self.remote_servers = self.construct_remote_servers(remote_servers)
+        self.remote_server_directory = remote_server_directory
+        self.remote_servers = None # self.construct_remote_servers(remote_servers)
         self.fmu_files = None# self.config.data["fmu_files"]
         self.tests     = None# self.config.data["tests"]
         self.base_port = 7000
@@ -48,8 +49,13 @@ class TestSystem:
         remote_servers = path to directory with remote server definitions
         this function iterates through all of them and adds them to a dictionaty in a structured manner
         """
+        # if remote_servers == None:
+        #     return
+        
         server_dict = {}
-        server_files = [os.path.join(remote_servers, i) for i in os.listdir(remote_servers)]
+        print(self.remote_server_directory, remote_servers)
+        # for server in remote_servers:
+        server_files = [os.path.join(self.remote_server_directory, i) for i in remote_servers]
 
         for server_name in server_files:
             server_desription = DataLoaderClass(server_name).data
@@ -353,7 +359,8 @@ class TestSystem:
         for test in test_files:
             self.config    = DataLoaderClass(test)
             self.fmu_files = self.config.data["fmu_files"]
-            self.tests     = self.config.data["test"]
+            self.tests     = self.config.data["test"]        
+            self.remote_servers = self.construct_remote_servers(self.config.data["external_servers"])
             servers = await self.init_servers_clients_vars()        
             await self.run_test(self.tests)
             
