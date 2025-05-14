@@ -14,15 +14,17 @@ from time import gmtime, strftime
 logging.basicConfig(level=logging.INFO) # required to get messages printed out
 
 getcontext().prec = 8
+DEFAULT_BASE_PORT = 7000 # port from which the server initialization begins
+DEFAULT_LOGGER_HEADER = "test name, evaluation function, measured value, test result, system timestamp\n"
 
 class TestSystem:
     def __init__(self, config_folder:str, remote_server_directory:str = None) -> None:
-        self.config = None #DataLoaderClass(config_file)
-        self.config_directory = config_folder
+        self.config_directory        = config_folder
         self.remote_server_directory = remote_server_directory
-        self.remote_servers = None # self.construct_remote_servers(remote_servers)
-        self.fmu_files = None# self.config.data["fmu_files"]
-        self.tests     = None# self.config.data["tests"]
+        self.config         = None 
+        self.remote_servers = None 
+        self.fmu_files      = None
+        self.tests          = None
         self.base_port = 7000
         self.log_file  = self.generate_logfile()
         self.system_description = {}
@@ -30,7 +32,6 @@ class TestSystem:
         self.system_clients     = {}
         self.external_clients   = {}
         self.system_node_ids    = {} # this is meant to take in all of the systems node id's
-        
         self.save_logs   = None
         self.timing      = None
         self.connections = None # description of system loop definition from test
@@ -39,40 +40,27 @@ class TestSystem:
         file_path = os.path.join("logs", strftime("%Y_%m_%d_%H_%M_%S", gmtime()))
         if not os.path.exists(file_path):
             with open(file_path, 'w') as file:
-                pass
-            
+                file.write(DEFAULT_LOGGER_HEADER)
         return file_path    
-        
 
     def construct_remote_servers(self, remote_servers):
         """
         remote_servers = path to directory with remote server definitions
         this function iterates through all of them and adds them to a dictionaty in a structured manner
         """
-        # if remote_servers == None:
-        #     return
-        
         server_dict = {}
-        print(self.remote_server_directory, remote_servers)
-        # for server in remote_servers:
         server_files = [os.path.join(self.remote_server_directory, i) for i in remote_servers]
 
         for server_name in server_files:
             server_desription = DataLoaderClass(server_name).data
-            print(server_desription)
-            print(server_name)
             name = Path(server_name).stem
             server_dict[name] = server_desription
-        
         return server_dict
 
     def fetch_appropriacte_client(self, client_name)->Client:
-        if client_name in self.system_clients.keys():
-            return self.system_clients[client_name]
-        elif client_name in self.external_clients.keys():
-            return self.external_clients[client_name]
-        else:
-            raise Exception(f"UNKNOWN CLIENT {client_name}")
+        if client_name in self.system_clients.keys():     return self.system_clients[client_name]
+        elif client_name in self.external_clients.keys(): return self.external_clients[client_name]
+        else: raise Exception(f"UNKNOWN CLIENT {client_name}")
     
     ########### SETTERS & GETTERS ########### 
     async def get_value(self, client_name: str, variable: ua.NodeId) -> None:
@@ -119,8 +107,6 @@ class TestSystem:
         """
         
         for update in self.connections:
-                
-            print(f"\n\n\n node ids: {update.from_fmu} var = {update.from_var}")
             value_nodid = self.system_node_ids[update.from_fmu][update.from_var]
             value = await self.get_value(client_name= update.from_fmu, variable= value_nodid)
 
@@ -130,7 +116,7 @@ class TestSystem:
                 value       = value
             )
             
-            print(f"passed {update.from_var} with {value}, to {update.from_var}, {update.to_var}")
+            # print(f"passed {update.from_var} with {value}, to {update.from_var}, {update.to_var}")
 
     def check_time(self, sim_time, max_time):
         return sim_time >= max_time
@@ -190,7 +176,7 @@ class TestSystem:
 
             # Evaluation logic
             if await self.check_reading_conditions(test["start_readings_conditions"]):
-                await self.check_outputs(test["evaluation"])
+                await self.check_outputs(test["evaluation"], simulation_time=sim_time)
 
             # Time advancement
             sim_time += timestep
@@ -238,7 +224,7 @@ class TestSystem:
     #######################################################################
     ################   CHECK SYSTEM OUTPUTS   #############################
     #######################################################################
-    async def check_outputs(self, evaluation: dict[list[dict]]) -> None:
+    async def check_outputs(self, evaluation: dict[list[dict]], simulation_time) -> None:
         """
         evaluation of system outputs, this function reads the "evaluation" section of the yaml file
         """
@@ -250,10 +236,8 @@ class TestSystem:
             node = self.system_node_ids[fmu_variable][variable_name]
             measured_value = self.system_clients[fmu_variable].get_node(node)
             measured_value = await measured_value.read_value()
-
-            print(f"test for {fmu_variable}, {variable_name}")
-            print(f"checking {measured_value} {evaluation_condition["operator"]} {evaluation_condition["target"]}")
-
+            # print(f"test for {fmu_variable}, {variable_name}")
+            # print(f"checking {measured_value} {evaluation_condition["operator"]} {evaluation_condition["target"]}")
             target_value = evaluation_condition["target"] 
             op = evaluation_condition["operator"] 
             
@@ -265,7 +249,12 @@ class TestSystem:
             else:                 print(Fore.RED   + f"test {variable} {op} {evaluation_condition["target"]} = {evaluation_result} \n FAILED with value: {measured_value}")
             
             if self.save_logs:
-                system_output = f"{criterea}, {evaluation_result}, {measured_value},\n"
+                system_output = f"{criterea},\
+                    {fmu_variable}.{variable_name} {op} {target_value},\
+                    {measured_value},\
+                    {evaluation_result},\
+                    {simulation_time}\n"
+                
                 self.log_system_output(output= system_output)
             
             print(Style.RESET_ALL)
