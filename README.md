@@ -5,16 +5,9 @@
 
 # tasks:
 
-add real time option:
+check that the system runs the loop under the timestep given
 
-    run_system_loop
-        update_system: 
-            delta = current_timestamp - last_timestamp 
-
-        constant delta:
-            wait until delta is reached
-
-add logging
+imporove logging
 
 separate tests into different files
 

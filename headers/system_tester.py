@@ -10,7 +10,7 @@ from decimal import getcontext
 import logging
 from headers.connections import parse_connections # Connection
 import time
-
+from time import gmtime, strftime
 logging.basicConfig(level=logging.INFO) # required to get messages printed out
 
 getcontext().prec = 8
@@ -22,14 +22,25 @@ class TestSystem:
         self.fmu_files = self.config.data["fmu_files"]
         self.tests     = self.config.data["tests"]
         self.base_port = 7000
-
+        self.log_file  = self.generate_logfile()
         self.system_description = {}
         self.system_servers     = {}
         self.system_clients     = {}
         self.external_clients   = {}
         self.system_node_ids    = {} # this is meant to take in all of the systems node id's
-
+        
+        self.save_logs   = None
+        self.timing      = None
         self.connections = None # description of system loop definition from test
+
+    def generate_logfile(self):
+        file_path = os.path.join("logs", strftime("%Y_%m_%d_%H_%M_%S", gmtime()))
+        if not os.path.exists(file_path):
+            with open(file_path, 'w') as file:
+                pass
+            
+        return file_path    
+        
 
     def construct_remote_servers(self, remote_servers):
         """
@@ -188,7 +199,10 @@ class TestSystem:
         sleep_duration = timestep - elapsed
         if sleep_duration > 0:
             await asyncio.sleep(sleep_duration)
-
+        elif sleep_duration < 0:
+            print("DURANTION OF LOOP EXCEEDS TIMESTEP UNSTABLE SYSTEM!!!!!!")
+            # ADD MESSAGE TO LOG FILES
+            
     async def run_test(self, test: dict) -> None:
         """
         check_test_type
@@ -207,6 +221,11 @@ class TestSystem:
         for client_name in self.system_clients:
             object_node = self.system_clients[client_name].get_node(ua.NodeId(1, 1))
             await object_node.call_method(ua.NodeId(1, 4))#, str(1)) # update fmu before updating values
+
+
+    def log_system_output(self, output):
+        with open(self.log_file, 'a') as file:            
+            file.write(output)
 
     #######################################################################
     ################   CHECK SYSTEM OUTPUTS   #############################
@@ -237,13 +256,18 @@ class TestSystem:
             if evaluation_result: print(Fore.GREEN + f"test {variable} {op} {evaluation_condition["target"]} = {evaluation_result} \n PASSED with value: {measured_value}")
             else:                 print(Fore.RED   + f"test {variable} {op} {evaluation_condition["target"]} = {evaluation_result} \n FAILED with value: {measured_value}")
             
+            if self.save_logs:
+                system_output = f"{criterea}, {evaluation_result}, {measured_value},\n"
+                self.log_system_output(output= system_output)
+            
             print(Style.RESET_ALL)
-
+            
     #######################################################################
     ################   SYSTEM VARIABLE INIT   #############################
     #######################################################################
     async def initialize_system_variables(self, test:dict):
         self.timing = test["timing"]
+        self.save_logs = test["save_logs"]
         initial_system_state = test["initial_system_state"]
         for server in initial_system_state:
             for variable in initial_system_state[server]:
@@ -291,7 +315,6 @@ class TestSystem:
     #######################   CLIENTS INIT   ###################################
     ############################################################################
     async def creat_internal_clients(self):
-        
         for server_name in self.system_servers:
             server = self.system_servers[server_name]
             client = Client(url=server.url)
@@ -301,9 +324,7 @@ class TestSystem:
         print(f"system clients clients setup: {self.system_clients}")
         
     async def create_external_clients(self):
-        
         for server in self.remote_servers:
-            
             server_url = self.remote_servers[server]["url"]
             client = Client(url=server_url)
             await client.connect()
@@ -313,19 +334,20 @@ class TestSystem:
         await self.creat_internal_clients()
         await self.create_external_clients()
 
+    async def init_servers_clients_vars(self):
+        servers = await self.initialize_fmu_opc_servers()
+        await self.create_system_clients()
+        self.gather_system_ids()
+        return servers
+    
     ################################################################################
     ###########################   MAIN LOOP   ######################################
     ################################################################################
     async def main_testing_loop(self):
+        # initialize fmu servers, clients and vairable id storage
+        servers = await self.init_servers_clients_vars()
         
-        # system initialization
-        servers = await self.initialize_fmu_opc_servers()
-        await self.create_system_clients()
-        self.gather_system_ids()
-        
-        print(f"TESTS = {self.tests}, \n type {type(self.tests)} \n {self.tests.keys()} \n\n")        
         for test in self.tests:
-            print("RUNNING TESTS")
             await self.run_test(self.tests[test])
             
         return await asyncio.gather(*servers)
