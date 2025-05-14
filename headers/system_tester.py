@@ -16,11 +16,12 @@ logging.basicConfig(level=logging.INFO) # required to get messages printed out
 getcontext().prec = 8
 
 class TestSystem:
-    def __init__(self, config_file:str, remote_servers:str = None) -> None:
-        self.config = DataLoaderClass(config_file)
+    def __init__(self, config_folder:str, remote_servers:str = None) -> None:
+        self.config = None #DataLoaderClass(config_file)
+        self.config_directory = config_folder
         self.remote_servers = self.construct_remote_servers(remote_servers)
-        self.fmu_files = self.config.data["fmu_files"]
-        self.tests     = self.config.data["tests"]
+        self.fmu_files = None# self.config.data["fmu_files"]
+        self.tests     = None# self.config.data["tests"]
         self.base_port = 7000
         self.log_file  = self.generate_logfile()
         self.system_description = {}
@@ -203,6 +204,7 @@ class TestSystem:
             print("DURANTION OF LOOP EXCEEDS TIMESTEP UNSTABLE SYSTEM!!!!!!")
             # ADD MESSAGE TO LOG FILES
             
+            
     async def run_test(self, test: dict) -> None:
         """
         check_test_type
@@ -345,10 +347,15 @@ class TestSystem:
     ################################################################################
     async def main_testing_loop(self):
         # initialize fmu servers, clients and vairable id storage
-        servers = await self.init_servers_clients_vars()
-        
-        for test in self.tests:
-            await self.run_test(self.tests[test])
+        # servers = await self.init_servers_clients_vars()
+        test_files = [os.path.join(self.config_directory, i) for i in os.listdir(self.config_directory)]
+
+        for test in test_files:
+            self.config    = DataLoaderClass(test)
+            self.fmu_files = self.config.data["fmu_files"]
+            self.tests     = self.config.data["test"]
+            servers = await self.init_servers_clients_vars()        
+            await self.run_test(self.tests)
             
         return await asyncio.gather(*servers)
 

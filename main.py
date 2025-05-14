@@ -3,9 +3,9 @@ import sys
 from headers import TestSystem
 
 async def main(funciton):
-    conf = "TESTS/system_config.yaml"
-    remote_servers = "TESTS/remote_servers/"
-    tests = TestSystem(config_file= conf, remote_servers= remote_servers)
+    conf = "TESTS_DEV/"
+    remote_servers = "TESTS/remote_servers/" # SERVERRS ARE INDIVIDUAL FILES!!!
+    tests = TestSystem(config_folder= conf, remote_servers= remote_servers)
     if   funciton == "test":     await tests.main_testing_loop()
     elif funciton == "describe": await tests.describe_system()
 

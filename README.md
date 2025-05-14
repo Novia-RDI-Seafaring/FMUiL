@@ -5,8 +5,6 @@
 
 # tasks:
 
-check that the system runs the loop under the timestep given
-
 imporove logging
 
 separate tests into different files
