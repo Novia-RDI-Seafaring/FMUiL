@@ -1,0 +1,14 @@
+# reference_name:
+#   url: opc.tcp://localhost:4840/freeopcua/server/
+#   objects: 
+#     sample_opc_object:
+#       custom_variable: {ns: 3, i: 10}
+
+url: opc.tcp://localhost:4840/freeopcua/server/
+
+objects:
+  sample_opc_object:
+    custom_variable: "custom_variable"
+    custom_variable2: "ns=2;i=5"
+
+
