@@ -55,8 +55,26 @@ class TestSystem:
             server_desription = DataLoaderClass(server_name).data
             name = Path(server_name).stem
             server_dict[name] = server_desription
+            
         return server_dict
 
+
+    async def store_remote_server_variables(self, remote_servers):
+        """
+        remote_servers = path to directory with remote server definitions
+        this function iterates through all of them and adds them to a dictionaty in a structured manner
+        # """
+        # for server in self.remote_servers:
+        #     for obj in self.remote_servers[server]["objects"]:
+        #         self.system
+        #     server_url = self.remote_servers[server]["url"]
+        #     client = Client(url=server_url)
+        #     await client.connect()
+        #     self.external_clients[server] = client
+        
+        
+        
+        
     def fetch_appropriacte_client(self, client_name)->Client:
         if client_name in self.system_clients.keys():     return self.system_clients[client_name]
         elif client_name in self.external_clients.keys(): return self.external_clients[client_name]
@@ -73,7 +91,9 @@ class TestSystem:
             write value to specific node in the system
             clienet_name = client to desired server
         """
+        print(f"system node idS:{self.system_node_ids}, \n remote servers {self.remote_servers}")
         node_id = self.system_node_ids[client_name][variable]
+        print(f"\n\n tryting to write to {client_name} \n\n")
         client = self.fetch_appropriacte_client(client_name=client_name)
         node = client.get_node(node_id)
         await node.write_value(value)    
@@ -306,6 +326,8 @@ class TestSystem:
     ###########################################################################
     def gather_system_ids(self):
         for server_name in self.system_servers:
+            print(f"server name = {self.system_servers[server_name]}")
+            # exit()
             self.system_node_ids[server_name] = self.system_servers[server_name].server_variable_ids
 
     ############################################################################
@@ -326,6 +348,14 @@ class TestSystem:
             client = Client(url=server_url)
             await client.connect()
             self.external_clients[server] = client
+            # temp
+            self.system_node_ids[server] = {}
+            print(f"\n\n server {server} \n\n")
+            # exit()
+            for obj in self.remote_servers[server]["objects"]:
+                # self.system_node_ids[obj] = {}
+                for var in self.remote_servers[server]["objects"][obj]:
+                    self.system_node_ids[server][var] = ua.NodeId(self.remote_servers[server]["objects"][obj][var])
             
     async def create_system_clients(self):
         await self.creat_internal_clients()
@@ -350,10 +380,13 @@ class TestSystem:
             self.fmu_files = self.config.data["fmu_files"]
             self.tests     = self.config.data["test"]        
             self.remote_servers = self.construct_remote_servers(self.config.data["external_servers"])
+            print(f"remote servers {self.remote_servers}")
             servers = await self.init_servers_clients_vars()        
             await self.run_test(self.tests)
             
         return await asyncio.gather(*servers)
+
+
 
     #################################################################################
     ########################   UTILITY FUNCTION   ###################################
