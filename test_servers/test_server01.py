@@ -26,8 +26,11 @@ async def main():
     myobj = await server.nodes.objects.add_object(idx, "sample_opc_object")
     var = "custom_variable"
     myvar = await myobj.add_variable(nodeid=ua.NodeId(var), bname=var, val=0.0)
+    myvarid = await myobj.add_variable(nodeid=ua.NodeId(Identifier= 4, NamespaceIndex=5), bname=var, val=0.0)
     # Set MyVariable to be writable by clients
     await myvar.set_writable()
+    await myvarid.set_writable()
+    
     await server.nodes.objects.add_method(
         ua.NodeId("ServerMethod", idx),
         ua.QualifiedName("ServerMethod", idx),
