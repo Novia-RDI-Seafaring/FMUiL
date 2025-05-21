@@ -72,9 +72,6 @@ class TestSystem:
         #     await client.connect()
         #     self.external_clients[server] = client
         
-        
-        
-        
     def fetch_appropriacte_client(self, client_name)->Client:
         if client_name in self.system_clients.keys():     return self.system_clients[client_name]
         elif client_name in self.external_clients.keys(): return self.external_clients[client_name]
@@ -91,23 +88,36 @@ class TestSystem:
             write value to specific node in the system
             clienet_name = client to desired server
         """
-        print(f"system node idS:{self.system_node_ids}, \n remote servers {self.remote_servers}")
-        node_id = self.system_node_ids[client_name][variable]
-        print(f"\n\n tryting to write to {client_name} \n\n")
-        client = self.fetch_appropriacte_client(client_name=client_name)
-        node = client.get_node(node_id)
-        await node.write_value(value)    
+        print(f"\n\n\n\n\n\n\n\nsystem servers {self.system_servers}")
+        if (client_name in self.system_servers):
+                object_node = self.system_clients[client_name].get_node(ua.NodeId(1, 1))
+                update_values = {
+                    "variable": variable,
+                    "value": value
+                }
+                print(f"values beeing updates {update_values}")
+                await object_node.call_method(ua.NodeId(1, 3), str(update_values)) # update fmu before updating values
+
+        else:
+            # print("client not part of the system")
+            # exit()
+            # print(f"system node idS:{self.system_node_ids}, \n remote servers {self.remote_servers}")
+            node_id = self.system_node_ids[client_name][variable]
+            # print(f"\n\n tryting to write to {client_name} \n\n")
+            client = self.fetch_appropriacte_client(client_name=client_name)
+            node = client.get_node(node_id)
+            await node.write_value(value)    
 
     async def get_system_values(self) -> dict:
         self.system_clients.keys()
         return
     
     async def run_system_updates(self, timestep):
-        print(f"TIMESTEP = {timestep}, type {type(timestep)}")
+        # print(f"TIMESTEP = {timestep}, type {type(timestep)}")
         for key in self.system_clients.keys():
-            print(f"updating {key} ")
+            # print(f"updating {key} ")
             client = self.system_clients[key]
-            print(f"CLIENT {client}")
+            # print(f"CLIENT {client}")
             object_node = client.get_node(ua.NodeId(1, 1))
             await object_node.call_method(ua.NodeId(1, 2), str(float(timestep)))
         return
@@ -125,18 +135,20 @@ class TestSystem:
         | fmu1 |*OUTPUT2 ====> INPUT2*| fmu2 |
         |______|*OUTPUT3 ====> INPUT3*|______|
         """
-        
         for update in self.connections:
+            # get nodeid of the source variable
             value_nodid = self.system_node_ids[update.from_fmu][update.from_var]
+            # get the value using the nodeid
             value = await self.get_value(client_name= update.from_fmu, variable= value_nodid)
 
+            # write it to the targer value
             await self.write_value(
                 client_name = update.to_fmu,
                 variable    = update.to_var,
                 value       = value
             )
             
-            # print(f"passed {update.from_var} with {value}, to {update.from_var}, {update.to_var}")
+            print(f"\n\n passed fmu {update.from_fmu} var {update.from_var} with {value}, to fmu {update.to_fmu} var {update.to_var} \n\n")
 
     def check_time(self, sim_time, max_time):
         return sim_time >= max_time
@@ -147,7 +159,7 @@ class TestSystem:
         """
         for condition in conditions:
             
-            print(f"\n\n\n criterea {condition} end \n\n\n")
+            # print(f"\n\n\n criterea {condition} end \n\n\n")
             
             fmu_name = conditions[condition]["system_value"]["fmu"]
             variable_name = conditions[condition]["system_value"]["variable"]

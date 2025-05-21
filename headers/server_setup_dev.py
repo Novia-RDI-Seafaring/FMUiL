@@ -130,7 +130,7 @@ class OPCUAFMUServerSetup:
     async def single_simulation_loop(self):
         time_step = Decimal(await self.get_value(variable="timestep")).quantize(Decimal(PRECISION_STR))
 
-        logger.info(f"DID update due to {self.server_time} - {self.fmu_time}:  > {time_step}")
+        # logger.info(f"DID update due to {self.server_time} - {self.fmu_time}:  > {time_step}")
         self.fmu.fmu.doStep(
             currentCommunicationPoint=self.fmu_time,
             communicationStepSize=time_step
@@ -142,6 +142,7 @@ class OPCUAFMUServerSetup:
             fmu_output = self.fmu.fmu.getReal([output_id])
             node = self.server.get_node(self.server_variable_ids[output])
             await node.set_value(float(fmu_output[0]))
+            # print(f"\n\n var {output} with val {fmu_output} passed to  {output}, {self.server_variable_ids[output]} \n\n")
             
 
     @uamethod
@@ -152,7 +153,7 @@ class OPCUAFMUServerSetup:
             time_step = Decimal(await self.get_value(variable="timestep")).quantize(Decimal(PRECISION_STR), rounding=ROUND_HALF_UP)
             self.server_time += system_timestep
 
-            print(f"system_timestep = {system_timestep}, time_step = {time_step}, server_time = {self.server_time}, fmu_time = {self.fmu_time}")
+            # print(f"system_timestep = {system_timestep}, time_step = {time_step}, server_time = {self.server_time}, fmu_time = {self.fmu_time}")
 
             time_diff = (self.server_time - self.fmu_time).quantize(Decimal(PRECISION_STR), rounding=ROUND_HALF_UP)
             double_step = (2 * time_step).quantize(Decimal(PRECISION_STR), rounding=ROUND_HALF_UP)
