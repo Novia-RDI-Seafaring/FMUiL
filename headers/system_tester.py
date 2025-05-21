@@ -58,19 +58,6 @@ class TestSystem:
             
         return server_dict
 
-
-    async def store_remote_server_variables(self, remote_servers):
-        """
-        remote_servers = path to directory with remote server definitions
-        this function iterates through all of them and adds them to a dictionaty in a structured manner
-        # """
-        # for server in self.remote_servers:
-        #     for obj in self.remote_servers[server]["objects"]:
-        #         self.system
-        #     server_url = self.remote_servers[server]["url"]
-        #     client = Client(url=server_url)
-        #     await client.connect()
-        #     self.external_clients[server] = client
         
     def fetch_appropriacte_client(self, client_name)->Client:
         if client_name in self.system_clients.keys():     return self.system_clients[client_name]
@@ -97,7 +84,6 @@ class TestSystem:
                 }
                 print(f"values beeing updates {update_values}")
                 await object_node.call_method(ua.NodeId(1, 3), str(update_values)) # update fmu before updating values
-
         else:
             node_id = self.system_node_ids[client_name][variable]
             client = self.fetch_appropriacte_client(client_name=client_name)
@@ -105,18 +91,15 @@ class TestSystem:
             datavalue1 = await node.read_data_value()
             variant1 = datavalue1.Value
             print(f"VariantType of Node 5: {variant1.VariantType}")  # e.g., ua.VariantType.Float
-            await node.write_value(ua.DataValue(ua.Variant(value, variant1)))            
+            await node.write_value(ua.DataValue(ua.Variant(value, variant1.VariantType)))            
             
     async def get_system_values(self) -> dict:
         self.system_clients.keys()
         return
     
     async def run_system_updates(self, timestep):
-        # print(f"TIMESTEP = {timestep}, type {type(timestep)}")
         for key in self.system_clients.keys():
-            # print(f"updating {key} ")
             client = self.system_clients[key]
-            # print(f"CLIENT {client}")
             object_node = client.get_node(ua.NodeId(1, 1))
             await object_node.call_method(ua.NodeId(1, 2), str(float(timestep)))
         return
@@ -317,16 +300,13 @@ class TestSystem:
         for fmu_file in self.fmu_files:
             print("intializing : ", fmu_file)
             self.base_port+=1
-            
             server =  await OPCUAFMUServerSetup.async_server_init(
                 fmu=fmu_file, 
                 port=self.base_port
             )
-
             server_task = asyncio.create_task(server.main_loop())
             await server.server_started.wait()
             server.server_started.clear()
-
             self.system_servers[server.fmu.fmu_name] = server
             tasklist.append(server_task)
 
@@ -337,8 +317,6 @@ class TestSystem:
     ###########################################################################
     def gather_system_ids(self):
         for server_name in self.system_servers:
-            print(f"server name = {self.system_servers[server_name]}")
-            # exit()
             self.system_node_ids[server_name] = self.system_servers[server_name].server_variable_ids
 
     ############################################################################
@@ -350,7 +328,6 @@ class TestSystem:
             client = Client(url=server.url)
             await client.connect()
             self.system_clients[server_name] = client
-        
         print(f"system clients clients setup: {self.system_clients}")
         
     async def create_external_clients(self):
