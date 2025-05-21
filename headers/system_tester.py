@@ -99,15 +99,14 @@ class TestSystem:
                 await object_node.call_method(ua.NodeId(1, 3), str(update_values)) # update fmu before updating values
 
         else:
-            # print("client not part of the system")
-            # exit()
-            # print(f"system node idS:{self.system_node_ids}, \n remote servers {self.remote_servers}")
             node_id = self.system_node_ids[client_name][variable]
-            # print(f"\n\n tryting to write to {client_name} \n\n")
             client = self.fetch_appropriacte_client(client_name=client_name)
             node = client.get_node(node_id)
-            await node.write_value(value)    
-
+            datavalue1 = await node.read_data_value()
+            variant1 = datavalue1.Value
+            print(f"VariantType of Node 5: {variant1.VariantType}")  # e.g., ua.VariantType.Float
+            await node.write_value(ua.DataValue(ua.Variant(value, variant1)))            
+            
     async def get_system_values(self) -> dict:
         self.system_clients.keys()
         return
