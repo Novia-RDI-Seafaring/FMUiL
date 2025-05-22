@@ -31,6 +31,7 @@ class client_manager:
         logger.info(f"system clients clients setup: {self.system_clients}")
         
     async def create_external_clients(self):
+        # TODO: REMOVE SYSTEM NODE ID INITIALIZATION FROM HERE, SEPARATE THE FUNCTIONALITY
         for server in self.remote_servers:
             server_url = self.remote_servers[server]["url"]
             client = Client(url=server_url)

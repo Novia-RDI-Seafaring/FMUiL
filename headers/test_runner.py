@@ -25,16 +25,16 @@ class TestSystem:
     def __init__(self, config_folder:str, remote_server_directory:str = None) -> None:
         self.config_directory        = config_folder
         self.remote_server_directory = remote_server_directory
-        self.config         = None 
-        self.fmu_files      = None
-        self.test           = None
-        self.log_file  = self.generate_logfile()
-        self.system_description = {}
-        self.server_obj = None
-        self.system_node_ids    = {} # this is meant to take in all of the systems node id's
+        self.log_file    = self.generate_logfile()
+        self.config      = None 
+        self.fmu_files   = None
+        self.test        = None
         self.save_logs   = None
         self.timing      = None
         self.connections = None # description of system loop definition from test
+        self.server_obj  = None
+        self.system_description = {}
+        self.system_node_ids    = {} # this is meant to take in all of the systems node id's
 
     def generate_logfile(self):
         file_path = os.path.join("logs", strftime("%Y_%m_%d_%H_%M_%S", gmtime()))
@@ -133,7 +133,6 @@ class TestSystem:
     ################################################
     ############### SYSTEM TESTS ###################
     ################################################
-    
     async def run_multi_step_test(self, test: dict):
         """
         Executes the test while regulating time according to test["timing"]:
@@ -184,10 +183,8 @@ class TestSystem:
         # reset and initialize system variables for every test
         await self.client_obj.reset_system() 
         await self.client_obj.initialize_system_variables(test=self.test)
-        
         # parses system_loop section of the test and stores it to use it as the system loop 
         self.connections = parse_connections(self.test["system_loop"])
-        # 
         await self.run_multi_step_test(test=self.test)
 
     def log_system_output(self, output):
@@ -237,15 +234,13 @@ class TestSystem:
         for server_name in self.server_obj.system_servers:
             self.system_node_ids[server_name] = self.server_obj.system_servers[server_name].server_variable_ids
 
-    def load_test_configuration(self, test):
-        self.config = DataLoaderClass(test).data
-    
     async def initialize_test_params(self, test):
-            self.load_test_configuration(test= test)
+            self.config    = DataLoaderClass(test).data
             self.fmu_files = self.config["fmu_files"]
             self.test      = self.config["test"]        
             self.timing    = self.test["timing"]
             self.save_logs = self.test["save_logs"]
+            
     ################################################################################
     ###########################   MAIN LOOP   ######################################
     ################################################################################
