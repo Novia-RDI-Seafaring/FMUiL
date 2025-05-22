@@ -28,7 +28,7 @@ class OPCUAFMUServerSetup:
         self.opc_server_only_variables = ["timestep"] # variables reserved only for the server not fmu
         self.last_simulation_timestamp = 0.0
         
-        # resrved vairabled have a namespace=2 
+        # resrved vairables have a namespace=2 
         self.reserved_variable_ids = {
             "timestep": ua.NodeId(2,1),
             "server_time": ua.NodeId(2,2)

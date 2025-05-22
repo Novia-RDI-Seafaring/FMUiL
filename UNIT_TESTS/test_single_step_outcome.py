@@ -10,20 +10,20 @@ from headers import TestSystem
 from headers.server_setup_dev import OPCUAFMUServerSetup
 from headers.config_loader import DataLoaderClass
 
-async def main(funciton):
+async def main(function):
     conf = "./test_files/single_step_test.yaml"
     tests = TestSystem(config_file=conf)
-    if   funciton == "test":     
+    if   function == "test":     
         value =  await tests.main_testing_loop()
         print(f"THIS IS AFTER THE VALUE {value}")
         exit()
-    elif funciton == "describe": 
+    elif function == "describe": 
         await tests.describe_system()
 
 if __name__ == "__main__":
     args = sys.argv[1:]
     if len(args) == 2 and args[0] == '-func':
-        asyncio.run(main(funciton=args[1]))
+        asyncio.run(main(function=args[1]))
     else:
         print("args reuqired '-func' and it can be rither 'test' or 'describe' ")
    

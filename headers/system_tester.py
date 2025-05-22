@@ -24,7 +24,7 @@ class TestSystem:
         self.config         = None 
         self.remote_servers = None 
         self.fmu_files      = None
-        self.tests          = None
+        self.test           = None
         self.base_port = 7000
         self.log_file  = self.generate_logfile()
         self.system_description = {}
@@ -108,7 +108,7 @@ class TestSystem:
         1) Updates fmu1 to get the most recent values
         2) For every I/O perform the value transfer
 
-        *NOTE: the funciton performs transfer and updates both FMU and Server variable
+        *NOTE: the function performs transfer and updates both FMU and Server variable
         ________                      ________
         |      |*OUTPUT1 ====> INPUT1*|      |
         | fmu1 |*OUTPUT2 ====> INPUT2*| fmu2 |
@@ -201,19 +201,19 @@ class TestSystem:
             # ADD MESSAGE TO LOG FILES
             
             
-    async def run_test(self, test: dict) -> None:
+    async def run_test(self) -> None:
         """
         check_test_type
         call corresponding test
         """
         # reset and initialize system variables for every test
         await self.reset_system() 
-        await self.initialize_system_variables(test=test)
+        await self.initialize_system_variables(test=self.test)
         
         # parses system_loop section of the test and stores it to use it as the system loop 
-        self.connections = parse_connections(test["system_loop"])
+        self.connections = parse_connections(self.test["system_loop"])
         # 
-        await self.run_multi_step_test(test=test)
+        await self.run_multi_step_test(test=self.test)
 
     async def reset_system(self) -> None:
         for client_name in self.system_clients:
@@ -348,22 +348,29 @@ class TestSystem:
         self.gather_system_ids()
         return servers
     
+    
+    def load_test_configuration(self, test):
+        self.config = DataLoaderClass(test).data
+    
+    async def initialize_test_params(self, test):
+            self.load_test_configuration(test= test)
+            self.fmu_files = self.config["fmu_files"]
+            self.test      = self.config["test"]        
+            self.remote_servers = self.construct_remote_servers(self.config["external_servers"])
+            print(f"remote servers {self.remote_servers}")
+            
+    
     ################################################################################
     ###########################   MAIN LOOP   ######################################
     ################################################################################
     async def main_testing_loop(self):
         # initialize fmu servers, clients and vairable id storage
-        # servers = await self.init_servers_clients_vars()
         test_files = [os.path.join(self.config_directory, i) for i in os.listdir(self.config_directory)]
 
-        for test in test_files:
-            self.config    = DataLoaderClass(test)
-            self.fmu_files = self.config.data["fmu_files"]
-            self.tests     = self.config.data["test"]        
-            self.remote_servers = self.construct_remote_servers(self.config.data["external_servers"])
-            print(f"remote servers {self.remote_servers}")
+        for test_file in test_files:
+            await self.initialize_test_params(test= test_file)
             servers = await self.init_servers_clients_vars()        
-            await self.run_test(self.tests)
+            await self.run_test()
             
         return await asyncio.gather(*servers)
 
