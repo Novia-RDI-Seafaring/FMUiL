@@ -120,17 +120,8 @@ class OPCUAFMUServerSetup:
             self.reset_fmu,           
         )
 
-        await obj.add_method(
-            ua.NodeId(1, 5),   
-            "reset_fmu",          
-            self.test,           
-        )
-
-
     async def single_simulation_loop(self):
         time_step = Decimal(await self.get_value(variable="timestep")).quantize(Decimal(PRECISION_STR))
-
-        # logger.info(f"DID update due to {self.server_time} - {self.fmu_time}:  > {time_step}")
         self.fmu.fmu.doStep(
             currentCommunicationPoint=self.fmu_time,
             communicationStepSize=time_step
@@ -142,7 +133,6 @@ class OPCUAFMUServerSetup:
             fmu_output = self.fmu.fmu.getReal([output_id])
             node = self.server.get_node(self.server_variable_ids[output])
             await node.set_value(float(fmu_output[0]))
-            # print(f"\n\n var {output} with val {fmu_output} passed to  {output}, {self.server_variable_ids[output]} \n\n")
             
 
     @uamethod
@@ -152,15 +142,12 @@ class OPCUAFMUServerSetup:
             system_timestep = Decimal(value).quantize(Decimal(PRECISION_STR), rounding=ROUND_HALF_UP)
             time_step = Decimal(await self.get_value(variable="timestep")).quantize(Decimal(PRECISION_STR), rounding=ROUND_HALF_UP)
             self.server_time += system_timestep
-
-            # print(f"system_timestep = {system_timestep}, time_step = {time_step}, server_time = {self.server_time}, fmu_time = {self.fmu_time}")
-
             time_diff = (self.server_time - self.fmu_time).quantize(Decimal(PRECISION_STR), rounding=ROUND_HALF_UP)
             double_step = (2 * time_step).quantize(Decimal(PRECISION_STR), rounding=ROUND_HALF_UP)
 
             if time_diff > double_step:
                 logger.warning(
-                    f"\n\n\\SOMETHING IS WRONG with timing: the gap is double the step time "
+                    f"\n\nSOMETHING IS WRONG with timing: the gap is double the step time "
                     f"{time_diff} > {double_step}\n\n"
                 )
 
@@ -179,12 +166,12 @@ class OPCUAFMUServerSetup:
         node = self.server.get_node(self.server_variable_ids[value["variable"]])
         await node.set_value(float(value["value"]))
         self.fmu.fmu.setReal([self.fmu.fmu_parameters[value["variable"]]["id"]], [float(value["value"])])
-        print(f"\n\n\n\n server {self.fmu.fmu_name} WAS UPDATED")
+        # print(f"\n\n\n\n server {self.fmu.fmu_name} WAS UPDATED")
     
     async def update_opc(self, parent, value):
         node = self.server.get_node(self.server_variable_ids[value["variable"]])
         await node.set_value(float(value["value"]))
-        print(f"\n\n\n\n server {self.fmu.fmu_name} WAS UPDATED")
+        # print(f"\n\n\n\n server {self.fmu.fmu_name} WAS UPDATED")
 
     @uamethod
     async def update_value_opc_and_fmu(self, parent= None, value= None):        
@@ -194,10 +181,6 @@ class OPCUAFMUServerSetup:
         else:
             await self.update_opc_and_fmu(parent= parent, value= value)
             
-    @uamethod
-    def test(self, parent= None, value= None):
-        print("test method")
-
     @uamethod
     async def reset_fmu(self, parent= None, value = None):
         await self.write_value(variable= "server_time", value=0.0)

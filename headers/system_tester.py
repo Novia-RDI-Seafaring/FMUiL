@@ -75,14 +75,12 @@ class TestSystem:
             write value to specific node in the system
             clienet_name = client to desired server
         """
-        print(f"\n\n\n\n\n\n\n\nsystem servers {self.system_servers}")
         if (client_name in self.system_servers):
                 object_node = self.system_clients[client_name].get_node(ua.NodeId(1, 1))
                 update_values = {
                     "variable": variable,
                     "value": value
                 }
-                print(f"values beeing updates {update_values}")
                 await object_node.call_method(ua.NodeId(1, 3), str(update_values)) # update fmu before updating values
         else:
             node_id = self.system_node_ids[client_name][variable]
@@ -90,7 +88,6 @@ class TestSystem:
             node = client.get_node(node_id)
             datavalue1 = await node.read_data_value()
             variant1 = datavalue1.Value
-            print(f"VariantType of Node 5: {variant1.VariantType}")  # e.g., ua.VariantType.Float
             await node.write_value(ua.DataValue(ua.Variant(value, variant1.VariantType)))            
             
     async def get_system_values(self) -> dict:
@@ -140,17 +137,11 @@ class TestSystem:
         checks that the conditions required to start readings are met
         """
         for condition in conditions:
-            
-            # print(f"\n\n\n criterea {condition} end \n\n\n")
-            
             fmu_name = conditions[condition]["system_value"]["fmu"]
             variable_name = conditions[condition]["system_value"]["variable"]
             node = self.system_node_ids[fmu_name][variable_name]
-            
             measured_value = self.system_clients[conditions[condition]["system_value"]["fmu"]].get_node(node)
             measured_value = await measured_value.read_value()
-
-            print(f"checking {measured_value} {conditions[condition]["operator"]} {conditions[condition]["target"]}")
             eval_criterea = conditions[condition]["target"] 
             op            = conditions[condition]["operator"] 
             result        = ops[op](measured_value, eval_criterea) 
@@ -174,7 +165,6 @@ class TestSystem:
         - "simulation_time": advances time instantly
         - "real_time": waits so each step aligns with real wall-clock time
         """
-        print(f"test time {test['stop_time']}")
         sim_time = 0.0
         simulation_status = True
         timestep = float(test["timestep"])  # assumed constant across system
@@ -250,8 +240,6 @@ class TestSystem:
             node = self.system_node_ids[fmu_variable][variable_name]
             measured_value = self.system_clients[fmu_variable].get_node(node)
             measured_value = await measured_value.read_value()
-            # print(f"test for {fmu_variable}, {variable_name}")
-            # print(f"checking {measured_value} {evaluation_condition["operator"]} {evaluation_condition["target"]}")
             target_value = evaluation_condition["target"] 
             op = evaluation_condition["operator"] 
             
@@ -287,7 +275,6 @@ class TestSystem:
                     "variable": variable,
                     "value": float(initial_system_state[server][variable])
                 }
-                print(f"values beeing updates {update_values}")
                 await object_node.call_method(ua.NodeId(1, 3), str(update_values)) # update fmu before updating values
 
     ############################################################################
@@ -336,15 +323,10 @@ class TestSystem:
             client = Client(url=server_url)
             await client.connect()
             self.external_clients[server] = client
-            # temp
             self.system_node_ids[server] = {}
-            print(f"\n\n server {server} \n\n")
-            # exit()
             for obj in self.remote_servers[server]["objects"]:
-                # self.system_node_ids[obj] = {}
                 for var in self.remote_servers[server]["objects"][obj]:
                     keys = self.remote_servers[server]["objects"][obj][var].keys()
-                    print(f"\n\n\nn\n\n\\n\\n\nkeys = {keys}")
                     if "name" in keys:
                         self.system_node_ids[server][var] = ua.NodeId(self.remote_servers[server]["objects"][obj][var]["name"])
                     elif("id" in keys and "ns" in keys):
