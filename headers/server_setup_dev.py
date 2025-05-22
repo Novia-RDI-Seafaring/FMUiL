@@ -147,7 +147,7 @@ class OPCUAFMUServerSetup:
 
             if time_diff > double_step:
                 logger.warning(
-                    f"\n\nSOMETHING IS WRONG with timing: the gap is double the step time "
+                    f"\nSOMETHING IS WRONG with timing: the gap is double the step time\n"
                     f"{time_diff} > {double_step}\n\n"
                 )
 
