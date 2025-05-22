@@ -166,12 +166,12 @@ class OPCUAFMUServerSetup:
         node = self.server.get_node(self.server_variable_ids[value["variable"]])
         await node.set_value(float(value["value"]))
         self.fmu.fmu.setReal([self.fmu.fmu_parameters[value["variable"]]["id"]], [float(value["value"])])
-        # print(f"\n\n\n\n server {self.fmu.fmu_name} WAS UPDATED")
+        # logger.info(f"\n\n\n\n server {self.fmu.fmu_name} WAS UPDATED")
     
     async def update_opc(self, parent, value):
         node = self.server.get_node(self.server_variable_ids[value["variable"]])
         await node.set_value(float(value["value"]))
-        # print(f"\n\n\n\n server {self.fmu.fmu_name} WAS UPDATED")
+        # logger.info(f"\n\n\n\n server {self.fmu.fmu_name} WAS UPDATED")
 
     @uamethod
     async def update_value_opc_and_fmu(self, parent= None, value= None):        
@@ -191,7 +191,7 @@ class OPCUAFMUServerSetup:
         self.fmu.fmu.instantiate()
         self.fmu.fmu.enterInitializationMode()
         self.fmu.fmu.exitInitializationMode()
-        print(f"fmu {self.fmu.fmu_name} was resetted")
+        logger.info(f"fmu {self.fmu.fmu_name} was resetted")
 
     def get_server_description(self):
         return {self.fmu.fmu_name: self.server_variables}
@@ -212,7 +212,7 @@ class OPCUAFMUServerSetup:
         async with self.server:
             self.server_started.set()
             while True:
-                print(f"working {datetime.datetime.now()} at {self.url}")
+                logger.info(f"working {datetime.datetime.now()} at {self.url}")
                 await asyncio.sleep(1) ######
 
 

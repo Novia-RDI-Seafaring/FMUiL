@@ -66,7 +66,7 @@ class FmuLoader:
             
             self._add_parameter(variable=variable)
 
-        print(f"inp = {self.fmu_inputs}, \nout = {self.fmu_outputs}, \npar = {self.fmu_parameters}")
+        _logger.info(f"inp = {self.fmu_inputs}, \nout = {self.fmu_outputs}, \npar = {self.fmu_parameters}")
 
     def get_fmu_inputs(self):
         return list(self.fmu_inputs.keys())

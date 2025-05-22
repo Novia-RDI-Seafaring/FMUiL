@@ -12,6 +12,7 @@ from headers.connections import parse_connections # Connection
 import time
 from time import gmtime, strftime
 logging.basicConfig(level=logging.INFO) # required to get messages printed out
+logger = logging.getLogger(__name__)
 
 getcontext().prec = 8
 DEFAULT_BASE_PORT = 7000 # port from which the server initialization begins
@@ -127,7 +128,7 @@ class TestSystem:
                 value       = value
             )
             
-            print(f"\n\n passed fmu {update.from_fmu} var {update.from_var} with {value}, to fmu {update.to_fmu} var {update.to_var} \n\n")
+            logger.info(f"\n\n passed fmu {update.from_fmu} var {update.from_var} with {value}, to fmu {update.to_fmu} var {update.to_var} \n\n")
 
     def check_time(self, sim_time, max_time):
         return sim_time >= max_time
@@ -148,9 +149,9 @@ class TestSystem:
             variable      = conditions[condition]["system_value"]["variable"]
 
             if result:
-                print(Fore.GREEN + f"condition  {variable} {op} {eval_criterea} PASSED \nwith value: {measured_value}")
+                logger.info(Fore.GREEN + f"condition  {variable} {op} {eval_criterea} PASSED \nwith value: {measured_value}")
             else:
-                print(Fore.RED + f"condition {variable} {op} {eval_criterea} FAILED \nwith value: {measured_value}")
+                logger.info(Fore.RED + f"condition {variable} {op} {eval_criterea} FAILED \nwith value: {measured_value}")
                 return False
 
         return True
@@ -197,7 +198,7 @@ class TestSystem:
         if sleep_duration > 0:
             await asyncio.sleep(sleep_duration)
         elif sleep_duration < 0:
-            print("DURANTION OF LOOP EXCEEDS TIMESTEP UNSTABLE SYSTEM!!!!!!")
+            logger.info("DURANTION OF LOOP EXCEEDS TIMESTEP UNSTABLE SYSTEM!!!!!!")
             # ADD MESSAGE TO LOG FILES
             
             
@@ -247,8 +248,8 @@ class TestSystem:
             evaluation_result = ops[op](measured_value, target_value)
             variable = evaluation[criterea]["system_value"]["variable"]
 
-            if evaluation_result: print(Fore.GREEN + f"test {variable} {op} {evaluation_condition["target"]} = {evaluation_result} \n PASSED with value: {measured_value}")
-            else:                 print(Fore.RED   + f"test {variable} {op} {evaluation_condition["target"]} = {evaluation_result} \n FAILED with value: {measured_value}")
+            if evaluation_result: logger.info(Fore.GREEN + f"test {variable} {op} {evaluation_condition["target"]} = {evaluation_result} \n PASSED with value: {measured_value}")
+            else:                 logger.info(Fore.RED   + f"test {variable} {op} {evaluation_condition["target"]} = {evaluation_result} \n FAILED with value: {measured_value}")
             
             if self.save_logs:
                 system_output = f"{criterea},\
@@ -259,7 +260,7 @@ class TestSystem:
                 
                 self.log_system_output(output= system_output)
             
-            print(Style.RESET_ALL)
+            logger.info(Style.RESET_ALL)
             
     #######################################################################
     ################   SYSTEM VARIABLE INIT   #############################
@@ -285,7 +286,7 @@ class TestSystem:
         tasklist = []
         
         for fmu_file in self.fmu_files:
-            print("intializing : ", fmu_file)
+            logger.info("intializing : ", fmu_file)
             self.base_port+=1
             server =  await OPCUAFMUServerSetup.async_server_init(
                 fmu=fmu_file, 
@@ -315,7 +316,7 @@ class TestSystem:
             client = Client(url=server.url)
             await client.connect()
             self.system_clients[server_name] = client
-        print(f"system clients clients setup: {self.system_clients}")
+        logger.info(f"system clients clients setup: {self.system_clients}")
         
     async def create_external_clients(self):
         for server in self.remote_servers:
@@ -357,7 +358,7 @@ class TestSystem:
             self.fmu_files = self.config["fmu_files"]
             self.test      = self.config["test"]        
             self.remote_servers = self.construct_remote_servers(self.config["external_servers"])
-            print(f"remote servers {self.remote_servers}")
+            logger.info(f"remote servers {self.remote_servers}")
             
     
     ################################################################################
@@ -384,6 +385,6 @@ class TestSystem:
         for server_name in self.system_servers:
             self.system_description.update(self.system_servers[server_name].get_server_description())
 
-        print(f"system description = {self.system_description}")
+        logger.info(f"system description = {self.system_description}")
         for task in tasklist:
             await task

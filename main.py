@@ -14,4 +14,5 @@ if __name__ == "__main__":
     if len(args) == 2 and args[0] == '-func':
         asyncio.run(main(function=args[1]))
     else:
-        print("args required '-func' and it can be rither 'test' or 'describe' ")
+        raise Exception("args required '-func' and it can be rither 'test' or 'describe' ")
+        
