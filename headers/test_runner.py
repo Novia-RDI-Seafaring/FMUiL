@@ -62,7 +62,7 @@ class TestSystem:
                 }
                 await object_node.call_method(ua.NodeId(1, 3), str(update_values)) # update fmu before updating values
         else:
-            node_id = self.server_obj.system_node_ids[client_name][variable]
+            node_id = self.client_obj.system_node_ids[client_name][variable]
             client = self.client_obj.fetch_appropriacte_client(client_name=client_name)
             node = client.get_node(node_id)
             datavalue1 = await node.read_data_value()
@@ -256,8 +256,10 @@ class TestSystem:
             self.client_obj = await client_manager.create(system_servers = self.server_obj.system_servers, 
                                                           remote_servers = self.server_obj.remote_servers, 
                                                           system_node_ids= self.system_node_ids)
-                    
+            
             await self.run_test()
+            await self.server_obj.close()
+            await self.client_obj.close()
             
         # return await asyncio.gather(*servers)
 

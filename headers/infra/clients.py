@@ -2,9 +2,7 @@ from asyncua import Client, ua
 import logging
 logging.basicConfig(level=logging.INFO) # required to get messages printed out
 logger = logging.getLogger(__name__)
-
-
-
+import asyncio
 
 class client_manager:
     @classmethod
@@ -16,8 +14,10 @@ class client_manager:
         self.system_node_ids = system_node_ids
         
         self.system_clients     = {} 
+        self.external_clients   = {}
+        
         await self.creat_internal_clients()
-        self.external_clients   = await self.create_external_clients()
+        await self.create_external_clients()
         
         return self
     
@@ -34,6 +34,7 @@ class client_manager:
         # TODO: REMOVE SYSTEM NODE ID INITIALIZATION FROM HERE, SEPARATE THE FUNCTIONALITY
         for server in self.remote_servers:
             server_url = self.remote_servers[server]["url"]
+            print(f"\n\nTRYING TO CONNECT TO {server_url} \n\n")
             client = Client(url=server_url)
             await client.connect()
             self.external_clients[server] = client
@@ -75,3 +76,17 @@ class client_manager:
                     "value": float(initial_system_state[server][variable])
                 }
                 await object_node.call_method(ua.NodeId(1, 3), str(update_values)) # update fmu before updating values
+
+    async def close(self):
+        if(len(self.external_clients)):
+            await asyncio.gather(
+                *(c.disconnect() for c in self.external_clients.values()),
+            )
+            self.external_clients.clear()
+        
+        if(len(self.system_clients)):    
+            await asyncio.gather(
+                *(c.disconnect() for c in self.system_clients.values()),
+            )
+            self.system_clients.clear()
+            

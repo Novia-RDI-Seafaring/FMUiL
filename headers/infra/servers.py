@@ -11,7 +11,8 @@ class server_manager:
         self.remote_server_directory = remote_server_directory
         self.remote_servers = self.construct_remote_servers(test_config["external_servers"])
         self.fmu_files = test_config["fmu_files"]
-        self.system_servers = {}
+        self._tasks: list[asyncio.Task] = []
+        self.system_servers: dict[str, OPCUAFMUServerSetup] = {}
         self.base_port = 7000
         await self.initialize_fmu_opc_servers() 
         return self
@@ -34,7 +35,6 @@ class server_manager:
 
     async def initialize_fmu_opc_servers(self):
         
-        tasklist = []
         
         for fmu_file in self.fmu_files:
             self.base_port+=1
@@ -46,7 +46,16 @@ class server_manager:
             await server.server_started.wait()
             server.server_started.clear()
             self.system_servers[server.fmu.fmu_name] = server
-            tasklist.append(server_task)
+            self._tasks.append(server_task)
+            # tasklist.append(server_task)
 
-        return tasklist
-
+        # return tasklist
+        
+    async def close(self):
+        """Stop all servers and free the ports."""
+        for srv in self.system_servers.values():
+            await srv.server.stop()          # closes socket listener
+        for t in self._tasks:                # background loops
+            t.cancel()
+        await asyncio.gather(*self._tasks, return_exceptions=True)
+        self.system_servers.clear()
