@@ -45,6 +45,16 @@ class TestSystem:
             with open(file_path, 'w') as file:
                 file.write(DEFAULT_LOGGER_HEADER)
         return file_path    
+    
+    def log_result(self, criterea, measured_value, evaluation_result, simulation_time):
+        system_output = f"{self.config["test"]["test_name"]},\
+            {criterea},\
+            {self.evaluation_equation_dic[criterea]["target_obj"]}.{self.evaluation_equation_dic[criterea]["target_var"]} {self.evaluation_equation_dic[criterea]["operator"]} {self.evaluation_equation_dic[criterea]["value"]},\
+            {measured_value},\
+            {evaluation_result},\
+            {simulation_time}\n"
+        self.log_system_output(output= system_output)
+    
         
     ########### SETTERS & GETTERS ########### 
     async def get_value(self, client_name: str, variable: ua.NodeId) -> None:
@@ -217,14 +227,14 @@ class TestSystem:
             else:                 logger.info(Fore.RED   + f"test {variable} {op} {self.evaluation_equation_dic[criterea]["value"]} = {evaluation_result} \n FAILED with value: {measured_value}")
             
             if self.save_logs:
-                system_output = f"{self.config["test"]["test_name"]},\
-                    {criterea},\
-                    {self.evaluation_equation_dic[criterea]["target_obj"]}.{self.evaluation_equation_dic[criterea]["target_var"]} {op} {target_value},\
-                    {measured_value},\
-                    {evaluation_result},\
-                    {simulation_time}\n"
-                
-                self.log_system_output(output= system_output)
+                self.log_result(criterea= criterea, measured_value= measured_value, evaluation_result= evaluation_result, simulation_time= simulation_time)
+                # system_output = f"{self.config["test"]["test_name"]},\
+                #     {criterea},\
+                #     {self.evaluation_equation_dic[criterea]["target_obj"]}.{self.evaluation_equation_dic[criterea]["target_var"]} {op} {target_value},\
+                #     {measured_value},\
+                #     {evaluation_result},\
+                #     {simulation_time}\n"
+                # self.log_system_output(output= system_output)
             
             logger.info(Style.RESET_ALL)
 
