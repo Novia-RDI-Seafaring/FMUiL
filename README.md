@@ -7,13 +7,10 @@
 
 imporove logging
 
-separate tests into different files
+improve test structure
 
-improve logging on screen
+documentation
 
-update reading_conditions, and evaluation
-
-check for better automated parser
 
 # test definition
 

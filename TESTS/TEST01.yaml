@@ -21,16 +21,8 @@ test:
       setpoint: 30
       feedback: 1 # IF THIS IS same as the above setpoint and the PIcontroller.control_signal is not changing values you know that the first connection in system loop is not working (control_signal->tank.input_WTS)
       
-
   start_readings_conditions: 
-    condition_01: { 
-      system_value: {
-        fmu: PIcontroller, 
-        variable: control_signal
-        }, 
-        operator: ">", 
-        target: 0.01 
-      }
+    condition_01: "PIcontroller.control_signal > 0.01"
 
   system_loop: 
     - from: PIcontroller.control_signal
@@ -41,19 +33,6 @@ test:
 
   ################# evaluation #################
   evaluation: 
-
-  # You can see how this should behave from the screenshots
-    eval_1: {system_value: {
-      fmu: tank, 
-      variable: output_WTS}, 
-      operator: "<", 
-      target: 11.1,
-    }
-
-  # You can see how this should behave from the screenshots
-    eval_2: {system_value: {
-      fmu: PIcontroller, 
-      variable: control_signal}, 
-      operator: "<", 
-      target: 20,
-    }
+    eval_1: "tank.output_WTS < 11.1"
+    eval_2: "PIcontroller.control_signal < 20"
+    

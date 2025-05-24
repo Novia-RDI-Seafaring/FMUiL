@@ -13,13 +13,13 @@ import time
 from time import gmtime, strftime
 logging.basicConfig(level=logging.INFO) # required to get messages printed out
 logger = logging.getLogger(__name__)
-
+import re
 from .infra.servers import server_manager
 from .infra.clients import client_manager
 
 getcontext().prec = 8
 DEFAULT_BASE_PORT = 7000 # port from which the server initialization begins
-DEFAULT_LOGGER_HEADER = "test name, evaluation function, measured value, test result, system timestamp\n"
+DEFAULT_LOGGER_HEADER = "test_name, evaluation_name, evaluation_function, measured_value, test_result, system_timestamp\n"
 
 class TestSystem:
     def __init__(self, config_folder:str, remote_server_directory:str = None) -> None:
@@ -33,8 +33,11 @@ class TestSystem:
         self.timing      = None
         self.connections = None # description of system loop definition from test
         self.server_obj  = None
-        self.system_description = {}
-        self.system_node_ids    = {} # this is meant to take in all of the systems node id's
+        self.reading_condition_dict  = {}
+        self.evaluation_equation_dic = {}
+        self.system_description      = {}
+        self.system_node_ids         = {} # this is meant to take in all of the systems node id's
+        self.regex_parser_pattern    = r'\d+\.\d+|\d+|[a-zA-Z_][\w]*|[<>!=]=?|==|!=|[^\s\w\.]'
 
     def generate_logfile(self):
         file_path = os.path.join("logs", strftime("%Y_%m_%d_%H_%M_%S", gmtime()))
@@ -111,24 +114,25 @@ class TestSystem:
         """
         checks that the conditions required to start readings are met
         """
-        for condition in conditions:
-            fmu_name = conditions[condition]["system_value"]["fmu"]
-            variable_name = conditions[condition]["system_value"]["variable"]
-            node = self.system_node_ids[fmu_name][variable_name]
-            measured_value = self.client_obj.system_clients[conditions[condition]["system_value"]["fmu"]].get_node(node)
+        for condition in self.reading_condition_dict:
+            node = self.system_node_ids[self.reading_condition_dict[condition]["target_obj"]][self.reading_condition_dict[condition]["target_var"]]
+            measured_value = self.client_obj.system_clients[self.reading_condition_dict[condition]["target_obj"]].get_node(node)
+            
             measured_value = await measured_value.read_value()
-            eval_criterea = conditions[condition]["target"] 
-            op            = conditions[condition]["operator"] 
+            eval_criterea = self.reading_condition_dict[condition]["value"] 
+            op            = self.reading_condition_dict[condition]["operator"]
             result        = ops[op](measured_value, eval_criterea) 
-            variable      = conditions[condition]["system_value"]["variable"]
+            variable      = self.reading_condition_dict[condition]["target_var"]
 
             if result:
                 logger.info(Fore.GREEN + f"condition  {variable} {op} {eval_criterea} PASSED \nwith value: {measured_value}")
+                return True
             else:
                 logger.info(Fore.RED + f"condition {variable} {op} {eval_criterea} FAILED \nwith value: {measured_value}")
                 return False
 
-        return True
+
+
 
     ################################################
     ############### SYSTEM TESTS ###################
@@ -198,27 +202,24 @@ class TestSystem:
         """
         evaluation of system outputs, this function reads the "evaluation" section of the yaml file
         """
-        for criterea in evaluation:
-            evaluation_condition = evaluation[criterea]
-            fmu_variable = evaluation_condition["system_value"]["fmu"]
-            variable_name = evaluation_condition["system_value"]["variable"]
-            
-            node = self.system_node_ids[fmu_variable][variable_name]
-            measured_value = self.client_obj.system_clients[fmu_variable].get_node(node)
+        for criterea in self.evaluation_equation_dic:
+            node = self.system_node_ids[self.evaluation_equation_dic[criterea]["target_obj"]][self.evaluation_equation_dic[criterea]["target_var"]]
+            measured_value = self.client_obj.system_clients[self.evaluation_equation_dic[criterea]["target_obj"]].get_node(node)
             measured_value = await measured_value.read_value()
-            target_value = evaluation_condition["target"] 
-            op = evaluation_condition["operator"] 
+            target_value = self.evaluation_equation_dic[criterea]["value"]
+            op = self.evaluation_equation_dic[criterea]["operator"] 
             
             # compare the two values
             evaluation_result = ops[op](measured_value, target_value)
-            variable = evaluation[criterea]["system_value"]["variable"]
+            variable = self.evaluation_equation_dic[criterea]["target_var"]
 
-            if evaluation_result: logger.info(Fore.GREEN + f"test {variable} {op} {evaluation_condition["target"]} = {evaluation_result} \n PASSED with value: {measured_value}")
-            else:                 logger.info(Fore.RED   + f"test {variable} {op} {evaluation_condition["target"]} = {evaluation_result} \n FAILED with value: {measured_value}")
+            if evaluation_result: logger.info(Fore.GREEN + f"test {variable} {op} {self.evaluation_equation_dic[criterea]["value"]} = {evaluation_result} \n PASSED with value: {measured_value}")
+            else:                 logger.info(Fore.RED   + f"test {variable} {op} {self.evaluation_equation_dic[criterea]["value"]} = {evaluation_result} \n FAILED with value: {measured_value}")
             
             if self.save_logs:
-                system_output = f"{criterea},\
-                    {fmu_variable}.{variable_name} {op} {target_value},\
+                system_output = f"{self.config["test"]["test_name"]},\
+                    {criterea},\
+                    {self.evaluation_equation_dic[criterea]["target_obj"]}.{self.evaluation_equation_dic[criterea]["target_var"]} {op} {target_value},\
                     {measured_value},\
                     {evaluation_result},\
                     {simulation_time}\n"
@@ -226,7 +227,8 @@ class TestSystem:
                 self.log_system_output(output= system_output)
             
             logger.info(Style.RESET_ALL)
-            
+
+
     ###########################################################################
     #####################   INIT SYSTEM IDS   #################################
     ###########################################################################
@@ -234,13 +236,40 @@ class TestSystem:
         for server_name in self.server_obj.system_servers:
             self.system_node_ids[server_name] = self.server_obj.system_servers[server_name].server_variable_ids
 
+    def parse_reading_conditions(self, conditions_dict):
+        print("\n\n\n\n\n conditions dict: ", conditions_dict)
+        for condition in conditions_dict:
+            self.reading_condition_dict[condition] = {}
+            self.reading_condition_dict[condition]["target_obj"], \
+            self.reading_condition_dict[condition]["target_var"], \
+            self.reading_condition_dict[condition]["operator"], \
+            self.reading_condition_dict[condition]["value"] = re.findall(self.regex_parser_pattern, conditions_dict[condition])    
+            # converstion from str to float
+            self.reading_condition_dict[condition]["value"] = float(self.reading_condition_dict[condition]["value"])        
+        print(self.reading_condition_dict)
+
+    def parse_evaluation_conditions(self, evalutaion_dict):
+        
+        for condition in evalutaion_dict:
+            print("evaluation   condition ", evalutaion_dict[condition], " regex: ", re.findall(self.regex_parser_pattern, evalutaion_dict[condition])   )
+            self.evaluation_equation_dic[condition] = {}
+            self.evaluation_equation_dic[condition]["target_obj"], \
+            self.evaluation_equation_dic[condition]["target_var"], \
+            self.evaluation_equation_dic[condition]["operator"], \
+            self.evaluation_equation_dic[condition]["value"] = re.findall(self.regex_parser_pattern, evalutaion_dict[condition])    
+            # converstion from str to float
+            self.evaluation_equation_dic[condition]["value"] = float(self.evaluation_equation_dic[condition]["value"])
+        
+        print("eval cond",self.evaluation_equation_dic)
+
     async def initialize_test_params(self, test):
             self.config    = DataLoaderClass(test).data
             self.fmu_files = self.config["fmu_files"]
             self.test      = self.config["test"]        
             self.timing    = self.test["timing"]
             self.save_logs = self.test["save_logs"]
-            
+            self.parse_reading_conditions(self.config["test"]["start_readings_conditions"])
+            self.parse_evaluation_conditions(self.config["test"]["evaluation"])
     ################################################################################
     ###########################   MAIN LOOP   ######################################
     ################################################################################
