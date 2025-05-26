@@ -34,13 +34,23 @@
 </p>
 
 # OPCUA-FMU Simulator
+**Table of content**
+- [1. Features](#features)
+- [2. Installation](#installation)
+- [3. Configurations](#configurations)
+    - [3.1. Test configuration](#test-configuration)
+    - [3.2. External servers](#external-servers)
+- [4.Example usage](#example-usage)
+- [5. Other](#other)
+    - [5.1. Main contributors](#main-contributors)
+    - [5.2. Citation](#citation)
+    - [5.3. License](#license)
+    - [5.4. Acknowledgements](#acknowledgements)
 
 ## Features
-- **Simulate FMU models** together with external OPC-UA servers.
+- **Simulate FMU models** with OPC-UA communicaiton.
+- **Connect external OPC-UA servers**. This allwows FMU models to simulated together with thrid-party hardware and software.
 - **Manage tests and violation monitoring** for simulation scenarios.
-
-## Prerequisites
-- Pyhon version 3.XX+.
 
 ## Installation
 
@@ -123,6 +133,14 @@ to do this we'll be calling the fmu step function while passing in the server ti
 
 # Other
 
+## Main Contributors
+- **Domitrios Bouzoulas**, Novia UAS. 
+    -  *CRediT*: Conceptualization, Methodology, Software, Validation
+- **Kristian Klemets**, University of Turku.
+    -  *CRediT*: Conceptualization, Methodology, Software, Validation
+- **Mikael Manngård**, Novia UAS.
+    -  *CRediT*: Conceptualization, Supervision
+
 ## Citation
 If you use this package in your research, please cite it using the following BibTeX entry:
 
@@ -134,11 +152,6 @@ If you use this package in your research, please cite it using the following Bib
   howpublished = {\url{https://github.com/Novia-RDI-Seafaring/fmu-opcua-test-platform}},
 }
 ```
-
-## Main Contributors
-- Domitrios Bouzoulas, Novia UAS
-- Kristian Klemets, University of Turku
-- Mikael Manngård, Novia UAS
 
 ## License
 This package is licensed under the MIT License license. See the [LICENSE](./LICENSE) file for more details.
