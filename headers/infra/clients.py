@@ -1,6 +1,6 @@
 from asyncua import Client, ua
 import logging
-logging.basicConfig(level=logging.INFO) # required to get messages printed out
+logging.basicConfig(level=logging.INFO) # required to enable log message print to terminal
 logger = logging.getLogger(__name__)
 import asyncio
 
@@ -22,7 +22,7 @@ class client_manager:
         return self
     
         
-    async def creat_internal_clients(self):
+    async def creat_internal_clients(self) -> None:
         for server_name in self.system_servers:
             server = self.system_servers[server_name]
             client = Client(url=server.url)
@@ -30,7 +30,7 @@ class client_manager:
             self.system_clients[server_name] = client
         logger.info(f"system clients clients setup: {self.system_clients}")
         
-    async def create_external_clients(self):
+    async def create_external_clients(self) -> None:
         # TODO: REMOVE SYSTEM NODE ID INITIALIZATION FROM HERE, SEPARATE THE FUNCTIONALITY
         for server in self.remote_servers:
             server_url = self.remote_servers[server]["url"]
@@ -55,18 +55,20 @@ class client_manager:
         if client_name in self.system_clients.keys():     return self.system_clients[client_name]
         elif client_name in self.external_clients.keys(): return self.external_clients[client_name]
         else: raise Exception(f"UNKNOWN CLIENT {client_name}")
-    
         
     async def get_system_values(self) -> dict:
-            self.system_clients.keys()
-            return
-
+            return self.system_clients.keys()
+            
     async def reset_system(self) -> None:
         for client_name in self.system_clients:
             object_node = self.system_clients[client_name].get_node(ua.NodeId(1, 1))
-            await object_node.call_method(ua.NodeId(1, 4))#, str(1)) # update fmu before updating values
+            await object_node.call_method(ua.NodeId(1, 4))
 
-    async def initialize_system_variables(self, test:dict):
+    async def initialize_system_variables(self, test:dict) -> None:
+        """
+        initialize system variables base on input state
+        uses user defined initial state
+        """
         initial_system_state = test["initial_system_state"]
         for server in initial_system_state:
             for variable in initial_system_state[server]:
@@ -77,7 +79,11 @@ class client_manager:
                 }
                 await object_node.call_method(ua.NodeId(1, 3), str(update_values)) # update fmu before updating values
 
-    async def close(self):
+    async def close(self) -> None:
+        """ 
+        disconnects all clients to enable the setup of new ones
+        releases ports
+        """
         if(len(self.external_clients)):
             await asyncio.gather(
                 *(c.disconnect() for c in self.external_clients.values()),

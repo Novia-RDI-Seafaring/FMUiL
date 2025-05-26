@@ -40,6 +40,8 @@ class TestSystem:
         self.regex_parser_pattern    = r'\d+\.\d+|\d+|[a-zA-Z_][\w]*|[<>!=]=?|==|!=|[^\s\w\.]'
 
     def generate_logfile(self):
+        if not os.path.exists("logs"):
+            os.makedirs("logs")
         file_path = os.path.join("logs", strftime("%Y_%m_%d_%H_%M_%S", gmtime()))
         if not os.path.exists(file_path):
             with open(file_path, 'w') as file:

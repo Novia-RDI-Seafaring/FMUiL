@@ -22,35 +22,26 @@ class FmuLoader:
         self.fmu_parameters = {} # contains both inputs and outputs
         self.locate_variable_names()
 
-    def _add_input(self, variable:fmpy.model_description.ScalarVariable):
+    def _add_input(self, variable:fmpy.model_description.ScalarVariable) -> None:
         self.fmu_inputs[variable.name] = {
             "id" : variable.valueReference,
             "type" : variable.type
         }
-        # self.fmu_parameters[variable.name] = {
-        #     "id" : variable.valueReference,
-        #     "type" : variable.type
-        # }
         return
 
-    def _add_output(self, variable:fmpy.model_description.ScalarVariable):
+    def _add_output(self, variable:fmpy.model_description.ScalarVariable) -> None:
         self.fmu_outputs[variable.name] = {
             "id" : variable.valueReference,
             "type" : variable.type
         }
-        # self.fmu_parameters[variable.name] = {
-        #     "id" : variable.valueReference,
-        #     "type" : variable.type
-        # }
     
-    def _add_parameter(self, variable:fmpy.model_description.ScalarVariable):
+    def _add_parameter(self, variable:fmpy.model_description.ScalarVariable) -> None:
         self.fmu_parameters[variable.name] = {
                 "id" : variable.valueReference,
                 "type" : variable.type
             }
             
-    
-    def locate_variable_names(self):
+    def locate_variable_names(self) -> None:
         """
         adds fmu I/Os to object
         """
@@ -68,9 +59,9 @@ class FmuLoader:
 
         _logger.info(f"inp = {self.fmu_inputs}, \nout = {self.fmu_outputs}, \npar = {self.fmu_parameters}")
 
-    def get_fmu_inputs(self):
+    def get_fmu_inputs(self) -> list[str]:
         return list(self.fmu_inputs.keys())
     
-    def get_fmu_outputs(self):
+    def get_fmu_outputs(self)  -> list[str]:
         return list(self.fmu_outputs.keys())
 

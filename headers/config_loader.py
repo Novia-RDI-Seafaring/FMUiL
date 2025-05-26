@@ -7,4 +7,3 @@ class DataLoaderClass:
     def load_file(self, file_path):
         with open(file_path) as file:
             return yaml.safe_load(file)
-        

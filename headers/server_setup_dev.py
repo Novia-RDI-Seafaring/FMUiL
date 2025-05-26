@@ -4,7 +4,6 @@ import asyncio
 import datetime
 from asyncua.common.methods import uamethod
 import logging
-# logging.basicConfig(level=logging.INFO) # required to get messages printed out
 logger = logging.getLogger(__name__)
 from decimal import Decimal, getcontext, ROUND_HALF_UP
 
@@ -12,18 +11,16 @@ getcontext().prec = 8
 PRECISION_STR = "0.000001"
 COMPARISON_PRECISION = Decimal("0.000001")
 
-
-
 class OPCUAFMUServerSetup:
     def __init__(self) -> None:
         self.server_started = asyncio.Event()
         self.server = None
-        self.url = None
+        self.url    = None
+        self.fmu    = None
+        self.idx    = None
         self.server_variables = []
-        self.fmu = None
         self.fmu_time    = Decimal("0.0")
         self.server_time = Decimal("0.0")
-        self.idx = None
         self.server_variable_ids = {}
         self.opc_server_only_variables = ["timestep"] # variables reserved only for the server not fmu
         self.last_simulation_timestamp = 0.0
@@ -68,31 +65,25 @@ class OPCUAFMUServerSetup:
         await self.server.init()
         self.server.set_endpoint(self.url)
 
+    async def set_variables_writable(self, obj, variables, reserved=False):
+        for var in variables:
+            self.server_variables.append(var)
+            if(reserved):
+                variable = await obj.add_variable(nodeid=self.reserved_variable_ids[var], bname=var, val=0.0)
+                self.server_variable_ids[var] = self.reserved_variable_ids[var]
+            else:
+                variable = await obj.add_variable(nodeid=ua.NodeId(var), bname=var, val=0.0)
+                self.server_variable_ids[var] = ua.NodeId(var)
+            await variable.set_writable()
+
+
+
     async def setup_server_variables(self):
-
-        obj = await self.server.nodes.objects.add_object(bname = self.fmu.fmu_name, 
-                                                         nodeid= ua.NodeId(Identifier=1, NamespaceIndex=1)) 
-        
+        obj = await self.server.nodes.objects.add_object(bname = self.fmu.fmu_name, nodeid= ua.NodeId(Identifier=1, NamespaceIndex=1)) 
         self.server_variable_ids[self.fmu.fmu_name] = ua.NodeId(Identifier=1, NamespaceIndex=1)
-        
-        for var in self.reserved_variable_ids:
-            self.server_variables.append(var)
-            variable = await obj.add_variable(nodeid=self.reserved_variable_ids[var], bname=var, val=0.0)
-            self.server_variable_ids[var] = self.reserved_variable_ids[var]
-            await variable.set_writable()
-
-        for var in self.fmu.fmu_inputs:
-            self.server_variables.append(var)
-            variable = await obj.add_variable(nodeid=ua.NodeId(var), bname=var, val=0.0)
-            self.server_variable_ids[var] = ua.NodeId(var)
-            await variable.set_writable()
-
-        for var in self.fmu.fmu_outputs:
-            self.server_variables.append(var)
-            variable = await obj.add_variable(nodeid=ua.NodeId(var), bname=var, val=0.0)
-            self.server_variable_ids[var] = ua.NodeId(var)
-            await variable.set_writable()
-
+        await self.set_variables_writable(variables=self.reserved_variable_ids, obj= obj)
+        await self.set_variables_writable(variables=self.fmu.fmu_inputs, obj= obj)
+        await self.set_variables_writable(variables=self.fmu.fmu_outputs, obj= obj)
         await self.setup_standard_methods(obj= obj)
     
     #######################################################
@@ -145,12 +136,6 @@ class OPCUAFMUServerSetup:
             time_diff = (self.server_time - self.fmu_time).quantize(Decimal(PRECISION_STR), rounding=ROUND_HALF_UP)
             double_step = (2 * time_step).quantize(Decimal(PRECISION_STR), rounding=ROUND_HALF_UP)
 
-            if time_diff > double_step:
-                logger.warning(
-                    f"\nSOMETHING IS WRONG with timing: the gap is double the step time\n"
-                    f"{time_diff} > {double_step}\n\n"
-                )
-
             if time_diff >= time_step:
                 await self.single_simulation_loop()
             else:
@@ -158,6 +143,7 @@ class OPCUAFMUServerSetup:
                     f"DID !NOT! update due to {self.server_time} - {self.fmu_time}: "
                     f"{self.server_time - self.fmu_time} < {time_step}"
                 )
+                
         except Exception as e:
             logger.error(f"Exception in simulate_fmu: {e}")
 
@@ -213,6 +199,6 @@ class OPCUAFMUServerSetup:
             self.server_started.set()
             while True:
                 logger.info(f"working {datetime.datetime.now()} at {self.url}")
-                await asyncio.sleep(1) ######
+                await asyncio.sleep(1) 
 
 

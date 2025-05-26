@@ -17,7 +17,7 @@ class server_manager:
         await self.initialize_fmu_opc_servers() 
         return self
     
-    def construct_remote_servers(self, remote_servers):
+    def construct_remote_servers(self, remote_servers: list[str]) -> dict[str:DataLoaderClass]:
         """
         remote_servers = path to directory with remote server definitions
         this function iterates through all of them and adds them to a dictionaty in a structured manner
@@ -32,10 +32,7 @@ class server_manager:
             
         return server_dict
 
-
-    async def initialize_fmu_opc_servers(self):
-        
-        
+    async def initialize_fmu_opc_servers(self) -> None:
         for fmu_file in self.fmu_files:
             self.base_port+=1
             server =  await OPCUAFMUServerSetup.async_server_init(
@@ -47,11 +44,8 @@ class server_manager:
             server.server_started.clear()
             self.system_servers[server.fmu.fmu_name] = server
             self._tasks.append(server_task)
-            # tasklist.append(server_task)
-
-        # return tasklist
         
-    async def close(self):
+    async def close(self) -> None:
         """Stop all servers and free the ports."""
         for srv in self.system_servers.values():
             await srv.server.stop()          # closes socket listener
