@@ -1,6 +1,39 @@
-# fmu-opcua-test-platform
+<p align="center">
+  <a href="https://novia.fi"><img src="./public/opcua_fmu_logo.png" alt="OPCUA-FMU" width="200">
+</a>
+</p>
 
+<p align="center">
+    <b>OPC-UA and FMU Simulator</b> <br />
+    Perform X-in-the-Loop (XiL) simulation tests with FMU simulation models and communication over OPC-UA.
+</p>
 
+<p align="center">
+  <a href="https://www.novia.fi/" target="_blank">
+      Novia UAS
+  </a>|
+  <a href="https://www.utu.fi/en" target="_blank">
+      University of Turku
+  </a>|
+  <a href="https://www.virtualseatrial.fi/" target="_blank">
+      Research Project
+  </a>|
+  <a href="mailto:mikael.manngard@novia.fi?subject=MCP-FMI:">Contact</a>
+
+</p>
+<p align="center">
+  <a href="https://www.python.org/">
+    <img src="https://img.shields.io/badge/Python-3.11%2B-blue" alt="Python Version">
+  </a>
+  <a href="https://opensource.org/licenses/MIT">
+    <img src="https://img.shields.io/github/license/Novia-RDI-Seafaring/FMU-OPCUA-TEST-PLATFORM" alt="License: MIT">
+  </a>
+  <a href="https://www.businessfinland.fi/">
+    <img src="https://img.shields.io/badge/Funded%20by-Business%20Finland-blue" alt="Funded by Business Finland">
+  </a>
+</p>
+
+# OPCUA-FMU Simulator
 
 # dev notes
 
@@ -89,3 +122,20 @@ FMU architecture and IOs
 <img src="./readme_resources/system_diagram.png"  />
 
 
+## Citation
+If you use this package in your research, please cite it using the following BibTeX entry:
+
+```bibtex
+@misc{MCP-FMU,
+  author = {Dimitrios Bouzoulas, Kristian Klemets, Mikael Manngård},
+  title = {OPCUA-FMU Simulator},
+  year = {2025},
+  howpublished = {\url{https://github.com/Novia-RDI-Seafaring/fmu-opcua-test-platform}},
+}
+```
+
+## Acknowledgements
+This work was done in the Business Finland funded project [Virtual Sea Trial](https://virtualseatrial.fi)
+
+## License
+This package is licensed under the MIT License license. See the [LICENSE](./LICENSE) file for more details.
