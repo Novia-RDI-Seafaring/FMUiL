@@ -47,9 +47,9 @@ class TestSystem:
         return file_path    
     
     def log_result(self, criterea, measured_value, evaluation_result, simulation_time):
-        system_output = f"{self.config["test"]["test_name"]},\
+        system_output = f"{self.config['test']['test_name']},\
             {criterea},\
-            {self.evaluation_equation_dic[criterea]["target_obj"]}.{self.evaluation_equation_dic[criterea]["target_var"]} {self.evaluation_equation_dic[criterea]["operator"]} {self.evaluation_equation_dic[criterea]["value"]},\
+            {self.evaluation_equation_dic[criterea]['target_obj']}.{self.evaluation_equation_dic[criterea]['target_var']} {self.evaluation_equation_dic[criterea]['operator']} {self.evaluation_equation_dic[criterea]['value']},\
             {measured_value},\
             {evaluation_result},\
             {simulation_time}\n"
@@ -218,8 +218,8 @@ class TestSystem:
             evaluation_result = ops[op](measured_value, target_value)
             variable = self.evaluation_equation_dic[criterea]["target_var"]
 
-            if evaluation_result: logger.info(Fore.GREEN + f"test {variable} {op} {self.evaluation_equation_dic[criterea]["value"]} = {evaluation_result} \n PASSED with value: {measured_value}")
-            else:                 logger.info(Fore.RED   + f"test {variable} {op} {self.evaluation_equation_dic[criterea]["value"]} = {evaluation_result} \n FAILED with value: {measured_value}")
+            if evaluation_result: logger.info(Fore.GREEN + f"test {variable} {op} {self.evaluation_equation_dic[criterea]['value']} = {evaluation_result} \n PASSED with value: {measured_value}")
+            else:                 logger.info(Fore.RED   + f"test {variable} {op} {self.evaluation_equation_dic[criterea]['value']} = {evaluation_result} \n FAILED with value: {measured_value}")
             
             if self.save_logs:
                 self.log_result(criterea          = criterea, 
