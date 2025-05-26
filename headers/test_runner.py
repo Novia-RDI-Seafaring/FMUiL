@@ -67,6 +67,7 @@ class TestSystem:
             write value to specific node in the system
             clienet_name = client to desired server
         """
+        # if it's part of the systems servers
         if (client_name in self.server_obj.system_servers):
                 object_node = self.client_obj.system_clients[client_name].get_node(ua.NodeId(1, 1))
                 update_values = {
@@ -74,6 +75,8 @@ class TestSystem:
                     "value": value
                 }
                 await object_node.call_method(ua.NodeId(1, 3), str(update_values)) # update fmu before updating values
+        
+        # if it's an external server
         else:
             node_id = self.client_obj.system_node_ids[client_name][variable]
             client = self.client_obj.fetch_appropriacte_client(client_name=client_name)
@@ -117,8 +120,6 @@ class TestSystem:
             
             logger.info(f"\n\n passed fmu {update.from_fmu} var {update.from_var} with {value}, to fmu {update.to_fmu} var {update.to_var} \n\n")
 
-    def check_time(self, sim_time, max_time):
-        return sim_time >= max_time
 
     async def check_reading_conditions(self, conditions):
         """
@@ -127,23 +128,17 @@ class TestSystem:
         for condition in self.reading_condition_dict:
             node = self.system_node_ids[self.reading_condition_dict[condition]["target_obj"]][self.reading_condition_dict[condition]["target_var"]]
             measured_value = self.client_obj.system_clients[self.reading_condition_dict[condition]["target_obj"]].get_node(node)
-            
             measured_value = await measured_value.read_value()
             eval_criterea = self.reading_condition_dict[condition]["value"] 
             op            = self.reading_condition_dict[condition]["operator"]
             result        = ops[op](measured_value, eval_criterea) 
             variable      = self.reading_condition_dict[condition]["target_var"]
 
-            if result:
-                logger.info(Fore.GREEN + f"condition  {variable} {op} {eval_criterea} PASSED \nwith value: {measured_value}")
-                return True
-            else:
-                logger.info(Fore.RED + f"condition {variable} {op} {eval_criterea} FAILED \nwith value: {measured_value}")
-                return False
+            if result:  logger.info(Fore.GREEN + f"condition  {variable} {op} {eval_criterea}  PASSED \nwith value: {measured_value}")
+            else:       logger.info(Fore.RED + f"condition {variable} {op} {eval_criterea} FAILED \nwith value: {measured_value}")
 
-
-
-
+            return result
+        
     ################################################
     ############### SYSTEM TESTS ###################
     ################################################
@@ -176,7 +171,7 @@ class TestSystem:
             if self.timing == "real_time":
                 await self.regulate_timestep(start_time= start_wall_time, timestep= timestep)
             
-            if self.check_time(sim_time, test["stop_time"]):
+            if sim_time >= test["stop_time"]:
                 simulation_status = False
 
     async def regulate_timestep(self, start_time: float, timestep: float):
@@ -227,14 +222,10 @@ class TestSystem:
             else:                 logger.info(Fore.RED   + f"test {variable} {op} {self.evaluation_equation_dic[criterea]["value"]} = {evaluation_result} \n FAILED with value: {measured_value}")
             
             if self.save_logs:
-                self.log_result(criterea= criterea, measured_value= measured_value, evaluation_result= evaluation_result, simulation_time= simulation_time)
-                # system_output = f"{self.config["test"]["test_name"]},\
-                #     {criterea},\
-                #     {self.evaluation_equation_dic[criterea]["target_obj"]}.{self.evaluation_equation_dic[criterea]["target_var"]} {op} {target_value},\
-                #     {measured_value},\
-                #     {evaluation_result},\
-                #     {simulation_time}\n"
-                # self.log_system_output(output= system_output)
+                self.log_result(criterea          = criterea, 
+                                measured_value    = measured_value, 
+                                evaluation_result = evaluation_result, 
+                                simulation_time   = simulation_time)
             
             logger.info(Style.RESET_ALL)
 
@@ -246,8 +237,11 @@ class TestSystem:
         for server_name in self.server_obj.system_servers:
             self.system_node_ids[server_name] = self.server_obj.system_servers[server_name].server_variable_ids
 
+    
+    # TODO: combine the functions bellow somehow
     def parse_reading_conditions(self, conditions_dict):
         print("\n\n\n\n\n conditions dict: ", conditions_dict)
+        self.reading_condition_dict = {}
         for condition in conditions_dict:
             self.reading_condition_dict[condition] = {}
             self.reading_condition_dict[condition]["target_obj"], \
@@ -259,7 +253,7 @@ class TestSystem:
         print(self.reading_condition_dict)
 
     def parse_evaluation_conditions(self, evalutaion_dict):
-        
+        self.evaluation_equation_dic = {}
         for condition in evalutaion_dict:
             print("evaluation   condition ", evalutaion_dict[condition], " regex: ", re.findall(self.regex_parser_pattern, evalutaion_dict[condition])   )
             self.evaluation_equation_dic[condition] = {}
@@ -280,6 +274,7 @@ class TestSystem:
             self.save_logs = self.test["save_logs"]
             self.parse_reading_conditions(self.config["test"]["start_readings_conditions"])
             self.parse_evaluation_conditions(self.config["test"]["evaluation"])
+            
     ################################################################################
     ###########################   MAIN LOOP   ######################################
     ################################################################################
@@ -299,19 +294,3 @@ class TestSystem:
             await self.run_test()
             await self.server_obj.close()
             await self.client_obj.close()
-            
-        # return await asyncio.gather(*servers)
-
-
-
-    #################################################################################
-    ########################   UTILITY FUNCTION   ###################################
-    #################################################################################
-    # async def describe_system(self):
-    #     tasklist = await self.initialize_fmu_opc_servers()
-    #     for server_name in self.server_obj.system_servers:
-    #         self.system_description.update(self.server_obj.system_servers[server_name].get_server_description())
-
-    #     logger.info(f"system description = {self.system_description}")
-    #     for task in tasklist:
-    #         await task
