@@ -35,7 +35,59 @@
 
 # OPCUA-FMU Simulator
 
-# dev notes
+## Features
+- **Simulate FMU models** together with external OPC-UA servers.
+- **Manage tests and violation monitoring** for simulation scenarios.
+
+## Prerequisites
+- Pyhon version 3.XX+.
+
+## Installation
+
+# Configurations
+Examples of how to configure the simulation tests and external OPC-UA servers.
+
+## Test configuration
+
+    tests:
+        test_name:
+            test_type: 
+
+            test_description: "a description of the test"
+
+            initial_system_state:
+
+            start_readings_conditions:
+
+            system_loop:
+
+
+simply loop after first fmu inputs
+
+loop:
+    first inputs = defaults
+
+    first outputs = second input
+
+    second out = first in
+
+alllow multiple of the same fmu by adding id's to the end
+
+## External Servers
+
+# Example usage
+## System
+
+System Diagram
+
+<img src="./readme_resources/LOC.drawio.svg"/>
+
+FMU architecture and IOs
+
+<img src="./readme_resources/system_diagram.png"  />
+
+
+# Dev notes
 
 try making parent in function calls the server itself, then we only need to pass in the variable
 
@@ -44,7 +96,7 @@ try making parent in function calls the server itself, then we only need to pass
 3) state machines
 4) add to value
 
-## in progress
+## Work in progress
 
 minor: add setters and getters to the server itself and clean it up a bit 
 
@@ -69,64 +121,13 @@ then we check if (server time - fmu time >= step) if that's true we make a step 
 
 to do this we'll be calling the fmu step function while passing in the server time variable
 
-
-
-
-## done
-
-
-
-
-
-
-# test definition
-
-
-    tests:
-        test_name:
-            test_type: 
-
-            test_description: "a description of the test"
-
-            initial_system_state:
-
-            start_readings_conditions:
-
-            system_loop:
-
-    
-
-
-
-simply loop after first fmu inputs
-
-loop:
-    first inputs = defaults
-
-    first outputs = second input
-
-    second out = first in
-
-
-
-alllow multiple of the same fmu by adding id's to the end
-
-# system
-
-System Diagram
-
-<img src="./readme_resources/LOC.drawio.svg"/>
-
-FMU architecture and IOs
-
-<img src="./readme_resources/system_diagram.png"  />
-
+# Other
 
 ## Citation
 If you use this package in your research, please cite it using the following BibTeX entry:
 
 ```bibtex
-@misc{MCP-FMU,
+@misc{OPCUA-FMU-Simulator,
   author = {Dimitrios Bouzoulas, Kristian Klemets, Mikael Manngård},
   title = {OPCUA-FMU Simulator},
   year = {2025},
@@ -134,8 +135,13 @@ If you use this package in your research, please cite it using the following Bib
 }
 ```
 
-## Acknowledgements
-This work was done in the Business Finland funded project [Virtual Sea Trial](https://virtualseatrial.fi)
+## Main Contributors
+- Domitrios Bouzoulas, Novia UAS
+- Kristian Klemets, University of Turku
+- Mikael Manngård, Novia UAS
 
 ## License
 This package is licensed under the MIT License license. See the [LICENSE](./LICENSE) file for more details.
+
+## Acknowledgements
+This work was done in the Business Finland funded project [Virtual Sea Trial](https://virtualseatrial.fi)
