@@ -6,9 +6,8 @@ import os
 
 class server_manager:
     @classmethod
-    async def create(cls, test_config, remote_server_directory):
+    async def create(cls, test_config):
         self = cls()
-        self.remote_server_directory = remote_server_directory
         self.remote_servers = self.construct_remote_servers(test_config["external_servers"])
         self.fmu_files = test_config["fmu_files"]
         self._tasks: list[asyncio.Task] = []
@@ -23,9 +22,8 @@ class server_manager:
         this function iterates through all of them and adds them to a dictionaty in a structured manner
         """
         server_dict = {}
-        server_files = [os.path.join(self.remote_server_directory, i) for i in remote_servers]
 
-        for server_name in server_files:
+        for server_name in remote_servers:
             server_desription = DataLoaderClass(server_name).data
             name = Path(server_name).stem
             server_dict[name] = server_desription

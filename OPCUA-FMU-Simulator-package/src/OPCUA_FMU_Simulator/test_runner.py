@@ -22,9 +22,8 @@ DEFAULT_BASE_PORT = 7000 # port from which the server initialization begins
 DEFAULT_LOGGER_HEADER = "test_name, evaluation_name, evaluation_function, measured_value, test_result, system_timestamp\n"
 
 class TestSystem:
-    def __init__(self, config_folder:str, remote_server_directory:str = None) -> None:
+    def __init__(self, config_folder:str) -> None:
         self.config_directory        = config_folder
-        self.remote_server_directory = remote_server_directory
         self.log_file    = self.generate_logfile()
         self.config      = None 
         self.fmu_files   = None
@@ -286,8 +285,7 @@ class TestSystem:
 
         for test_file in test_files:
             await self.initialize_test_params(test= test_file)
-            self.server_obj = await server_manager.create(test_config= self.config, 
-                                                          remote_server_directory= self.remote_server_directory)
+            self.server_obj = await server_manager.create(test_config= self.config)
             self.gather_system_ids()
             self.client_obj = await client_manager.create(system_servers = self.server_obj.system_servers, 
                                                           remote_servers = self.server_obj.remote_servers, 

@@ -5,8 +5,7 @@ from OPCUA_FMU_Simulator import TestSystem
 
 async def main(function):
     conf = "TESTS/"
-    remote_servers = "test_servers/" # SERVERRS ARE INDIVIDUAL FILES!!!
-    tests = TestSystem(config_folder= conf, remote_server_directory=remote_servers )#, remote_servers= remote_servers)
+    tests = TestSystem(config_folder= conf)#, remote_servers= remote_servers)
     if   function == "test":     await tests.main_testing_loop()
 
 if __name__ == "__main__":
