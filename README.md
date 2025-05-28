@@ -197,47 +197,48 @@ FMU architecture and IOs
 
 TESTS/TEST02.taml represents an appropriate test file for this system:
 
-    fmu_files: 
-      ["FMUs/LOC_CNTRL_custom_linux.fmu",
-      "FMUs/LOC_SYSTEM_linux.fmu"]
+    fmu_files: # list of fmu files || Model description Names:LOC_CNTRL_v2_customPI, LOC_SYSTEM
+  ["FMUs/LOC_CNTRL_custom_linux.fmu",
+   "FMUs/LOC_SYSTEM_linux.fmu"]
 
-    external_servers: [] 
+external_servers: []
 
-    test:
-      test_name: test_02
-      timestep: 1     
-      timing: "simulation_time" 
-      stop_time: 10.0 # seconds 
-      save_logs: true
-      initial_system_state:
-
-      LOC_SYSTEM:
-        timestep: 0.2
-        INPUT_temperature_cold_circuit_inlet: 1 
-        INPUT_massflow_cold_circuit: 1
-        INPUT_engine_load_0_1: 1
-        INPUT_control_valve_position: 0 
-
-      LOC_CNTRL_v2_customPI:
-        timestep: 0.5
-        SETPOINT_temperature_lube_oil: 2
-        INPUT_temperature_lube_oil: 10
-
-    start_readings_conditions: 
-      condition_01: "LOC_CNTRL_v2_customPI.OUTPUT_control_valve_position > 0.2"
+test:
+  test_name: test_01
+  timestep: 0.5    # seconds, communication timestep
+  timing: "simulation_time" # simulation_time or real_time 
+  stop_time: 400.0 # seconds 
+  save_logs: true
+  initial_system_state:
     
-    system_loop: 
-      - from: LOC_SYSTEM.OUTPUT_temperature_cold_circuit_outlet
-        to:   LOC_CNTRL_v2_customPI.INPUT_temperature_lube_oil
-      
-      - from: LOC_CNTRL_v2_customPI.OUTPUT_control_valve_position
-        to:   LOC_SYSTEM.INPUT_control_valve_position
+    LOC_CNTRL_v2_customPI:
+      timestep: 0.5
+      SETPOINT_temperature_lube_oil: 70
+      INPUT_temperature_lube_oil: 65
+    
+    LOC_SYSTEM:
+      timestep: 0.5
+      INPUT_temperature_cold_circuit_inlet: 40
+      INPUT_massflow_cold_circuit: 35
+      INPUT_engine_load_0_1: 1
+      INPUT_control_valve_position: 0
 
-    evaluation: 
-      eval_1: "LOC_CNTRL_v2_customPI.OUTPUT_control_valve_position < 0.1"
-      eval_2: "LOC_CNTRL_v2_customPI.OUTPUT_control_valve_position > 0.1"
-      eval_3: "LOC_SYSTEM.OUTPUT_temperature_cold_circuit_outlet > 64"
-      eval_4: "LOC_SYSTEM.OUTPUT_temperature_lube_oil > 70"
+  start_readings_conditions: 
+    condition_01: "LOC_SYSTEM.OUTPUT_temperature_lube_oil > 65"
+
+  system_loop: 
+    - from: LOC_CNTRL_v2_customPI.OUTPUT_control_valve_position
+      to:   LOC_SYSTEM.INPUT_control_valve_position
+    
+    - from: LOC_SYSTEM.OUTPUT_temperature_lube_oil
+      to:   LOC_CNTRL_v2_customPI.INPUT_temperature_lube_oil   
+
+  ################# evaluation #################
+  evaluation: 
+    eval_1: "LOC_SYSTEM.OUTPUT_temperature_lube_oil < 80"
+    eval_2: "LOC_CNTRL_v2_customPI.OUTPUT_control_valve_position < 1.01"
+    eval_3: "LOC_SYSTEM.OUTPUT_massflow_cold_circuit < 80"
+    eval_4: "LOC_SYSTEM.OUTPUT_temperature_cold_circuit_outlet < 80"
 
 
 
