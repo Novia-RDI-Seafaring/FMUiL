@@ -30,10 +30,10 @@ test:
   system_loop: # defined as SERVER.VARIABLE_NAME
     - from: LOC_SYSTEM.OUTPUT_temperature_cold_circuit_outlet
       to:   LOC_CNTRL_v2_customPI.INPUT_temperature_lube_oil
-    
+
     - from: LOC_CNTRL_v2_customPI.OUTPUT_control_valve_position
       to:   LOC_SYSTEM.INPUT_control_valve_position
-
+      
   ################# evaluation #################
   evaluation: 
     eval_1: "LOC_CNTRL_v2_customPI.OUTPUT_control_valve_position < 0.1"

@@ -3,6 +3,7 @@
 </a>
 </p>
 
+
 <p align="center">
     <b>OPC-UA and FMU Simulator</b> <br />
     Perform X-in-the-Loop (XiL) simulation tests with FMU simulation models and communication over OPC-UA.
@@ -77,6 +78,11 @@ for test03 to also run you will need to run the remote server under test_servers
   terminal 2:
 
     python main.py
+
+# System setup
+
+The system automatically sets up an opcua server for every specifiend FMU. The server's name is the same as that of the FMU (the name defined within the FMU not filename). Then the variables of the server take on the names of the FMU vairables. In the variables, inputs, outputs and overall system variables are included and can be configured.
+
 
 # Configurations
 Examples of how to configure the simulation tests and external OPC-UA servers.
@@ -263,6 +269,10 @@ If you use this package in your research, please cite it using the following Bib
 ```
 
 ## Further development notes
+
+
+- refactoring (TODOs)
+- automated tests
 
 - User interface addition
 - System tester takes as input the log file after the test has been performed and compares it to existing "correct" log file looking for differences.

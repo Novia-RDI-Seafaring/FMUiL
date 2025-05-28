@@ -151,6 +151,7 @@ class TestSystem:
         """
         sim_time = 0.0
         simulation_status = True
+        # TODO: PUT IN SETUP
         timestep = float(test["timestep"])  # assumed constant across system
 
         while simulation_status:
@@ -281,6 +282,7 @@ class TestSystem:
     ################################################################################
     async def main_testing_loop(self):
         # initialize fmu servers, clients and vairable id storage
+        # TODO: read only .yaml files
         test_files = [os.path.join(self.config_directory, i) for i in os.listdir(self.config_directory)]
 
         for test_file in test_files:
