@@ -164,6 +164,22 @@ the system enables its users to use external servers along side with their FMU b
 NOTES: external servers are treated as OPCUA servers, as a result hardware can also be used with this system. 
 
 
+# Logging
+
+The system logs all data required to evaluate a tests performance when the flag `save_logs: true`. The saved values are the following:
+ 
+test_name: given name of the test under `test_name:` flag 
+
+evaluation_name: name of the evaluation metric defined in the test.
+
+evaluation_function: "object.vairable < 11.1"
+
+measured_value: value of the vairable during the time of the test
+
+test_result: boolean true or false
+
+system_timestamp: system time at the time of the test
+
 
 # Example usage
 ## System
