@@ -1,5 +1,5 @@
 [project]
-name = "OPCUA_FMU_Simulator"
+name = "OPCUA_FMU_simulator"
 version = "0.1.0"
 authors = [{ name="Dimitrios Bouzoulas", email="dimitrios.bouzoulas@novia.fi"},
     {name="Kristian Klemets",    email="Kristian.klemets@utu.fi"},

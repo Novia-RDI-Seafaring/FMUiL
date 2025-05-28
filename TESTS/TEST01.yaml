@@ -1,6 +1,5 @@
-fmu_files: # list of fmu files
-  ["FMUs/tank.fmu",
-   "FMUs/PIcontroller.fmu"]
+fmu_files: ["FMUs/tank.fmu",
+            "FMUs/PIcontroller.fmu"]
 
 external_servers: [test_servers/server_description01.yaml]
 

@@ -36,8 +36,7 @@ test:
 
   ################# evaluation #################
   evaluation: 
-
     eval_1: "LOC_CNTRL_v2_customPI.OUTPUT_control_valve_position < 0.1"
-    # eval_2: "LOC_CNTRL_v2_customPI.OUTPUT_control_valve_position > 0.1"
-    # eval_3: "LOC_SYSTEM.OUTPUT_temperature_cold_circuit_outlet > 64"
-    # eval_4: "LOC_SYSTEM.OUTPUT_temperature_lube_oil > 70"
+    eval_2: "LOC_CNTRL_v2_customPI.OUTPUT_control_valve_position > 0.1"
+    eval_3: "LOC_SYSTEM.OUTPUT_temperature_cold_circuit_outlet > 64"
+    eval_4: "LOC_SYSTEM.OUTPUT_temperature_lube_oil > 70"

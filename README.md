@@ -54,39 +54,110 @@
 
 ## Installation
 
+  pip create -n opcua_fmu_environment python=3.13.2
+
+  pip install -r requirements.txt
+
+  cd .\OPCUA-FMU-simulator-package\
+
+  python -m build ; pip install .
+
+## run example
+
+  python main.py
+
+
 # Configurations
 Examples of how to configure the simulation tests and external OPC-UA servers.
 
 ## Test configuration
 
-    tests:
-        test_name:
-            test_type: 
+    fmu_files:[
+      "path01 to your fmu",
+      "path01 to your fmu"
+      ]
 
-            test_description: "a description of the test"
+    external_servers: [
+                      "path01 to your external server yaml description",
+                      "path02 to your external server yaml description",
+                      "path03 to your external server yaml description"
+                      ]
 
-            initial_system_state:
+    test:
+      test_name: "a unique test name"
+      timestep: 1.2 # in seconds
+      timing:  "simulation_time" or "real_time" 
+      stop_time: 100.0 # duration of the test 
+      save_logs: true # boolean
+      test_description: "a description of the test"
 
-            start_readings_conditions:
+      initial_system_state:
+        opcua_object01_name:
+          opcua_object_variable1: "desired initial value"
+          opcua_object_variable2: "desired initial value"
+          opcua_object_variable3: "desired initial value"
 
-            system_loop:
+        opcua_object02_name:
+          opcua_object02_variable1: "desired initial value"
 
+      start_readings_conditions:
+        condition_name: "object_name.variable operator value"
+        # example_condition: "fmu_fuel_tank.fuel_level > 20"
+        # the object and variable have to be part of a created or external server 
+        # operators supported: '+' '-' '<' '<=' '>' '>='
 
-simply loop after first fmu inputs
+      system_loop: # difinision of system cycle 
+        - from: source_object.source_variable
+          to:   target_object.target_variable
+        
+        - from: source_object.source_variable
+          to:   target_object.target_variable
 
-loop:
-    first inputs = defaults
-
-    first outputs = second input
-
-    second out = first in
-
-alllow multiple of the same fmu by adding id's to the end
+      ################# evaluation #################
+      evaluation: 
+        eval_1: "object.value < 11.1"
+        eval_2: "object.value > 20"
 
 ## External Servers
 
+the system enables its users to use external servers along side with their FMU based OPCUA servers.
+
+#### Adding an external server
+
+  1) server definition: create a .yaml file with the description of your server.
+  Example server definition:
+
+    url: opc.tcp://localhost:5000/opcua/server/ #server url
+
+    # object definition, used objects/variables must be specified
+    objects:
+      object_name_01:
+        vairable_name_01: 
+          id: 4
+          ns: 5
+          name: "vairable_01"
+      
+        vairable_name_02: 
+          name: "vairable_02"
+      
+        vairable_name_03: 
+          id: 4
+          ns: 5
+    
+  - url has to correspond to the server
+  - variables can be with (id, namespace) and/or their name, for most applications and to avoid error it is recommended to use ((id, namespace))
+
+  2) to add the server to the system you need to add the path of the config file to your test definition  `external_servers: ["path to yaml description"]`.
+
+
+NOTES: external servers are treated as OPCUA servers, as a result hardware can also be used with this system. 
+
+
+
 # Example usage
 ## System
+
+The example comprises of two fmu collectively describing a lube oil cooling system, with one acting as a regualtor valve and the other the system.
 
 System Diagram
 
@@ -97,41 +168,52 @@ FMU architecture and IOs
 <img src="./readme_resources/system_diagram.png"  />
 
 
-# Dev notes
+TESTS/TEST02.taml represents an appropriate test file for this system:
 
-try making parent in function calls the server itself, then we only need to pass in the variable
+    fmu_files: 
+      ["FMUs/LOC_CNTRL_custom_linux.fmu",
+      "FMUs/LOC_SYSTEM_linux.fmu"]
 
-## tasks
-1) universal clock
-3) state machines
-4) add to value
+    external_servers: [] 
 
-## Work in progress
+    test:
+      test_name: test_02
+      timestep: 1     
+      timing: "simulation_time" 
+      stop_time: 10.0 # seconds 
+      save_logs: true
+      initial_system_state:
 
-minor: add setters and getters to the server itself and clean it up a bit 
+      LOC_SYSTEM:
+        timestep: 0.2
+        INPUT_temperature_cold_circuit_inlet: 1 
+        INPUT_massflow_cold_circuit: 1
+        INPUT_engine_load_0_1: 1
+        INPUT_control_valve_position: 0 
+
+      LOC_CNTRL_v2_customPI:
+        timestep: 0.5
+        SETPOINT_temperature_lube_oil: 2
+        INPUT_temperature_lube_oil: 10
+
+    start_readings_conditions: 
+      condition_01: "LOC_CNTRL_v2_customPI.OUTPUT_control_valve_position > 0.2"
+    
+    system_loop: 
+      - from: LOC_SYSTEM.OUTPUT_temperature_cold_circuit_outlet
+        to:   LOC_CNTRL_v2_customPI.INPUT_temperature_lube_oil
+      
+      - from: LOC_CNTRL_v2_customPI.OUTPUT_control_valve_position
+        to:   LOC_SYSTEM.INPUT_control_valve_position
+
+    evaluation: 
+      eval_1: "LOC_CNTRL_v2_customPI.OUTPUT_control_valve_position < 0.1"
+      eval_2: "LOC_CNTRL_v2_customPI.OUTPUT_control_valve_position > 0.1"
+      eval_3: "LOC_SYSTEM.OUTPUT_temperature_cold_circuit_outlet > 64"
+      eval_4: "LOC_SYSTEM.OUTPUT_temperature_lube_oil > 70"
 
 
-2) zero order hold, signals hold their value constant until changed
-goal: make the fmus work with a universal time
-for example fmu1 has a timestep of 0.5 seconds while fmu2 has a step of t=1sec
 
-we have a universal clock and timestep
-
-it should loop around the whole thing and whenever enough time has passed we update our values
-
-solution:
-
-every server should have 
-- server time
-- fmu time
-- receive system time
-
-through these we can get the time from the system and update server time
-then we check if (server time - fmu time >= step) if that's true we make a step to the fmu 
-
-to do this we'll be calling the fmu step function while passing in the server time variable
-
-# Other
 
 ## Main Contributors
 - **Domitrios Bouzoulas**, Novia UAS. 
@@ -152,6 +234,13 @@ If you use this package in your research, please cite it using the following Bib
   howpublished = {\url{https://github.com/Novia-RDI-Seafaring/fmu-opcua-test-platform}},
 }
 ```
+
+## Further development notes
+
+- User interface addition
+- System tester takes as input the log file after the test has been performed and compares it to existing "correct" log file looking for differences.
+
+
 
 ## License
 This package is licensed under the MIT License license. See the [LICENSE](./LICENSE) file for more details.

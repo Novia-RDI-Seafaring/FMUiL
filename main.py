@@ -1,10 +1,11 @@
-from OPCUA_FMU_Simulator import TestSystem
+import asyncio
+from OPCUA_FMU_simulator import TestSystem
 
 test_directory = "TESTS/"
 
 async def main():
-    tests = TestSystem(config_folder= test_directory)
+    tests = TestSystem(config_folder=test_directory)
     await tests.main_testing_loop()
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

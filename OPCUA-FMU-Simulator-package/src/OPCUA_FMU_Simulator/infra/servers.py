@@ -1,8 +1,7 @@
-from OPCUA_FMU_Simulator.config_loader import DataLoaderClass
+from OPCUA_FMU_simulator.config_loader import DataLoaderClass
+from OPCUA_FMU_simulator.server_setup_dev import OPCUAFMUServerSetup
 from pathlib import Path
-from OPCUA_FMU_Simulator.server_setup_dev import OPCUAFMUServerSetup
 import asyncio
-import os
 
 class server_manager:
     @classmethod
