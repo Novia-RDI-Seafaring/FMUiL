@@ -1,7 +1,7 @@
 fmu_files: ["FMUs/tank.fmu",
             "FMUs/PIcontroller.fmu"]
 
-external_servers: [test_servers/server_description01.yaml]
+external_servers: []
 
 test:
   test_name: test_01

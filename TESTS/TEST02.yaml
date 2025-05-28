@@ -7,7 +7,7 @@ external_servers: [] # server_description01.yaml
 test:
   test_name: test_02
   timestep: 1     # seconds, communication timestep
-  timing: "simulation_time" # simulation_time or real_time 
+  timing: "real_time" # simulation_time or real_time 
   stop_time: 10.0 # seconds 
   save_logs: true
   initial_system_state:

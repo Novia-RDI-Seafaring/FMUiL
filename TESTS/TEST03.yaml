@@ -2,7 +2,7 @@ fmu_files: # list of fmu files || Model description Names:LOC_CNTRL_v2_customPI,
   ["FMUs/LOC_CNTRL_custom_linux.fmu",
    "FMUs/LOC_SYSTEM_linux.fmu"]
 
-external_servers: []
+external_servers: [test_servers/server_description01.yaml]
 
 test:
   test_name: test_01

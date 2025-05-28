@@ -62,10 +62,21 @@
 
   python -m build ; pip install .
 
-## run example
+## running examples
 
-  python main.py
+for the tests to run, test01 and test02 will be performed without any additional setup, simply by running main.py:
 
+    python main.py
+
+for test03 to also run you will need to run the remote server under test_servers:
+
+  terminal 1:
+    
+    python test_servers/server_description01.yaml
+
+  terminal 2:
+
+    python main.py
 
 # Configurations
 Examples of how to configure the simulation tests and external OPC-UA servers.
