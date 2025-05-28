@@ -1,0 +1,41 @@
+fmu_files: # list of fmu files || Model description Names:LOC_CNTRL_v2_customPI, LOC_SYSTEM
+  ["FMUs/LOC_CNTRL_custom_linux.fmu",
+   "FMUs/LOC_SYSTEM_linux.fmu"]
+
+external_servers: [test_servers/server_description01.yaml]
+
+test:
+  test_name: test_01
+  timestep: 0.5     # seconds, communication timestep
+  timing: "simulation_time" # simulation_time or real_time 
+  stop_time: 100.0 # seconds 
+  save_logs: true
+  initial_system_state:
+    
+    LOC_CNTRL_v2_customPI:
+      timestep: 0.5
+      SETPOINT_temperature_lube_oil: 70
+      INPUT_temperature_lube_oil: 65
+    
+    LOC_SYSTEM:
+      timestep: 0.1
+      INPUT_temperature_cold_circuit_inlet: 40
+      INPUT_massflow_cold_circuit: 35
+      INPUT_engine_load_0_1: 1
+      INPUT_control_valve_position: 0
+
+
+  start_readings_conditions: 
+    condition_01: "LOC_SYSTEM.OUTPUT_temperature_lube_oil > 65"
+
+  system_loop: 
+    - from: LOC_CNTRL_v2_customPI.OUTPUT_control_valve_position
+      to:   LOC_SYSTEM.INPUT_control_valve_position
+    
+    - from: LOC_SYSTEM.OUTPUT_temperature_lube_oil
+      to:   LOC_CNTRL_v2_customPI.INPUT_temperature_lube_oil   
+
+  ################# evaluation #################
+  evaluation: 
+    eval_1: "LOC_SYSTEM.OUTPUT_temperature_lube_oil < 80"
+    eval_2: "LOC_CNTRL_v2_customPI.OUTPUT_control_valve_position < 1.01"

@@ -1,22 +1,11 @@
 import asyncio
-from headers.server_setup_dev import OPCUAFMUServerSetup
-from headers.config_loader import DataLoaderClass
-from asyncua import Client, ua
-import asyncua
-import sys
-from colorama import Fore, Back, Style
-from headers import ops, TestSystem
+from OPCUA_FMU_simulator import TestSystem
 
-async def main(funciton):
-    conf = "TESTS/system_config.yaml"
-    tests = TestSystem(config_file=conf)
-    if   funciton == "test":     await tests.main_testing_loop()
-    elif funciton == "describe": await tests.describe_system()
+test_directory = "TESTS/"
+
+async def main():
+    tests = TestSystem(config_folder=test_directory)
+    await tests.main_testing_loop()
 
 if __name__ == "__main__":
-    args = sys.argv[1:]
-    if len(args) == 2 and args[0] == '-func':
-        asyncio.run(main(funciton=args[1]))
-    else:
-        print("args reuqired '-func' and it can be rither 'test' or 'describe' ")
-   
+    asyncio.run(main())

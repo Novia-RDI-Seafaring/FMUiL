@@ -1,0 +1,36 @@
+fmu_files: ["FMUs/tank.fmu",
+            "FMUs/PIcontroller.fmu"]
+
+external_servers: []
+
+test:
+  test_name: test_01
+  timestep: 1     # seconds, communication timestep
+  timing: "simulation_time" # simulation_time or real_time 
+  stop_time: 100.0 # seconds 
+  save_logs: true
+  initial_system_state:
+    tank:
+      timestep: 0.1
+      input_WTS: 0
+    
+    PIcontroller:
+      timestep: 0.1
+      setpoint: 30
+      feedback: 1 # IF THIS IS same as the above setpoint and the PIcontroller.control_signal is not changing values you know that the first connection in system loop is not working (control_signal->tank.input_WTS)
+      
+  start_readings_conditions: 
+    condition_01: "PIcontroller.control_signal > 0.01"
+
+  system_loop: 
+    - from: PIcontroller.control_signal
+      to:   tank.input_WTS
+    
+    - from: tank.output_WTS
+      to:   PIcontroller.feedback
+
+  ################# evaluation #################
+  evaluation: 
+    eval_1: "tank.output_WTS < 11.1"
+    eval_2: "PIcontroller.control_signal < 20"
+    
