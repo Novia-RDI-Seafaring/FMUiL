@@ -184,7 +184,7 @@ system_timestamp: system time at the time of the test
 # Example usage
 ## System
 
-The example comprises of two fmu collectively describing a lube oil cooling system, with one acting as a regualtor valve and the other the system.
+The example comprises of two fmu collectively describing a lube oil cooling system, with one acting as a control system for the valve and the other the system itself.
 
 System Diagram
 
@@ -197,48 +197,48 @@ FMU architecture and IOs
 
 TESTS/TEST02.yaml represents an appropriate test file for this system:
 
-  fmu_files: # list of fmu files || Model description Names:LOC_CNTRL_v2_customPI, LOC_SYSTEM
-    ["FMUs/LOC_CNTRL_custom_linux.fmu",
-     "FMUs/LOC_SYSTEM_linux.fmu"]
-  
-  external_servers: []
-  
-  test:
-    test_name: test_01
-    timestep: 0.5    # seconds, communication timestep
-    timing: "simulation_time" # simulation_time or real_time 
-    stop_time: 400.0 # seconds 
-    save_logs: true
-    initial_system_state:
-      
-      LOC_CNTRL_v2_customPI:
-        timestep: 0.5
-        SETPOINT_temperature_lube_oil: 70
-        INPUT_temperature_lube_oil: 65
-      
-      LOC_SYSTEM:
-        timestep: 0.5
-        INPUT_temperature_cold_circuit_inlet: 40
-        INPUT_massflow_cold_circuit: 35
-        INPUT_engine_load_0_1: 1
-        INPUT_control_valve_position: 0
-  
-    start_readings_conditions: 
-      condition_01: "LOC_SYSTEM.OUTPUT_temperature_lube_oil > 65"
-  
-    system_loop: 
-      - from: LOC_CNTRL_v2_customPI.OUTPUT_control_valve_position
-        to:   LOC_SYSTEM.INPUT_control_valve_position
-      
-      - from: LOC_SYSTEM.OUTPUT_temperature_lube_oil
-        to:   LOC_CNTRL_v2_customPI.INPUT_temperature_lube_oil   
-  
-    ################# evaluation #################
-    evaluation: 
-      eval_1: "LOC_SYSTEM.OUTPUT_temperature_lube_oil < 80"
-      eval_2: "LOC_CNTRL_v2_customPI.OUTPUT_control_valve_position < 1.01"
-      eval_3: "LOC_SYSTEM.OUTPUT_massflow_cold_circuit < 80"
-      eval_4: "LOC_SYSTEM.OUTPUT_temperature_cold_circuit_outlet < 80"
+    fmu_files: # list of fmu files || Model description Names:LOC_CNTRL_v2_customPI, LOC_SYSTEM
+      ["FMUs/LOC_CNTRL_custom_linux.fmu",
+       "FMUs/LOC_SYSTEM_linux.fmu"]
+    
+    external_servers: []
+    
+    test:
+      test_name: test_01
+      timestep: 0.5    # seconds, communication timestep
+      timing: "simulation_time" # simulation_time or real_time 
+      stop_time: 400.0 # seconds 
+      save_logs: true
+      initial_system_state:
+        
+        LOC_CNTRL_v2_customPI:
+          timestep: 0.5
+          SETPOINT_temperature_lube_oil: 70
+          INPUT_temperature_lube_oil: 65
+        
+        LOC_SYSTEM:
+          timestep: 0.5
+          INPUT_temperature_cold_circuit_inlet: 40
+          INPUT_massflow_cold_circuit: 35
+          INPUT_engine_load_0_1: 1
+          INPUT_control_valve_position: 0
+    
+      start_readings_conditions: 
+        condition_01: "LOC_SYSTEM.OUTPUT_temperature_lube_oil > 65"
+    
+      system_loop: 
+        - from: LOC_CNTRL_v2_customPI.OUTPUT_control_valve_position
+          to:   LOC_SYSTEM.INPUT_control_valve_position
+        
+        - from: LOC_SYSTEM.OUTPUT_temperature_lube_oil
+          to:   LOC_CNTRL_v2_customPI.INPUT_temperature_lube_oil   
+    
+      ################# evaluation #################
+      evaluation: 
+        eval_1: "LOC_SYSTEM.OUTPUT_temperature_lube_oil < 80"
+        eval_2: "LOC_CNTRL_v2_customPI.OUTPUT_control_valve_position < 1.01"
+        eval_3: "LOC_SYSTEM.OUTPUT_massflow_cold_circuit < 80"
+        eval_4: "LOC_SYSTEM.OUTPUT_temperature_cold_circuit_outlet < 80"
 
 
 
