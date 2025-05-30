@@ -3,6 +3,7 @@
 </a>
 </p>
 
+
 <p align="center">
     <b>OPC-UA and FMU Simulator</b> <br />
     Perform X-in-the-Loop (XiL) simulation tests with FMU simulation models and communication over OPC-UA.
@@ -54,13 +55,15 @@
 
 ## Installation
 
-  pip create -n opcua_fmu_environment python=3.13.2
+    pip create -n opcua_fmu_environment python=3.13.2
 
-  pip install -r requirements.txt
+    pip install -r requirements.txt
 
-  cd .\OPCUA-FMU-simulator-package\
+    cd .\OPCUA-FMU-simulator-package\
 
-  python -m build ; pip install .
+    python -m build 
+    
+    pip install .
 
 ## running examples
 
@@ -77,6 +80,11 @@ for test03 to also run you will need to run the remote server under test_servers
   terminal 2:
 
     python main.py
+
+# System setup
+
+The system automatically sets up an opcua server for every specifiend FMU. The server's name is the same as that of the FMU (the name defined within the FMU not filename). Then the variables of the server take on the names of the FMU vairables. In the variables, inputs, outputs and overall system variables are included and can be configured.
+
 
 # Configurations
 Examples of how to configure the simulation tests and external OPC-UA servers.
@@ -241,6 +249,22 @@ TESTS/TEST02.yaml represents an appropriate test file for this system:
         eval_4: "LOC_SYSTEM.OUTPUT_temperature_cold_circuit_outlet < 80"
 
 
+## Running your tests:
+
+```python
+import asyncio
+from OPCUA_FMU_simulator import TestSystem
+
+test_directory = "path_to_your_tests/"
+
+async def main():
+    tests = TestSystem(config_folder=test_directory)
+    await tests.main_testing_loop()
+
+if __name__ == "__main__":
+    asyncio.run(main())
+
+```
 
 
 ## Main Contributors
@@ -264,6 +288,10 @@ If you use this package in your research, please cite it using the following Bib
 ```
 
 ## Further development notes
+
+
+- refactoring (TODOs)
+- automated tests
 
 - User interface addition
 - System tester takes as input the log file after the test has been performed and compares it to existing "correct" log file looking for differences.

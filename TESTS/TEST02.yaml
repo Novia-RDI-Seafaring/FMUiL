@@ -27,15 +27,15 @@ test:
 
 
   start_readings_conditions: 
-    condition_01: "LOC_SYSTEM.OUTPUT_temperature_lube_oil > 65"
+    condition_01: "LOC_CNTRL_v2_customPI.OUTPUT_control_valve_position > 0.2"
+  
+  system_loop: # defined as SERVER.VARIABLE_NAME
+    - from: LOC_SYSTEM.OUTPUT_temperature_cold_circuit_outlet
+      to:   LOC_CNTRL_v2_customPI.INPUT_temperature_lube_oil
 
-  system_loop: 
     - from: LOC_CNTRL_v2_customPI.OUTPUT_control_valve_position
       to:   LOC_SYSTEM.INPUT_control_valve_position
-    
-    - from: LOC_SYSTEM.OUTPUT_temperature_lube_oil
-      to:   LOC_CNTRL_v2_customPI.INPUT_temperature_lube_oil   
-
+      
   ################# evaluation #################
   evaluation: 
     eval_1: "LOC_SYSTEM.OUTPUT_temperature_lube_oil < 80"

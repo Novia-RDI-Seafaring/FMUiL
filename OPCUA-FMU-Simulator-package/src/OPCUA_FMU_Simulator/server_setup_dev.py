@@ -59,7 +59,6 @@ class OPCUAFMUServerSetup:
         await self.initialize_server()
         await self.setup_server_variables()
 
-
     async def initialize_server(self):
         self.server = Server()
         await self.server.init()
@@ -76,8 +75,7 @@ class OPCUAFMUServerSetup:
                 self.server_variable_ids[var] = ua.NodeId(var)
             await variable.set_writable()
 
-
-
+    # TODO: improve set writable 
     async def setup_server_variables(self):
         obj = await self.server.nodes.objects.add_object(bname = self.fmu.fmu_name, nodeid= ua.NodeId(Identifier=1, NamespaceIndex=1)) 
         self.server_variable_ids[self.fmu.fmu_name] = ua.NodeId(Identifier=1, NamespaceIndex=1)
@@ -87,7 +85,7 @@ class OPCUAFMUServerSetup:
         await self.setup_standard_methods(obj= obj)
     
     #######################################################
-    ####### STANDARD METHODS FOR ALL OFJBECTS #############
+    ####### STANDARD METHODS FOR ALL OF OJBECTS ###########
     #######################################################
     async def setup_standard_methods(self, obj):
         ######### simulation #########

@@ -4,6 +4,7 @@ from pathlib import Path
 import asyncio
 
 class server_manager:
+    # TODO: pass directly "FMU FILES" not whole test config file
     @classmethod
     async def create(cls, test_config):
         self = cls()
@@ -12,7 +13,7 @@ class server_manager:
         self._tasks: list[asyncio.Task] = []
         self.system_servers: dict[str, OPCUAFMUServerSetup] = {}
         self.base_port = 7000
-        await self.initialize_fmu_opc_servers() 
+        await self.initialize_fmu_opc_servers()
         return self
     
     def construct_remote_servers(self, remote_servers: list[str]) -> dict[str:DataLoaderClass]:
