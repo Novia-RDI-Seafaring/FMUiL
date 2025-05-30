@@ -55,13 +55,15 @@
 
 ## Installation
 
-  pip create -n opcua_fmu_environment python=3.13.2
+    pip create -n opcua_fmu_environment python=3.13.2
 
-  pip install -r requirements.txt
+    pip install -r requirements.txt
 
-  cd .\OPCUA-FMU-simulator-package\
+    cd .\OPCUA-FMU-simulator-package\
 
-  python -m build ; pip install .
+    python -m build 
+    
+    pip install .
 
 ## running examples
 
@@ -246,6 +248,22 @@ TESTS/TEST02.taml represents an appropriate test file for this system:
       eval_4: "LOC_SYSTEM.OUTPUT_temperature_lube_oil > 70"
 
 
+## Running your tests:
+
+```python
+import asyncio
+from OPCUA_FMU_simulator import TestSystem
+
+test_directory = "path_to_your_tests/"
+
+async def main():
+    tests = TestSystem(config_folder=test_directory)
+    await tests.main_testing_loop()
+
+if __name__ == "__main__":
+    asyncio.run(main())
+
+```
 
 
 ## Main Contributors
