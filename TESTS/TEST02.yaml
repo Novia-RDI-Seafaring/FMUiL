@@ -27,7 +27,7 @@ test:
 
 
   start_readings_conditions: 
-    condition_01: "LOC_CNTRL_v2_customPI.OUTPUT_control_valve_position > 0.2"
+    condition_01: "LOC_CNTRL_v2_customPI.OUTPUT_control_valve_position > 0"
   
   system_loop: # defined as SERVER.VARIABLE_NAME
     - from: LOC_SYSTEM.OUTPUT_temperature_lube_oil
