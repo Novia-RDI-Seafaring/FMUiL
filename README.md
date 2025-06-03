@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://novia.fi"><img src="./readme_resources/opcua_fmu_logo.png" alt="OPCUA-FMU" width="200">
+  <a href="https://github.com/Novia-RDI-Seafaring/opcua-fmu-simulator"><img src="./readme_resources/opcua_fmu_logo.png" alt="OPCUA-FMU" width="200">
 </a>
 </p>
 
@@ -90,7 +90,7 @@ The system automatically sets up an opcua server for every specifiend FMU. The s
 Examples of how to configure the simulation tests and external OPC-UA servers.
 
 ## Test configuration
-
+```yaml
     fmu_files:[
       "path01 to your fmu",
       "path01 to your fmu"
@@ -136,6 +136,7 @@ Examples of how to configure the simulation tests and external OPC-UA servers.
       evaluation: 
         eval_1: "object.value < 11.1"
         eval_2: "object.value > 20"
+```
 
 ## External Servers
 
@@ -145,7 +146,7 @@ the system enables its users to use external servers along side with their FMU b
 
   1) server definition: create a .yaml file with the description of your server.
   Example server definition:
-
+```yaml
     url: opc.tcp://localhost:5000/opcua/server/ #server url
 
     # object definition, used objects/variables must be specified
@@ -162,7 +163,7 @@ the system enables its users to use external servers along side with their FMU b
         vairable_name_03: 
           id: 4
           ns: 5
-    
+```  
   - url has to correspond to the server
   - variables can be with (id, namespace) and/or their name, for most applications and to avoid error it is recommended to use ((id, namespace))
 
@@ -202,7 +203,7 @@ FMU architecture and IOs
 
 <img src="./readme_resources/system_diagram.png"  />
 
-
+```yaml
 TESTS/TEST02.yaml represents an appropriate test file for this system:
 
     fmu_files: # list of fmu files || Model description Names:LOC_CNTRL_v2_customPI, LOC_SYSTEM
@@ -247,7 +248,7 @@ TESTS/TEST02.yaml represents an appropriate test file for this system:
         eval_2: "LOC_CNTRL_v2_customPI.OUTPUT_control_valve_position < 1.01"
         eval_3: "LOC_SYSTEM.OUTPUT_massflow_cold_circuit < 80"
         eval_4: "LOC_SYSTEM.OUTPUT_temperature_cold_circuit_outlet < 80"
-
+```
 
 ## Running your tests:
 
