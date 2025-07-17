@@ -7,9 +7,9 @@ import logging
 logger = logging.getLogger(__name__)
 from decimal import Decimal, getcontext, ROUND_HALF_UP
 
-getcontext().prec = 8
-PRECISION_STR = "0.000001"
-COMPARISON_PRECISION = Decimal("0.000001")
+getcontext().prec = 4
+PRECISION_STR = "0.0001"
+COMPARISON_PRECISION = Decimal("0.0001")
 
 class OPCUAFMUServerSetup:
     def __init__(self) -> None:

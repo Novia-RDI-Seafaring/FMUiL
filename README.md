@@ -55,7 +55,7 @@
 
 ## Installation
 
-    pip create -n opcua_fmu_environment python=3.13.2
+    pip create -n opcua_fmu_environment python=3.13.2 
 
     pip install -r requirements.txt
 
@@ -64,6 +64,22 @@
     python -m build 
     
     pip install .
+
+  ----------  
+Alternative:  
+
+    python -m venv .venv
+
+    .venv/Scripts/activate
+
+    pip install build
+
+    cd .\OPCUA-FMU-simulator-package\
+
+    python -m build 
+    
+    pip install .
+
 
 ## running examples
 
@@ -75,15 +91,18 @@ for test03 to also run you will need to run the remote server under test_servers
 
   terminal 1:
     
-    python test_servers/server_description01.yaml
+    python test_servers/test_server.py
 
   terminal 2:
 
     python main.py
 
+From the log files it is possible to plot the results. Here is the results from the test01:
+<img src="./readme_resources/Test01.png"  />
+
 # System setup
 
-The system automatically sets up an opcua server for every specifiend FMU. The server's name is the same as that of the FMU (the name defined within the FMU not filename). Then the variables of the server take on the names of the FMU vairables. In the variables, inputs, outputs and overall system variables are included and can be configured.
+The system automatically sets up an opcua server for every specifiend FMU. The server's name is the same as that of the FMU (the name defined within the FMU not filename). Then the variables of the server take on the names of the FMU variables. In the variables, inputs, outputs and overall system variables are included and can be configured.
 
 
 # Configurations
@@ -305,3 +324,38 @@ This package is licensed under the MIT License license. See the [LICENSE](./LICE
 ## Acknowledgements
 This work was done in the Business Finland funded project [Virtual Sea Trial](https://virtualseatrial.fi)
 
+## Changelog
+
+### Update on 17-7-2025
+- Changed requirements:
+	FMPy==0.3.23 -> 0.3.21
+	numpy==2.2.6 -> 2.0.2
+- Fixed OPCUA_FMU_simulator -> OPCUA_FMU_Simulator
+	- main.py
+	- infra/servers.py
+- Changed the port on test_server (and server_description) 4840 -> 7500
+	
+  --> Running state
+
+- There was a bug that FMU's stopped running -> Lowered the precision to 4 decimals. -> Seems to be working well.
+
+- Changed tests to represent better the capabilities:  
+	- Test01:
+		Made real_time and changed the values 
+
+	- Test02:
+		Changed values to represent better a real simulation case
+
+	- Test03:
+		Connected the external server value to a gain.fmu which just multiplies the opc value by 2.
+
+
+- Readme:
+	- Alternative installation
+	- python test_servers/server_description01.yaml TO python test_servers/test_server.py
+	- Some typos
+
+TODO:
+- Update Readme
+- Changing FMU Parameters
+- Evaluation of external server values

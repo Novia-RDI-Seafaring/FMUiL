@@ -15,7 +15,7 @@ async def main():
     # setup our server
     server = Server()
     await server.init()
-    server.set_endpoint("opc.tcp://0.0.0.0:4840/freeopcua/server/")
+    server.set_endpoint("opc.tcp://0.0.0.0:7500/freeopcua/server/")
 
     # set up our own namespace, not really necessary but should as spec
     # uri = "http://examples.freeopcua.github.io"
@@ -42,9 +42,9 @@ async def main():
     async with server:
         while True:
             await asyncio.sleep(1)
-            new_val = await myvar.get_value() + 0.1
-            _logger.info("Set value of %s to %.1f", myvar, new_val)
-            await myvar.write_value(new_val)
+            new_val = await myvarid.get_value() + 0.1
+            _logger.info("Set value of %s to %.1f", myvarid, new_val)
+            await myvarid.write_value(new_val)
 
 
 if __name__ == "__main__":
