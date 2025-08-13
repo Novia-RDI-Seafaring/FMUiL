@@ -171,15 +171,15 @@ the system enables its users to use external servers along side with their FMU b
     # object definition, used objects/variables must be specified
     objects:
       object_name_01:
-        vairable_name_01: 
+        variable_name_01: 
           id: 4
           ns: 5
-          name: "vairable_01"
+          name: "variable_01"
       
-        vairable_name_02: 
-          name: "vairable_02"
+        variable_name_02: 
+          name: "variable_02"
       
-        vairable_name_03: 
+        variable_name_03: 
           id: 4
           ns: 5
 ```  
