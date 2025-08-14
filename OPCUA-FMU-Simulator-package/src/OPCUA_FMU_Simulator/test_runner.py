@@ -11,7 +11,7 @@ import logging
 from .connections import parse_connections # Connection
 import time
 from time import gmtime, strftime
-logging.basicConfig(level=logging.INFO) # required to get messages printed out
+logging.basicConfig(level=logging.ERROR) # required to get messages printed out
 logger = logging.getLogger(__name__)
 import re
 from .infra.servers import server_manager
@@ -154,6 +154,11 @@ class TestSystem:
         # TODO: PUT IN SETUP
         timestep = float(test["timestep"])  # assumed constant across system
 
+        print(f"""Starting simulation:
+        Test: {self.test['test_name']}
+        FMU's: {self.fmu_files}
+        Simulating""", end="", flush=True)
+
         while simulation_status:
             start_wall_time = time.time()
 
@@ -173,8 +178,11 @@ class TestSystem:
             if self.timing == "real_time":
                 await self.regulate_timestep(start_time= start_wall_time, timestep= timestep)
             
-            if sim_time >= test["stop_time"]:
+            print(".", end="", flush=True)
+
+            if sim_time > test["stop_time"]:
                 simulation_status = False
+                print("Simulation ended\n\n ")
 
     async def regulate_timestep(self, start_time: float, timestep: float):
         elapsed = time.time() - start_time
@@ -182,7 +190,7 @@ class TestSystem:
         if sleep_duration > 0:
             await asyncio.sleep(sleep_duration)
         elif sleep_duration < 0:
-            logger.info("DURANTION OF LOOP EXCEEDS TIMESTEP UNSTABLE SYSTEM!!!!!!")
+            logger.error("DURANTION OF LOOP EXCEEDS TIMESTEP UNSTABLE SYSTEM!!!!!!")
             # ADD MESSAGE TO LOG FILES
             
             
@@ -194,7 +202,8 @@ class TestSystem:
         # reset and initialize system variables for every test
         await self.client_obj.reset_system() 
         await self.client_obj.initialize_system_variables(test=self.test)
-        # parses system_loop section of the test and stores it to use it as the system loop 
+        # parses system_loop section of the test and stores it to use it as the system loop
+        print("Parsing connections...") 
         self.connections = parse_connections(self.test["system_loop"])
         await self.run_multi_step_test(test=self.test)
 
@@ -242,7 +251,8 @@ class TestSystem:
     
     # TODO: combine the functions bellow somehow
     def parse_reading_conditions(self, conditions_dict):
-        print("\n\n\n\n\n conditions dict: ", conditions_dict)
+        #print("\n\n\n\n\n conditions dict: ", conditions_dict)
+        print("Parsing reading conditions...")
         self.reading_condition_dict = {}
         for condition in conditions_dict:
             self.reading_condition_dict[condition] = {}
@@ -252,12 +262,13 @@ class TestSystem:
             self.reading_condition_dict[condition]["value"] = re.findall(self.regex_parser_pattern, conditions_dict[condition])    
             # converstion from str to float
             self.reading_condition_dict[condition]["value"] = float(self.reading_condition_dict[condition]["value"])        
-        print(self.reading_condition_dict)
+        #print(self.reading_condition_dict)
 
     def parse_evaluation_conditions(self, evalutaion_dict):
+        print("Parsing evaluation conditions...")
         self.evaluation_equation_dic = {}
         for condition in evalutaion_dict:
-            print("evaluation   condition ", evalutaion_dict[condition], " regex: ", re.findall(self.regex_parser_pattern, evalutaion_dict[condition])   )
+            #print("evaluation   condition ", evalutaion_dict[condition], " regex: ", re.findall(self.regex_parser_pattern, evalutaion_dict[condition])   )
             self.evaluation_equation_dic[condition] = {}
             self.evaluation_equation_dic[condition]["target_obj"], \
             self.evaluation_equation_dic[condition]["target_var"], \
@@ -266,9 +277,10 @@ class TestSystem:
             # converstion from str to float
             self.evaluation_equation_dic[condition]["value"] = float(self.evaluation_equation_dic[condition]["value"])
         
-        print("eval cond",self.evaluation_equation_dic)
+        #print("eval cond",self.evaluation_equation_dic)
 
     async def initialize_test_params(self, test):
+            print("Initializing test parameters...")
             self.config    = DataLoaderClass(test).data
             self.fmu_files = self.config["fmu_files"]
             self.test      = self.config["test"]        

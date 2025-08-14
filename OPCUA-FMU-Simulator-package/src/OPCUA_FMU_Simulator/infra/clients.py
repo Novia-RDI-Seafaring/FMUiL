@@ -34,7 +34,7 @@ class client_manager:
         # TODO: REMOVE SYSTEM NODE ID INITIALIZATION FROM HERE, SEPARATE THE FUNCTIONALITY
         for server in self.remote_servers:
             server_url = self.remote_servers[server]["url"]
-            print(f"\n\nTRYING TO CONNECT TO {server_url} \n\n")
+            print(f"TRYING TO CONNECT TO {server_url} ")
             client = Client(url=server_url)
             await client.connect()
             self.external_clients[server] = client

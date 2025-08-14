@@ -72,7 +72,9 @@ Alternative:
 
     .venv/Scripts/activate
 
-    pip install build
+    pip install build -> Add to req
+
+    pip install -r requirements.txt
 
     cd .\OPCUA-FMU-simulator-package\
 
@@ -359,3 +361,8 @@ TODO:
 - Update Readme
 - Changing FMU Parameters
 - Evaluation of external server values
+
+Notes 14.8 ->:
+- added build to requirements.txt
+- fixed bug where the time of simulation would be 20 but we would only run until 19.5 (0.5 timestep)
+- Put debugger info to Error and cleaned the command line output
