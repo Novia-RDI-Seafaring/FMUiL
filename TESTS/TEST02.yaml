@@ -1,41 +1,49 @@
-fmu_files: # list of fmu files || Model description Names:LOC_CNTRL_v2_customPI, LOC_SYSTEM
-  ["FMUs/LOC_CNTRL_custom_linux.fmu",
-   "FMUs/LOC_SYSTEM_linux.fmu"]
+# This is an example configuration for Lube oil cooling system
+#
+# FMUs and system description can be found here:
+# https://github.com/Novia-RDI-Seafaring/fmu-library/tree/main/models/loc
+#_____________________________________________________________________________________________________________
+
+################# FMUs and OPC UA Servers #################
+
+fmu_files: 
+  ["FMUs/LOC_Control.fmu",
+   "FMUs/LOC_System.fmu"]
 
 external_servers: []
 
+################# Scenario #################
+
 test:
-  test_name: test_02
-  timestep: 0.5     # seconds, communication timestep
-  timing: "simulation_time" # simulation_time or real_time 
-  stop_time: 1000.0 # seconds 
+  test_name: Lube Oil Cooling
+  timestep: 0.5     
+  timing: "simulation_time"  
+  stop_time: 1000.0  
   save_logs: true
   initial_system_state:
     
-    LOC_CNTRL_v2_customPI:
-      timestep: 0.5
-      SETPOINT_temperature_lube_oil: 70
-      INPUT_temperature_lube_oil: 65
-    
-    LOC_SYSTEM:
+    LOC_Control:
       timestep: 0.1
-      INPUT_temperature_cold_circuit_inlet: 35
-      INPUT_massflow_cold_circuit: 20
-      INPUT_engine_load_0_1: 1
-      INPUT_control_valve_position: 0
-      
+      setpoint_temperature_oil: 50
+
+    LOC_System:  
+      timestep: 0.1
+      temperature_cooling_liquid_in: 35 
+      mass_flow_cooling_liquid_in: 20
+      engine_load: 1 # 0-1 <-> 0-100%
+
   start_readings_conditions: 
-    condition_01: "LOC_SYSTEM.OUTPUT_temperature_lube_oil > 65"
+    condition_01: "LOC_System.temperature_oil > 0"
 
   system_loop: 
-    - from: LOC_CNTRL_v2_customPI.OUTPUT_control_valve_position
-      to:   LOC_SYSTEM.INPUT_control_valve_position
-    
-    - from: LOC_SYSTEM.OUTPUT_temperature_lube_oil
-      to:   LOC_CNTRL_v2_customPI.INPUT_temperature_lube_oil   
+    - from: LOC_System.temperature_oil
+      to:   LOC_Control.temperature_oil_in
+
+    - from: LOC_Control.position_valve
+      to:   LOC_System.position_valve_in
 
   ################# evaluation #################
   evaluation: 
-    eval_1: "LOC_SYSTEM.OUTPUT_temperature_lube_oil < 80"
-    eval_2: "LOC_SYSTEM.OUTPUT_temperature_cold_circuit_outlet < 65"
-    eval_3: "LOC_CNTRL_v2_customPI.OUTPUT_control_valve_position < 0.75"
+    eval_1: "LOC_System.temperature_oil < 58"
+    eval_2: "LOC_System.temperature_cooling_liquid_out < 40"
+    eval_3: "LOC_Control.position_valve > 0"

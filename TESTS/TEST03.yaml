@@ -1,13 +1,21 @@
-fmu_files: # list of fmu files || Model description Names:LOC_CNTRL_v2_customPI, LOC_SYSTEM
-  ["FMUs/gain.fmu"] # This FMU just multiplies the input by 2. 
+# This is a example for integrating external OPC UA servers to the simulation
+# You need to run the "example_server.py" from the servers folder
+# The gain will take a value from the external server, multiply it by 2 and log it.
+#
+################# FMUs and OPC UA Servers #################
 
-external_servers: [test_servers/server_description01.yaml]
+fmu_files: 
+  ["FMUs/gain.fmu"]                             # This FMU just multiplies the input by 2. 
+
+external_servers: [servers/example_server.yaml] # This is path to the config for the external server
+
+################# Scenario #################
 
 test:
-  test_name: test_03
-  timestep: 1     # seconds, communication timestep
-  timing: "real_time" # simulation_time or real_time 
-  stop_time: 30.0 # seconds 
+  test_name: External server
+  timestep: 1                   
+  timing: "real_time"  
+  stop_time: 30.0  
   save_logs: true
   initial_system_state:
     
@@ -18,7 +26,7 @@ test:
     condition_01: "gain.output_gain > 0"
 
   system_loop: 
-    - from: server_description01.custom_variable
+    - from: example_server.custom_variable
       to:   gain.input_gain
     
   ################# evaluation #################
