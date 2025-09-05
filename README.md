@@ -366,3 +366,8 @@ Notes 14.8 ->:
 - added build to requirements.txt
 - fixed bug where the time of simulation would be 20 but we would only run until 19.5 (0.5 timestep)
 - Put debugger info to Error and cleaned the command line output
+
+Notes 05.9 ->:
+- Updated FMUS and Tests
+- Cleaned minor things (test_servers -> servers etc)
+ 
