@@ -39,7 +39,7 @@ test:
       timestep: 0.2                   # This has to be defined for every fmu
     
     TankLevel_PI:             
-      timestep: 0.2
+      timestep: 1
       SP_WaterLevel_in: 10            # Input for the TankLevel_PI    
 
   start_readings_conditions: 
