@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://github.com/Novia-RDI-Seafaring/opcua-fmu-simulator"><img src="./readme_resources/opcua_fmu_logo.png" alt="OPCUA-FMU" width="200">
+  <a href="https://github.com/Novia-RDI-Seafaring/opcua-fmu-simulator"><img src="./public/opcua_fmu_logo.png" alt="OPCUA-FMU" width="200">
 </a>
 </p>
 
@@ -254,7 +254,7 @@ Both systems have been implemented as FMUs: `WaterTankSystem.fmu` and `TankLevel
 
 This creates a closed-loop system where:
 <p align="center">
-<img src="./readme_resources/BlockDiagram.png" alt="OPCUA-FMU" width="500">
+<img src="./public/BlockDiagram.png" alt="OPCUA-FMU" width="500">
 </p>
 This can now be configred in the configuration file as follows:
 
@@ -304,7 +304,7 @@ python main.py
 ```
 The `.log` file is in `.csv` format and the results are easy to plot. In this particular scenario they should look something like this:
 <p align="center">
-<img src="./readme_resources/ExamplePlot.png" alt="OPCUA-FMU" width="500">
+<img src="./public/ExamplePlot.png" alt="OPCUA-FMU" width="500">
 </p>
 
 ## Main Contributors
