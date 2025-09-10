@@ -343,7 +343,7 @@ If you use this package in your research, please cite it using the following Bib
   author = {Dimitrios Bouzoulas, Kristian Klemets, Mikael Manngård},
   title = {OPCUA-FMU Simulator},
   year = {2025},
-  howpublished = {\url{https://github.com/Novia-RDI-Seafaring/fmu-opcua-test-platform}},
+  howpublished = {\url{https://github.com/Novia-RDI-Seafaring/opcua-fmu-simulator}},
 }
 ```
 
