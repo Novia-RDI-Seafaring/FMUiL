@@ -43,11 +43,12 @@
     - [3.2. External servers](#external-servers)
 - [4. Run experiments](#run-experiments)
 - [5. Example usage](#example-usage)
-- [6. Other](#other)
-    - [6.1. Main contributors](#main-contributors)
-    - [6.2. Citation](#citation)
-    - [6.3. License](#license)
-    - [6.4. Acknowledgements](#acknowledgements)
+- [6. Contributing](#contributing)
+- [7. Other](#other)
+    - [7.1. Main contributors](#main-contributors)
+    - [7.2. Citation](#citation)
+    - [7.3. License](#license)
+    - [7.4. Acknowledgements](#acknowledgements)
 
 ## Features
 - **Simulate FMU models** with OPC-UA communicaiton.
