@@ -332,6 +332,8 @@ We welcome contributions! Please follow these steps:
     -  *CRediT*: Conceptualization, Methodology, Software, Validation
 - **Mikael Manngård**, Novia UAS.
     -  *CRediT*: Conceptualization, Supervision
+- **Jari Böling**, Novia UAS.
+    -  *CRediT*: Supervision
 
 ## Citation
 If you use this package in your research, please cite it using the following BibTeX entry:
