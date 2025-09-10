@@ -38,15 +38,16 @@
 **Table of content**
 - [1. Features](#features)
 - [2. Installation](#installation)
-- [3. Configurations](#configurations)
-    - [3.1. Test configuration](#test-configuration)
+- [3. Configure experiments](#configure-experiments)
+    - [3.1. Experiment configuration](#experiment-configuration)
     - [3.2. External servers](#external-servers)
-- [4.Example usage](#example-usage)
-- [5. Other](#other)
-    - [5.1. Main contributors](#main-contributors)
-    - [5.2. Citation](#citation)
-    - [5.3. License](#license)
-    - [5.4. Acknowledgements](#acknowledgements)
+- [4. Run experiments](#run-experiments)
+- [5. Example usage](#example-usage)
+- [6. Other](#other)
+    - [6.1. Main contributors](#main-contributors)
+    - [6.2. Citation](#citation)
+    - [6.3. License](#license)
+    - [6.4. Acknowledgements](#acknowledgements)
 
 ## Features
 - **Simulate FMU models** with OPC-UA communicaiton.
@@ -93,32 +94,10 @@
    # Linux/macOS
    source .venv/bin/activate
    ```
+  
+# Configure experiments
 
-## Running Examples
-
-The preconfigured tests, `test01.yaml` and `test02.yaml`, can be executed directly without any additional setup by simply running `main.py`. 
-
-    python main.py
-
-Currently `main.py` runs all the tests under the `TESTS/` folder. In future versions, this will likely be updated to allow users to specify which tests to run.
-
-For `test03.yaml` to also run you will need to run the remote server that is located under servers:
-
-     
-    python servers/example_server.py
-
- 
-  Log file should be generated under `log/`.
-
-# System setup
-
-The system automatically sets up an opcua server for every specified FMU. The server's name is the same as that of the FMU "model name" found in model description. The server variables adopt the names of the FMU variables. These variables include inputs, outputs, and overall system parameters, all of which can be configured from the configuration file.
-
-
-# Configurations
-
-
-## Test configuration
+## Experiment configuration
 The test file allows users to configure the following parameters:
 
 - **FMUs** included in the simulation  
@@ -215,8 +194,36 @@ external_servers: ["path/to/server_description.yaml"]
 ```
 
 
+## Run experiments
+Experiments are specified as `.yaml` files and are stored in the `/experiments` folder. Experiments can be run with the provided ´uv´ scripts.
 
-# Logging
+### Run all experiments
+Runs every experiment file in the `/experiments` folder:
+```powershell
+uv run experiments
+```
+### Run specific experiments
+To run specific experiments you pass the file names as:
+```powershell
+# Multiple files
+uv run experiments exp_a.yaml exp_b.yaml
+```
+
+# Examples
+## Water Tank with control
+
+## Lubrication-oil cooling (LOC) with control
+
+## External server
+For `TEST03.yaml`, start the example remote server first:
+
+```powershell
+python servers/example_server.py
+```
+
+Logs are generated under `log/`.
+
+# How to log results
 
 The system logs all data required to evaluate a tests performance when the flag `save_logs: true`. The evaluation happens every communication timestep. The saved values are the following:
  
@@ -307,6 +314,7 @@ The `.log` file is in `.csv` format and the results are easy to plot. In this pa
 <img src="./public/ExamplePlot.png" alt="OPCUA-FMU" width="500">
 </p>
 
+# Other
 ## Main Contributors
 - **Domitrios Bouzoulas**, Novia UAS. 
     -  *CRediT*: Conceptualization, Methodology, Software, Validation
