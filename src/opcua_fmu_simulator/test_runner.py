@@ -22,8 +22,8 @@ DEFAULT_BASE_PORT = 7000 # port from which the server initialization begins
 DEFAULT_LOGGER_HEADER = "test_name, evaluation_name, evaluation_function, measured_value, test_result, system_timestamp\n"
 
 class TestSystem:
-    def __init__(self, config_folder:str) -> None:
-        self.config_directory        = config_folder
+    def __init__(self, experiment_configs: list[str]) -> None:
+        self.experiment_configs = experiment_configs
         self.log_file    = self.generate_logfile()
         self.config      = None 
         self.fmu_files   = None
@@ -294,7 +294,15 @@ class TestSystem:
     async def main_testing_loop(self):
         # initialize fmu servers, clients and vairable id storage
         # TODO: read only .yaml files
-        test_files = [os.path.join(self.config_directory, i) for i in os.listdir(self.config_directory)]
+
+        # experiment_configs = [experiments/test1.yaml experiments/test2.yaml, ...]
+        test_files = []
+        for config in self.experiment_configs:
+            test_files.append(os.path.join(config))
+
+
+        #test_files = self.experiment_files
+        #test_files = [os.path.join(self.experiment_files, i) for i in os.listdir(self.experiment_files)]
 
         for test_file in test_files:
             await self.initialize_test_params(test= test_file)

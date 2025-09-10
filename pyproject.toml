@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.11"
+scripts = { experiments = "opcua_fmu_simulator:main" }
 dependencies = [
     "aiofiles>=24.1.0",
     "aiosqlite>=0.21.0",
