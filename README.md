@@ -347,17 +347,6 @@ If you use this package in your research, please cite it using the following Bib
 }
 ```
 
-## Further development notes
-
-- Refactoring (TODOs) [High]
-- Changing Parameters [High]
-- Evaluating external server values [Medium]
-- Choose which tests to run [Medium]
-- On time changes [Low]
-- Automated tests [Low]
-- User interface addition [Low]
-- Comparison [Low]
-
 ## License
 This package is licensed under the MIT License license. See the [LICENSE](./LICENSE) file for more details.
 
