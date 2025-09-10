@@ -53,21 +53,46 @@
 - **Connect external OPC-UA servers**. This allwows FMU models to simulated together with thrid-party hardware and software.
 - **Manage tests and violation monitoring** for simulation scenarios.
 
+
 ## Installation
-To set up the project, first create and activate a Python virtual environment. Then install the required dependencies, build the package, and install it locally. This ensures that the OPCUA-FMU-Simulator runs in an isolated environment with all necessary libraries.
 
-    python -m venv .venv
+### Prerequisites
+- Python 3.11 or higher
+- [uv](https://docs.astral.sh/uv/) package manager
 
-    .venv/Scripts/activate
+### Quick Setup with uv (Recommended)
 
-    pip install -r requirements.txt
+1. **Install uv** (if not already installed):
+   ```powershell
+   # Windows PowerShell
+   irm https://astral.sh/uv/install.ps1 | iex
+   ```
 
-    cd .\OPCUA-FMU-simulator-package\
+2. **Clone the repository**:
+   ```bash
+   git clone https://github.com/Novia-RDI-Seafaring/opcua-fmu-simulator.git
+   cd opcua-fmu-simulator
+   ```
 
-    python -m build 
-    
-    pip install .
+3. **Install the project and all dependencies**:
+   ```bash
+   uv sync
+   ```
 
+   This single command will:
+   - Create a virtual environment automatically
+   - Install all required dependencies
+   - Install the OPCUA-FMU-Simulator package in editable mode
+   - Create a lock file for reproducible installs
+
+4. **Activate the virtual environment** (if needed):
+   ```powershell
+   # Windows
+   .venv\Scripts\Activate.ps1
+   
+   # Linux/macOS
+   source .venv/bin/activate
+   ```
 
 ## Running Examples
 

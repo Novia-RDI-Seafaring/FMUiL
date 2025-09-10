@@ -1,5 +1,5 @@
 import asyncio
-from OPCUA_FMU_Simulator import TestSystem
+from opcua_fmu_simulator import TestSystem
 
 test_directory = "TESTS/"
 
