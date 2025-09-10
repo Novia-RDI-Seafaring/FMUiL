@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://github.com/Novia-RDI-Seafaring/opcua-fmu-simulator"><img src="./readme_resources/opcua_fmu_logo.png" alt="OPCUA-FMU" width="200">
+  <a href="https://github.com/Novia-RDI-Seafaring/opcua-fmu-simulator"><img src="./public/opcua_fmu_logo.png" alt="OPCUA-FMU" width="200">
 </a>
 </p>
 
@@ -38,63 +38,90 @@
 **Table of content**
 - [1. Features](#features)
 - [2. Installation](#installation)
-- [3. Configurations](#configurations)
-    - [3.1. Test configuration](#test-configuration)
+- [3. Configure experiments](#configure-experiments)
+    - [3.1. Experiment configuration](#experiment-configuration)
     - [3.2. External servers](#external-servers)
-- [4.Example usage](#example-usage)
-- [5. Other](#other)
-    - [5.1. Main contributors](#main-contributors)
-    - [5.2. Citation](#citation)
-    - [5.3. License](#license)
-    - [5.4. Acknowledgements](#acknowledgements)
+- [4. Run experiments](#run-experiments)
+- [5. Example usage](#example-usage)
+- [6. Other](#other)
+    - [6.1. Main contributors](#main-contributors)
+    - [6.2. Citation](#citation)
+    - [6.3. License](#license)
+    - [6.4. Acknowledgements](#acknowledgements)
 
 ## Features
 - **Simulate FMU models** with OPC-UA communicaiton.
 - **Connect external OPC-UA servers**. This allwows FMU models to simulated together with thrid-party hardware and software.
 - **Manage tests and violation monitoring** for simulation scenarios.
 
+
 ## Installation
 
-    pip create -n opcua_fmu_environment python=3.13.2
+### Prerequisites
+- Python 3.11 or higher
+- [uv](https://docs.astral.sh/uv/) package manager
 
-    pip install -r requirements.txt
+### Quick Setup with uv (Recommended)
 
-    cd .\OPCUA-FMU-simulator-package\
+1. **Install uv** (if not already installed):
+   ```powershell
+   # Windows PowerShell
+   irm https://astral.sh/uv/install.ps1 | iex
+   ```
 
-    python -m build 
-    
-    pip install .
+2. **Clone the repository**:
+   ```bash
+   git clone https://github.com/Novia-RDI-Seafaring/opcua-fmu-simulator.git
+   cd opcua-fmu-simulator
+   ```
 
-## running examples
+3. **Install the project and all dependencies**:
+   ```bash
+   uv sync
+   ```
 
-for the tests to run, test01 and test02 will be performed without any additional setup, simply by running main.py:
+   This single command will:
+   - Create a virtual environment automatically
+   - Install all required dependencies
+   - Install the OPCUA-FMU-Simulator package in editable mode
+   - Create a lock file for reproducible installs
 
-    python main.py
+4. **Activate the virtual environment** (if needed):
+   ```powershell
+   # Windows
+   .venv\Scripts\Activate.ps1
+   
+   # Linux/macOS
+   source .venv/bin/activate
+   ```
+  
+# Configure experiments
 
-for test03 to also run you will need to run the remote server under test_servers:
+## Experiment configuration
+The test file allows users to configure the following parameters:
 
-  terminal 1:
-    
-    python test_servers/server_description01.yaml
+- **FMUs** included in the simulation  
+- **External OPC UA servers** used  
+- **Test parameters:**  
+  - Test name  
+  - Communication timestep  
+  - Simulation or real-time mode  
+  - Simulation stop time  
+  - Logging (enabled/disabled)  
+  - Test description  
+- **Initial system inputs** for all FMUs and external servers  
+- **Conditions for starting logging**  
+- **System loop definition** (from-to)  
+- **Simulation evaluation criteria**  
 
-  terminal 2:
+**Example configuration file:**
 
-    python main.py
-
-# System setup
-
-The system automatically sets up an opcua server for every specifiend FMU. The server's name is the same as that of the FMU (the name defined within the FMU not filename). Then the variables of the server take on the names of the FMU vairables. In the variables, inputs, outputs and overall system variables are included and can be configured.
-
-
-# Configurations
-Examples of how to configure the simulation tests and external OPC-UA servers.
-
-## Test configuration
 ```yaml
-    fmu_files:[
-      "path01 to your fmu",
-      "path01 to your fmu"
-      ]
+    fmu_files:  [  
+                "path01 to your fmu",
+                "path02 to your fmu",
+                "path03 to your fmu"
+                ]
 
     external_servers: [
                       "path01 to your external server yaml description",
@@ -104,35 +131,33 @@ Examples of how to configure the simulation tests and external OPC-UA servers.
 
     test:
       test_name: "a unique test name"
-      timestep: 1.2 # in seconds
+      timestep: 0.5                             # in seconds
       timing:  "simulation_time" or "real_time" 
-      stop_time: 100.0 # duration of the test 
-      save_logs: true # boolean
+      stop_time: 100.0                          # duration of the test 
+      save_logs: true                           # boolean
       test_description: "a description of the test"
 
       initial_system_state:
-        opcua_object01_name:
-          opcua_object_variable1: "desired initial value"
-          opcua_object_variable2: "desired initial value"
-          opcua_object_variable3: "desired initial value"
+        FMU_Model_Name:
+          FMU_input_name1: "desired initial value"
+          FMU_input_name2: "desired initial value"
+          FMU_input_name3: "desired initial value"
 
-        opcua_object02_name:
-          opcua_object02_variable1: "desired initial value"
+        example_server:
+          opcua_object01_variable1: "desired initial value"
 
       start_readings_conditions:
-        condition_name: "object_name.variable operator value"
-        # example_condition: "fmu_fuel_tank.fuel_level > 20"
+        condition_name: "FMU_Model_Name.FMU_input_name1 > 10"
         # the object and variable have to be part of a created or external server 
         # operators supported: '+' '-' '<' '<=' '>' '>='
 
-      system_loop: # difinision of system cycle 
+      system_loop: # definition how the systems are connected 
         - from: source_object.source_variable
           to:   target_object.target_variable
         
         - from: source_object.source_variable
           to:   target_object.target_variable
 
-      ################# evaluation #################
       evaluation: 
         eval_1: "object.value < 11.1"
         eval_2: "object.value > 20"
@@ -140,134 +165,166 @@ Examples of how to configure the simulation tests and external OPC-UA servers.
 
 ## External Servers
 
-the system enables its users to use external servers along side with their FMU based OPCUA servers.
+The OPCUA-FMU-Simulator allows users to integrate external servers alongside their FMUs. These servers are specified in the configuration file under the external server section using the server description file. To add an server, create a `.yaml` file describing your server.  
 
-#### Adding an external server
+**Example server definition:**
 
-  1) server definition: create a .yaml file with the description of your server.
-  Example server definition:
 ```yaml
     url: opc.tcp://localhost:5000/opcua/server/ #server url
 
     # object definition, used objects/variables must be specified
     objects:
       object_name_01:
-        vairable_name_01: 
+        variable_name_01: 
           id: 4
           ns: 5
-          name: "vairable_01"
+          name: "variable_01"
       
-        vairable_name_02: 
-          name: "vairable_02"
+        variable_name_02: 
+          name: "variable_02"
       
-        vairable_name_03: 
+        variable_name_03: 
           id: 4
           ns: 5
 ```  
-  - url has to correspond to the server
-  - variables can be with (id, namespace) and/or their name, for most applications and to avoid error it is recommended to use ((id, namespace))
-
-  2) to add the server to the system you need to add the path of the config file to your test definition  `external_servers: ["path to yaml description"]`.
-
-
-NOTES: external servers are treated as OPCUA servers, as a result hardware can also be used with this system. 
-
-
-# Logging
-
-The system logs all data required to evaluate a tests performance when the flag `save_logs: true`. The saved values are the following:
  
-test_name: given name of the test under `test_name:` flag 
+Set `url` to match the server address. Specify variables using OPC UA node id and namespace or their BrowseNames.  Include the server in your simulation by adding the YAML file path in your test definition:
+```yaml
+external_servers: ["path/to/server_description.yaml"]
+```
 
-evaluation_name: name of the evaluation metric defined in the test.
 
-evaluation_function: "object.vairable < 11.1"
+## Run experiments
+Experiments are specified as `.yaml` files and are stored in the `/experiments` folder. Experiments can be run with the provided ´uv´ scripts.
 
-measured_value: value of the vairable during the time of the test
+### Run all experiments
+Runs every experiment file in the `/experiments` folder:
+```powershell
+uv run experiments
+```
+### Run specific experiments
+To run specific experiments you pass the file names as:
+```powershell
+# Multiple files
+uv run experiments exp_a.yaml exp_b.yaml
+```
 
-test_result: boolean true or false
+# Examples
+## Water Tank with control
 
-system_timestamp: system time at the time of the test
+## Lubrication-oil cooling (LOC) with control
+
+## External server
+For `TEST03.yaml`, start the example remote server first:
+
+```powershell
+python servers/example_server.py
+```
+
+Logs are generated under `log/`.
+
+# How to log results
+
+The system logs all data required to evaluate a tests performance when the flag `save_logs: true`. The evaluation happens every communication timestep. The saved values are the following:
+ 
+- `test_name`: Given name of the test under test_name 
+
+- `evaluation_name`: Name of the evaluation metric defined in the test
+
+- `evaluation_function`: Evaluation function defined in the configuration
+
+- `measured_value`: Value of the variable during the time of the test
+
+- `test_result`: Boolean value if the condition is met
+
+- `system_timestamp`: system time at the time of the evaluation 
 
 
 # Example usage
-## System
 
-The example comprises of two fmu collectively describing a lube oil cooling system, with one acting as a control system for the valve and the other the system itself.
+Let's take a look on this example system created by Mathworks: [Watertank Model](https://mathworks.com/help/slcontrol/ug/watertank-simulink-model.html) 
 
-System Diagram
+The model consists of a **WaterTankSystem** and a **PI-controller** connected in a feedback loop. 
+The goal of this system is for the PI-controller to maintain the water level in the tank as close as possible to a defined setpoint (`SP`). It does this by adjusting the voltage applied to a pump (`CV`), which controls the inflow of water, while continuously receiving measurements (`PV`) from the WaterTankSystem.
 
-<img src="./readme_resources/LOC.drawio.svg"/>
+Both systems have been implemented as FMUs: `WaterTankSystem.fmu` and `TankLevel_PI.fmu`.  
 
-FMU architecture and IOs
+- **TankLevel_PI.fmu** (the PI controller) has two inputs:  
+  - `SP_WaterLevel` — the **setpoint (SP)** that the controller aims to reach.  
+  - `PV_WaterLevel_in` — the **process value (PV)**, i.e., the current water level measurement from the WaterTankSystem’s output `PV_WaterLevel_out`.  
 
-<img src="./readme_resources/system_diagram.png"  />
+  Its output is:  
+  - `CV_PumpCtrl_out` — the **control value (CV)** that drives the pump to adjust the water inflow.  
+
+- **WaterTankSystem.fmu** has one input:  
+  - `CV_PumpCtrl_in` — the **control value (CV)** from the PI-controller.  
+
+This creates a closed-loop system where:
+<p align="center">
+<img src="./public/BlockDiagram.png" alt="OPCUA-FMU" width="500">
+</p>
+This can now be configred in the configuration file as follows:
 
 ```yaml
-TESTS/TEST02.yaml represents an appropriate test file for this system:
+fmu_files: ["FMUs/WaterTankSystem.fmu",
+            "FMUs/TankLevel_PI.fmu"]
 
-    fmu_files: # list of fmu files || Model description Names:LOC_CNTRL_v2_customPI, LOC_SYSTEM
-      ["FMUs/LOC_CNTRL_custom_linux.fmu",
-       "FMUs/LOC_SYSTEM_linux.fmu"]
+external_servers: []
+
+test:
+  test_name: Water Level Control      # Scenario name for logs
+  timestep: 1                         # seconds, communication timestep
+  timing: "simulation_time"           # simulation_time or real_time 
+  stop_time: 300.0                    # seconds 
+  save_logs: true                     # true/false
+
+  initial_system_state:               # Define timestep and initial conditions
     
-    external_servers: []
+    WaterTankSystem:                  # Model description -> "Model name"
+      timestep: 0.2                   # This has to be defined for every fmu
     
-    test:
-      test_name: test_01
-      timestep: 0.5    # seconds, communication timestep
-      timing: "simulation_time" # simulation_time or real_time 
-      stop_time: 400.0 # seconds 
-      save_logs: true
-      initial_system_state:
-        
-        LOC_CNTRL_v2_customPI:
-          timestep: 0.5
-          SETPOINT_temperature_lube_oil: 70
-          INPUT_temperature_lube_oil: 65
-        
-        LOC_SYSTEM:
-          timestep: 0.5
-          INPUT_temperature_cold_circuit_inlet: 40
-          INPUT_massflow_cold_circuit: 35
-          INPUT_engine_load_0_1: 1
-          INPUT_control_valve_position: 0
+    TankLevel_PI:             
+      timestep: 1
+      SP_WaterLevel_in: 10            # Input for the TankLevel_PI    
+
+  start_readings_conditions: 
+    condition_01: "TankLevel_PI.CV_PumpCtrl_out > 0.01" # Logging starts, when this condition is met
+
+  # The system loop is made according to the block diagram  
+  system_loop: 
+    - from: TankLevel_PI.CV_PumpCtrl_out
+      to:   WaterTankSystem.CV_PumpCtrl_in
     
-      start_readings_conditions: 
-        condition_01: "LOC_SYSTEM.OUTPUT_temperature_lube_oil > 65"
-    
-      system_loop: 
-        - from: LOC_CNTRL_v2_customPI.OUTPUT_control_valve_position
-          to:   LOC_SYSTEM.INPUT_control_valve_position
-        
-        - from: LOC_SYSTEM.OUTPUT_temperature_lube_oil
-          to:   LOC_CNTRL_v2_customPI.INPUT_temperature_lube_oil   
-    
-      ################# evaluation #################
-      evaluation: 
-        eval_1: "LOC_SYSTEM.OUTPUT_temperature_lube_oil < 80"
-        eval_2: "LOC_CNTRL_v2_customPI.OUTPUT_control_valve_position < 1.01"
-        eval_3: "LOC_SYSTEM.OUTPUT_massflow_cold_circuit < 80"
-        eval_4: "LOC_SYSTEM.OUTPUT_temperature_cold_circuit_outlet < 80"
-```
+    - from: WaterTankSystem.PV_WaterLevel_out
+      to:   TankLevel_PI.PV_WaterLevel_in
 
-## Running your tests:
-
-```python
-import asyncio
-from OPCUA_FMU_simulator import TestSystem
-
-test_directory = "path_to_your_tests/"
-
-async def main():
-    tests = TestSystem(config_folder=test_directory)
-    await tests.main_testing_loop()
-
-if __name__ == "__main__":
-    asyncio.run(main())
+  # These values are logged and they also return true/false depending if the condition is satisfied
+  evaluation: 
+    eval_1: "WaterTankSystem.PV_WaterLevel_out < 11.1"
+    eval_2: "TankLevel_PI.CV_PumpCtrl_out < 20"
 
 ```
+This is already setup on the file `TEST01.yaml`, to run this simply just call the main:
 
+```
+python main.py
+```
+The `.log` file is in `.csv` format and the results are easy to plot. In this particular scenario they should look something like this:
+<p align="center">
+<img src="./public/ExamplePlot.png" alt="OPCUA-FMU" width="500">
+</p>
 
+# Contributing
+
+We welcome contributions! Please follow these steps:
+
+- Fork the repository  
+- Create a new feature branch
+- Make your changes
+- Commit your changes with clear commit messages. We recommend following the [conventional commits](https://www.conventionalcommits.org/en/v1.0.0/) specification.
+- Push your branch and create a pull request
+
+# Other
 ## Main Contributors
 - **Domitrios Bouzoulas**, Novia UAS. 
     -  *CRediT*: Conceptualization, Methodology, Software, Validation
@@ -275,6 +332,8 @@ if __name__ == "__main__":
     -  *CRediT*: Conceptualization, Methodology, Software, Validation
 - **Mikael Manngård**, Novia UAS.
     -  *CRediT*: Conceptualization, Supervision
+- **Jari Böling**, Novia UAS.
+    -  *CRediT*: Supervision
 
 ## Citation
 If you use this package in your research, please cite it using the following BibTeX entry:
@@ -290,18 +349,18 @@ If you use this package in your research, please cite it using the following Bib
 
 ## Further development notes
 
-
-- refactoring (TODOs)
-- automated tests
-
-- User interface addition
-- System tester takes as input the log file after the test has been performed and compares it to existing "correct" log file looking for differences.
-
-
+- Refactoring (TODOs) [High]
+- Changing Parameters [High]
+- Evaluating external server values [Medium]
+- Choose which tests to run [Medium]
+- On time changes [Low]
+- Automated tests [Low]
+- User interface addition [Low]
+- Comparison [Low]
 
 ## License
 This package is licensed under the MIT License license. See the [LICENSE](./LICENSE) file for more details.
 
 ## Acknowledgements
 This work was done in the Business Finland funded project [Virtual Sea Trial](https://virtualseatrial.fi)
-
+ 

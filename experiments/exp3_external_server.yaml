@@ -1,0 +1,36 @@
+# This is a example for integrating external OPC UA servers to the simulation
+# You need to run the "example_server.py" from the servers folder
+# The gain will take a value from the external server, multiply it by 2 and log it.
+#
+################# FMUs and OPC UA Servers #################
+
+fmu_files: 
+  ["fmus/gain.fmu"]                             # This FMU just multiplies the input by 2. 
+
+external_servers: [servers/example_server.yaml] # This is path to the config for the external server
+
+################# Scenario #################
+
+test:
+  test_name: External server
+  timestep: 1                   
+  timing: "real_time"  
+  stop_time: 30.0  
+  save_logs: true
+  initial_system_state:
+    
+    gain:
+      timestep: 1 
+
+  start_readings_conditions: 
+    condition_01: "gain.output_gain > 0"
+
+  system_loop: 
+    - from: example_server.custom_variable
+      to:   gain.input_gain
+    
+  ################# evaluation #################
+  evaluation: 
+    eval_1: "gain.output_gain > 0"
+
+

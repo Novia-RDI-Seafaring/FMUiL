@@ -1,0 +1,10 @@
+url: opc.tcp://localhost:7500/freeopcua/server/
+
+objects:
+  sample_opc_object:
+    custom_variable: 
+      id: 4
+      ns: 5
+      
+    custom_variable2: 
+      name: "ns=5;i=4"

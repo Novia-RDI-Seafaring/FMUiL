@@ -1,9 +1,0 @@
-[project]
-name = "OPCUA_FMU_simulator"
-version = "0.1.0"
-authors = [{ name="Dimitrios Bouzoulas", email="dimitrios.bouzoulas@novia.fi"},
-    {name="Kristian Klemets",    email="Kristian.klemets@utu.fi"},
-    {name="Mikael Manngård",     email="mikael.manngard@novia.fi"}]
-description = "An simulation system that enables the combination testing of FMUs as parts of OPCUA systems with the option to combine external servers"
-readme = "README.md"
-requires-python = ">=3.9"

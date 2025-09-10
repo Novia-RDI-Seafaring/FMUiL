@@ -1,0 +1,61 @@
+# This is an example configuration for WaterTankSystem water level control
+#
+# - Water enters the tank proportional to the voltage applied to the pump (CV_PumpCtrl)
+# - Water leaves through opening in the tank proportional to the square root of the water height (PV_Waterlevel)
+# - Controller (TankLevel_PI) tries to keep the water height at the setpoint (user defined) 
+#
+# More info about the model:
+# https://mathworks.com/help/slcontrol/ug/watertank-simulink-model.html       
+# ___________________________________________________________________________________________________________                                                     
+# Block Diagram:                                      (LOG)
+#                                                       ^
+#                                                       |
+# SP_WaterLevel (Setpoint) ─► [ TankLevel_PI ] ─► CV_PumpCtrl ─► [ WaterTankSystem ] ─► PV_WaterLevel (LOG)
+#                               ^                                            |
+#                               |                                            |
+#                               +--------------------------------------------+
+#                                                PV_WaterLevel
+#_____________________________________________________________________________________________________________
+
+################# FMUs and OPC UA Servers #################
+
+fmu_files: ["fmus/WaterTankSystem.fmu",
+            "fmus/TankLevel_PI.fmu"]
+
+external_servers: []
+
+################# Scenario #################
+
+test:
+  test_name: Water Level Control      # Scenario name for logs
+  timestep: 1                         # seconds, communication timestep
+  timing: "simulation_time"           # simulation_time or real_time 
+  stop_time: 300.0                    # seconds 
+  save_logs: true                     # true/false
+
+  initial_system_state:               # Define timestep and initial conditions
+    
+    WaterTankSystem:                  # Model description -> "Model name"
+      timestep: 0.2                   # This has to be defined for every fmu
+    
+    TankLevel_PI:             
+      timestep: 1
+      SP_WaterLevel_in: 10            # Input for the TankLevel_PI    
+
+  start_readings_conditions: 
+    condition_01: "TankLevel_PI.CV_PumpCtrl_out > 0.01" # Logging starts, when this condition is met
+
+  # The system loop is made according to the block diagram  
+  system_loop: 
+    - from: TankLevel_PI.CV_PumpCtrl_out
+      to:   WaterTankSystem.CV_PumpCtrl_in
+    
+    - from: WaterTankSystem.PV_WaterLevel_out
+      to:   TankLevel_PI.PV_WaterLevel_in
+
+  ################# evaluation #################
+  # These values are logged and they also return true/false depending if the condition is satisfied
+  evaluation: 
+    eval_1: "WaterTankSystem.PV_WaterLevel_out < 11.1"
+    eval_2: "TankLevel_PI.CV_PumpCtrl_out < 20"
+    
