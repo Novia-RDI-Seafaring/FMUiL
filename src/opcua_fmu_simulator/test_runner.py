@@ -158,7 +158,6 @@ class TestSystem:
         Test: {self.test['test_name']}
         FMU's: {self.fmu_files}
         Simulating""", end="", flush=True)
-
         while simulation_status:
             start_wall_time = time.time()
 

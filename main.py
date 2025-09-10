@@ -1,7 +1,7 @@
 import asyncio
 from opcua_fmu_simulator import TestSystem
 
-test_directory = "TESTS/"
+test_directory = "experiments/"
 
 async def main():
     tests = TestSystem(config_folder=test_directory)
