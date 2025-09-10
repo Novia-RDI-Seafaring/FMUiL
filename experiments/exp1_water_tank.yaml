@@ -19,8 +19,8 @@
 
 ################# FMUs and OPC UA Servers #################
 
-fmu_files: ["FMUs/WaterTankSystem.fmu",
-            "FMUs/TankLevel_PI.fmu"]
+fmu_files: ["fmus/WaterTankSystem.fmu",
+            "fmus/TankLevel_PI.fmu"]
 
 external_servers: []
 
