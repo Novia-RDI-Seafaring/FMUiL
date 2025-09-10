@@ -314,6 +314,16 @@ The `.log` file is in `.csv` format and the results are easy to plot. In this pa
 <img src="./public/ExamplePlot.png" alt="OPCUA-FMU" width="500">
 </p>
 
+# Contributing
+
+We welcome contributions! Please follow these steps:
+
+- Fork the repository  
+- Create a new feature branch
+- Make your changes
+- Commit your changes with clear commit messages. We recommend following the [conventional commits](https://www.conventionalcommits.org/en/v1.0.0/) specification.
+- Push your branch and create a pull request
+
 # Other
 ## Main Contributors
 - **Domitrios Bouzoulas**, Novia UAS. 
