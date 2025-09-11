@@ -154,10 +154,14 @@ class TestSystem:
         # TODO: PUT IN SETUP
         timestep = float(test["timestep"])  # assumed constant across system
 
+        if timestep > test["stop_time"]:
+            raise ValueError("stop_time has to be equal or greater than step_time")
+
         print(f"""Starting simulation:
         Test: {self.test['test_name']}
         FMU's: {self.fmu_files}
         Simulating""", end="", flush=True)
+
         while simulation_status:
             start_wall_time = time.time()
 
@@ -189,7 +193,7 @@ class TestSystem:
         if sleep_duration > 0:
             await asyncio.sleep(sleep_duration)
         elif sleep_duration < 0:
-            logger.error("DURANTION OF LOOP EXCEEDS TIMESTEP UNSTABLE SYSTEM!!!!!!")
+            logger.error("DURANTION OF LOOP EXCEEDS TIMESTEP!")
             # ADD MESSAGE TO LOG FILES
             
             
@@ -249,44 +253,147 @@ class TestSystem:
 
     
     # TODO: combine the functions bellow somehow
+
     def parse_reading_conditions(self, conditions_dict):
-        #print("\n\n\n\n\n conditions dict: ", conditions_dict)
+        """
+        Parse start_readings_conditions from config safely.
+        Expected format for each condition: 'FMU.variable operator value' 
+        e.g., 'TankLevel_PI.CV_PumpCtrl_out > 0.01'
+        
+        This might change in the future depending what kind of operations we want to make.
+        """
         print("Parsing reading conditions...")
         self.reading_condition_dict = {}
-        for condition in conditions_dict:
-            self.reading_condition_dict[condition] = {}
-            self.reading_condition_dict[condition]["target_obj"], \
-            self.reading_condition_dict[condition]["target_var"], \
-            self.reading_condition_dict[condition]["operator"], \
-            self.reading_condition_dict[condition]["value"] = re.findall(self.regex_parser_pattern, conditions_dict[condition])    
-            # converstion from str to float
-            self.reading_condition_dict[condition]["value"] = float(self.reading_condition_dict[condition]["value"])        
-        #print(self.reading_condition_dict)
 
-    def parse_evaluation_conditions(self, evalutaion_dict):
+        if not isinstance(conditions_dict, dict):
+            raise ValueError("start_readings_conditions is not configured correctly: LOGGING UNENABLED.")
+
+        for condition_name, cond_str in conditions_dict.items():
+            try:
+                # Use regex to extract parts
+                match = re.findall(self.regex_parser_pattern, cond_str)
+                if not match or len(match) != 4:
+                    raise ValueError(f"Condition '{condition_name}' does not match expected pattern: LOGGING UNENABLED.")
+                
+                target_obj, target_var, operator, value_str = match
+
+                # Convert value to float
+                try:
+                    value = float(value_str)
+                except ValueError:
+                    raise ValueError(f"Condition '{condition_name}' has invalid numeric value: '{value_str}': LOGGING UNENABLED.")
+
+                # Store parsed values
+                self.reading_condition_dict[condition_name] = {
+                    "target_obj": target_obj,
+                    "target_var": target_var,
+                    "operator": operator,
+                    "value": value
+                }
+
+            except Exception as e:
+                print(f"Error parsing condition '{condition_name}': {e}")          
+
+    def parse_evaluation_conditions(self, evaluation_dict):
+        """
+        Parse evaluation conditions safely.
+        Expected format for each condition: 'FMU.variable operator value'
+        e.g., 'WaterTankSystem.PV_WaterLevel_out < 11.1'
+        """
         print("Parsing evaluation conditions...")
         self.evaluation_equation_dic = {}
-        for condition in evalutaion_dict:
-            #print("evaluation   condition ", evalutaion_dict[condition], " regex: ", re.findall(self.regex_parser_pattern, evalutaion_dict[condition])   )
-            self.evaluation_equation_dic[condition] = {}
-            self.evaluation_equation_dic[condition]["target_obj"], \
-            self.evaluation_equation_dic[condition]["target_var"], \
-            self.evaluation_equation_dic[condition]["operator"], \
-            self.evaluation_equation_dic[condition]["value"] = re.findall(self.regex_parser_pattern, evalutaion_dict[condition])    
-            # converstion from str to float
-            self.evaluation_equation_dic[condition]["value"] = float(self.evaluation_equation_dic[condition]["value"])
-        
-        #print("eval cond",self.evaluation_equation_dic)
+
+        if not isinstance(evaluation_dict, dict):
+            raise ValueError("evaluation conditions must be a dictionary")
+
+        for condition_name, cond_str in evaluation_dict.items():
+            try:
+                # Extract target object, variable, operator, value
+                match = re.findall(self.regex_parser_pattern, cond_str)
+                if not match or len(match) != 4:
+                    raise ValueError(f"Condition '{condition_name}' does not match expected pattern")
+
+                target_obj, target_var, operator, value_str = match
+
+                # Convert value to float
+                try:
+                    value = float(value_str)
+                except ValueError:
+                    raise ValueError(f"Condition '{condition_name}' has invalid numeric value: '{value_str}'")
+
+                # Store parsed values
+                self.evaluation_equation_dic[condition_name] = {
+                    "target_obj": target_obj,
+                    "target_var": target_var,
+                    "operator": operator,
+                    "value": value
+                }
+
+            except Exception as e:
+                print(f"Error parsing evaluation condition '{condition_name}': {e}")
+
+        print("Parsed evaluation conditions:", self.evaluation_equation_dic)
 
     async def initialize_test_params(self, test):
             print("Initializing test parameters...")
             self.config    = DataLoaderClass(test).data
-            self.fmu_files = self.config["fmu_files"]
-            self.test      = self.config["test"]        
-            self.timing    = self.test["timing"]
-            self.save_logs = self.test["save_logs"]
-            self.parse_reading_conditions(self.config["test"]["start_readings_conditions"])
-            self.parse_evaluation_conditions(self.config["test"]["evaluation"])
+            print(self.config)
+            try:
+                # Check FMU files
+                self.fmu_files = self.config.get("fmu_files")
+                if not isinstance(self.fmu_files, list) or not self.fmu_files:
+                    raise ValueError("'fmu_files' must be a non-empty list of FMU paths")
+
+                # Check external servers
+                self.external_servers = self.config.get("external_servers", [])
+                if not isinstance(self.external_servers, list):
+                    raise ValueError("'external_servers' must be a list")
+
+                # Check test section
+                self.test = self.config.get("test")
+                if not isinstance(self.test, dict):
+                    raise ValueError("'test' section must be a dictionary")
+
+                # Individual test parameters
+                self.test_name = self.test.get("test_name")
+                if not isinstance(self.test_name, str) or not self.test_name:
+                    raise ValueError("'test_name' must be a non-empty string")
+
+                self.timestep = self.test.get("timestep")
+                if not isinstance(self.timestep, (int, float)) or self.timestep <= 0:
+                    raise ValueError("'timestep' must be a positive number")
+
+                self.timing = self.test.get("timing")
+                if self.timing not in ["simulation_time", "real_time"]:
+                    raise ValueError("'timing' must be either 'simulation_time' or 'real_time'")
+
+                self.stop_time = self.test.get("stop_time")
+                if not isinstance(self.stop_time, (int, float)) or self.stop_time <= 0:
+                    raise ValueError("'stop_time' must be a positive number")
+
+                self.save_logs = self.test.get("save_logs")
+                if not isinstance(self.save_logs, bool):
+                    raise ValueError("'save_logs' must be True or False")
+
+                # Check initial system state
+                self.initial_system_state = self.test.get("initial_system_state", {})
+                if not isinstance(self.initial_system_state, dict):
+                    raise ValueError("'initial_system_state' must be a dictionary")
+
+                # Parse nested reading/evaluation conditions safely
+                self.parse_reading_conditions(self.test.get("start_readings_conditions", {}))
+                self.parse_evaluation_conditions(self.test.get("evaluation", {}))
+
+                # System loop checks
+                self.system_loop = self.test.get("system_loop", [])
+                if not isinstance(self.system_loop, list):
+                    raise ValueError("'system_loop' must be a list of connections")
+
+            except KeyError as e:
+                raise ValueError(f"Config missing required key: {e}")
+            except TypeError as e:
+                raise ValueError(f"Config has wrong type: {e}")
+
             
     ################################################################################
     ###########################   MAIN LOOP   ######################################

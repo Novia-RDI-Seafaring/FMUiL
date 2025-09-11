@@ -30,8 +30,8 @@ test:
   test_name: Water Level Control      # Scenario name for logs
   timestep: 1                         # seconds, communication timestep
   timing: "simulation_time"           # simulation_time or real_time 
-  stop_time: 300.0                    # seconds 
-  save_logs: true                     # true/false
+  stop_time: 300                      # seconds 
+  save_logs: True                     # true/false
 
   initial_system_state:               # Define timestep and initial conditions
     
