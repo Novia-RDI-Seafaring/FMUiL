@@ -43,11 +43,12 @@
     - [3.2. External servers](#external-servers)
 - [4. Run experiments](#run-experiments)
 - [5. Example usage](#example-usage)
-- [6. Other](#other)
-    - [6.1. Main contributors](#main-contributors)
-    - [6.2. Citation](#citation)
-    - [6.3. License](#license)
-    - [6.4. Acknowledgements](#acknowledgements)
+- [6. Contributing](#contributing)
+- [7. Other](#other)
+    - [7.1. Main contributors](#main-contributors)
+    - [7.2. Citation](#citation)
+    - [7.3. License](#license)
+    - [7.4. Acknowledgements](#acknowledgements)
 
 ## Features
 - **Simulate FMU models** with OPC-UA communicaiton.
@@ -343,20 +344,9 @@ If you use this package in your research, please cite it using the following Bib
   author = {Dimitrios Bouzoulas, Kristian Klemets, Mikael Manngård},
   title = {OPCUA-FMU Simulator},
   year = {2025},
-  howpublished = {\url{https://github.com/Novia-RDI-Seafaring/fmu-opcua-test-platform}},
+  howpublished = {\url{https://github.com/Novia-RDI-Seafaring/opcua-fmu-simulator}},
 }
 ```
-
-## Further development notes
-
-- Refactoring (TODOs) [High]
-- Changing Parameters [High]
-- Evaluating external server values [Medium]
-- Choose which tests to run [Medium]
-- On time changes [Low]
-- Automated tests [Low]
-- User interface addition [Low]
-- Comparison [Low]
 
 ## License
 This package is licensed under the MIT License license. See the [LICENSE](./LICENSE) file for more details.
