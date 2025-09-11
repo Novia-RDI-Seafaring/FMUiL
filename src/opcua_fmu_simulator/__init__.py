@@ -10,8 +10,7 @@ EXPERIMENTS_DIR = "experiments/"
 def main():
     """Main entry point for running experiments."""
     args = sys.argv[1:]
-    print(args)
-
+    
     if not args:
         print("Running all experiments")
         experiment_configs = [
