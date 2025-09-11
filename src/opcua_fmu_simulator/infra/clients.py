@@ -1,8 +1,9 @@
 from asyncua import Client, ua
 import logging
-logging.basicConfig(level=logging.INFO) # required to enable log message print to terminal
+logging.basicConfig(level=logging.warning) # required to enable log message print to terminal
 logger = logging.getLogger(__name__)
 import asyncio
+import sys
 
 class client_manager:
     @classmethod
@@ -26,8 +27,14 @@ class client_manager:
         for server_name in self.system_servers:
             server = self.system_servers[server_name]
             client = Client(url=server.url)
-            await client.connect()
-            self.system_clients[server_name] = client
+
+            # This should never fail, since we are creating the servers ourselves
+            try:
+                await client.connect()
+                self.system_clients[server_name] = client
+                logging.info(f"Connected to server {server_name} at {server.url}")
+            except Exception as e:
+                logging.error(f"Failed to connect to server {server_name} at {server.url}: {e}")
         logger.info(f"system clients clients setup: {self.system_clients}")
         
     async def create_external_clients(self) -> None:
@@ -36,20 +43,28 @@ class client_manager:
             server_url = self.remote_servers[server]["url"]
             print(f"TRYING TO CONNECT TO {server_url} ")
             client = Client(url=server_url)
-            await client.connect()
-            self.external_clients[server] = client
-            self.system_node_ids[server] = {}
-            for obj in self.remote_servers[server]["objects"]:
-                for var in self.remote_servers[server]["objects"][obj]:
-                    keys = self.remote_servers[server]["objects"][obj][var].keys()
-                    if "name" in keys:
-                        self.system_node_ids[server][var] = ua.NodeId(self.remote_servers[server]["objects"][obj][var]["name"])
-                    elif("id" in keys and "ns" in keys):
-                        id = self.remote_servers[server]["objects"][obj][var]["id"]
-                        ns = self.remote_servers[server]["objects"][obj][var]["ns"]
-                        self.system_node_ids[server][var] = ua.NodeId(Identifier= id, NamespaceIndex= ns)
-                    else:
-                        raise Exception(f"server {server} with object {obj} found no acceptable id namespace or name for variable {var}")
+
+            # This can fail, since we are connecting to an user defined server
+            try:
+                await client.connect()
+                self.external_clients[server] = client
+                self.system_node_ids[server] = {}
+                for obj in self.remote_servers[server]["objects"]:
+                    for var in self.remote_servers[server]["objects"][obj]:
+                        keys = self.remote_servers[server]["objects"][obj][var].keys()
+                        if "name" in keys:
+                            self.system_node_ids[server][var] = ua.NodeId(self.remote_servers[server]["objects"][obj][var]["name"])
+                        elif("id" in keys and "ns" in keys):
+                            id = self.remote_servers[server]["objects"][obj][var]["id"]
+                            ns = self.remote_servers[server]["objects"][obj][var]["ns"]
+                            self.system_node_ids[server][var] = ua.NodeId(Identifier= id, NamespaceIndex= ns)
+                        else:
+                            raise Exception(f"server {server} with object {obj} found no acceptable id namespace or name for variable {var}")
+                        
+            # In the future this could be changed to move to the next experiment
+            except Exception as e:
+                logging.error(f"Failed to connect to server {server} at {server_url}: {e}")
+                sys.exit(1)
 
     def fetch_appropriacte_client(self, client_name)->Client:
         if client_name in self.system_clients.keys():     return self.system_clients[client_name]

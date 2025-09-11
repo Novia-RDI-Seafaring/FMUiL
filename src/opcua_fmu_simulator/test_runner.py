@@ -252,15 +252,12 @@ class TestSystem:
             self.system_node_ids[server_name] = self.server_obj.system_servers[server_name].server_variable_ids
 
     
-    # TODO: combine the functions bellow somehow
-
     def _parse_conditions(self, conditions_dict, store_dict_name, description=""):
         """
         Generic parser for reading or evaluation conditions.
         
         conditions_dict: dict of {name: "FMU.variable operator value"}
         store_dict_name: string, attribute name to store parsed data
-        description: human-readable name for logging
         """
         print(f"Parsing {description}s...")
         if not isinstance(conditions_dict, dict):
@@ -371,8 +368,7 @@ class TestSystem:
     ################################################################################
     async def main_testing_loop(self):
         # initialize fmu servers, clients and vairable id storage
-        # TODO: read only .yaml files
-
+        
         # experiment_configs = [experiments/test1.yaml experiments/test2.yaml, ...]
         test_files = []
         for config in self.experiment_configs:
