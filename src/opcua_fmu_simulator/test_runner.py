@@ -254,64 +254,25 @@ class TestSystem:
     
     # TODO: combine the functions bellow somehow
 
-    def parse_reading_conditions(self, conditions_dict):
+    def _parse_conditions(self, conditions_dict, store_dict_name, description=""):
         """
-        Parse start_readings_conditions from config safely.
-        Expected format for each condition: 'FMU.variable operator value' 
-        e.g., 'TankLevel_PI.CV_PumpCtrl_out > 0.01'
+        Generic parser for reading or evaluation conditions.
         
-        This might change in the future depending what kind of operations we want to make.
+        conditions_dict: dict of {name: "FMU.variable operator value"}
+        store_dict_name: string, attribute name to store parsed data
+        description: human-readable name for logging
         """
-        print("Parsing reading conditions...")
-        self.reading_condition_dict = {}
-
+        print(f"Parsing {description}s...")
         if not isinstance(conditions_dict, dict):
-            raise ValueError("start_readings_conditions is not configured correctly: LOGGING UNENABLED.")
+            raise ValueError(f"{description.capitalize()}s must be a dictionary")
+
+        parsed_dict = {}
 
         for condition_name, cond_str in conditions_dict.items():
             try:
-                # Use regex to extract parts
                 match = re.findall(self.regex_parser_pattern, cond_str)
                 if not match or len(match) != 4:
-                    raise ValueError(f"Condition '{condition_name}' does not match expected pattern: LOGGING UNENABLED.")
-                
-                target_obj, target_var, operator, value_str = match
-
-                # Convert value to float
-                try:
-                    value = float(value_str)
-                except ValueError:
-                    raise ValueError(f"Condition '{condition_name}' has invalid numeric value: '{value_str}': LOGGING UNENABLED.")
-
-                # Store parsed values
-                self.reading_condition_dict[condition_name] = {
-                    "target_obj": target_obj,
-                    "target_var": target_var,
-                    "operator": operator,
-                    "value": value
-                }
-
-            except Exception as e:
-                print(f"Error parsing condition '{condition_name}': {e}")          
-
-    def parse_evaluation_conditions(self, evaluation_dict):
-        """
-        Parse evaluation conditions safely.
-        Expected format for each condition: 'FMU.variable operator value'
-        e.g., 'WaterTankSystem.PV_WaterLevel_out < 11.1'
-        """
-        print("Parsing evaluation conditions...")
-        self.evaluation_equation_dic = {}
-
-        if not isinstance(evaluation_dict, dict):
-            raise ValueError("evaluation conditions must be a dictionary")
-
-        for condition_name, cond_str in evaluation_dict.items():
-            try:
-                # Extract target object, variable, operator, value
-                match = re.findall(self.regex_parser_pattern, cond_str)
-                if not match or len(match) != 4:
-                    raise ValueError(f"Condition '{condition_name}' does not match expected pattern")
+                    raise ValueError(f"{description.capitalize()} '{condition_name}' does not match expected pattern")
 
                 target_obj, target_var, operator, value_str = match
 
@@ -319,10 +280,9 @@ class TestSystem:
                 try:
                     value = float(value_str)
                 except ValueError:
-                    raise ValueError(f"Condition '{condition_name}' has invalid numeric value: '{value_str}'")
+                    raise ValueError(f"{description.capitalize()} '{condition_name}' has invalid numeric value: '{value_str}'")
 
-                # Store parsed values
-                self.evaluation_equation_dic[condition_name] = {
+                parsed_dict[condition_name] = {
                     "target_obj": target_obj,
                     "target_var": target_var,
                     "operator": operator,
@@ -330,14 +290,15 @@ class TestSystem:
                 }
 
             except Exception as e:
-                print(f"Error parsing evaluation condition '{condition_name}': {e}")
+                print(f"Error parsing {description} '{condition_name}': {e}")
 
-        print("Parsed evaluation conditions:", self.evaluation_equation_dic)
+        setattr(self, store_dict_name, parsed_dict)
+
 
     async def initialize_test_params(self, test):
             print("Initializing test parameters...")
             self.config    = DataLoaderClass(test).data
-            print(self.config)
+
             try:
                 # Check FMU files
                 self.fmu_files = self.config.get("fmu_files")
@@ -380,9 +341,19 @@ class TestSystem:
                 if not isinstance(self.initial_system_state, dict):
                     raise ValueError("'initial_system_state' must be a dictionary")
 
-                # Parse nested reading/evaluation conditions safely
-                self.parse_reading_conditions(self.test.get("start_readings_conditions", {}))
-                self.parse_evaluation_conditions(self.test.get("evaluation", {}))
+                # For reading conditions
+                self._parse_conditions(
+                    conditions_dict=self.test.get("start_readings_conditions", {}),
+                    store_dict_name="reading_condition_dict",
+                    description="reading condition"
+                )
+
+                # For evaluation conditions
+                self._parse_conditions(
+                    conditions_dict=self.test.get("evaluation", {}),
+                    store_dict_name="evaluation_equation_dic",
+                    description="evaluation condition"
+                )
 
                 # System loop checks
                 self.system_loop = self.test.get("system_loop", [])
