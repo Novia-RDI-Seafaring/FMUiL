@@ -43,6 +43,7 @@
     - [3.2. External servers](#external-servers)
 - [4. Run experiments](#run-experiments)
 - [5. Example usage](#example-usage)
+  - [5.1 Other examples](#other-examples)
 - [6. Contributing](#contributing)
 - [7. Other](#other)
     - [7.1. Main contributors](#main-contributors)
@@ -210,20 +211,6 @@ To run specific experiments you pass the file names as:
 uv run experiments exp_a.yaml exp_b.yaml
 ```
 
-# Examples
-## Water Tank with control
-
-## Lubrication-oil cooling (LOC) with control
-
-## External server
-For `TEST03.yaml`, start the example remote server first:
-
-```powershell
-python servers/example_server.py
-```
-
-Logs are generated under `log/`.
-
 # How to log results
 
 The system logs all data required to evaluate a tests performance when the flag `save_logs: true`. The evaluation happens every communication timestep. The saved values are the following:
@@ -305,15 +292,19 @@ test:
     eval_2: "TankLevel_PI.CV_PumpCtrl_out < 20"
 
 ```
-This is already setup on the file `TEST01.yaml`, to run this simply just call the main:
+This is already setup on the file `exp1_water_tank.yaml`, to run this simply just call the main:
 
 ```
-python main.py
+uv run experiments exp1_water_tank.yaml
 ```
 The `.log` file is in `.csv` format and the results are easy to plot. In this particular scenario they should look something like this:
 <p align="center">
 <img src="./public/ExamplePlot.png" alt="OPCUA-FMU" width="500">
 </p>
+
+## Other examples
+
+  Placeholder for exp2 and exp3.
 
 # Contributing
 
