@@ -229,7 +229,9 @@ The system logs all data required to evaluate a tests performance when the flag 
 
 
 # Example usage
+This section provides details about the available examples and how to run them.
 
+## Example 1: exp1_water_tank.yaml 
 Let's take a look on this example system created by Mathworks: [Watertank Model](https://mathworks.com/help/slcontrol/ug/watertank-simulink-model.html) 
 
 The model consists of a **WaterTankSystem** and a **PI-controller** connected in a feedback loop. 
@@ -302,9 +304,13 @@ The `.log` file is in `.csv` format and the results are easy to plot. In this pa
 <img src="./public/ExamplePlot.png" alt="OPCUA-FMU" width="500">
 </p>
 
-## Other examples
+## Example 2: exp2_loc.yaml
+A lube oil cooling (LOC) system regulates the lubrication oil temperature at a constant setpoint at the engine inlet using a PI controller and a control valve. The lube oil cooler transfers heat from the lubrication oil to the cooling water circuit.
 
-  Placeholder for exp2 and exp3.
+Similar to the water tank system this model has been divided to two: the physical system and the control. More information about the models and FMUs can be found here.
+  
+## Example 3: exp3_external_server.yaml
+Here you can find the explanation of the two other examples provided.
 
 # Contributing
 
