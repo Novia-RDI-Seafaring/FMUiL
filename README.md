@@ -43,7 +43,9 @@
     - [3.2. External servers](#external-servers)
 - [4. Run experiments](#run-experiments)
 - [5. Example usage](#example-usage)
-  - [5.1 Other examples](#other-examples)
+  - [5.1 Example 1: exp1_water_tank.yaml](#example-usage)
+  - [5.2 Example 2: exp2_loc.yaml](#example-usage)
+  - [5.3 Example 3: exp3_external_server.yaml](#example-usage)
 - [6. Contributing](#contributing)
 - [7. Other](#other)
     - [7.1. Main contributors](#main-contributors)
@@ -294,7 +296,7 @@ test:
     eval_2: "TankLevel_PI.CV_PumpCtrl_out < 20"
 
 ```
-This is already setup on the file `exp1_water_tank.yaml`, to run this simply just call the main:
+This is already setup on the file `exp1_water_tank.yaml`, to run this simply just call:
 
 ```
 uv run experiments exp1_water_tank.yaml
@@ -307,10 +309,20 @@ The `.log` file is in `.csv` format and the results are easy to plot. In this pa
 ## Example 2: exp2_loc.yaml
 A lube oil cooling (LOC) system regulates the lubrication oil temperature at a constant setpoint at the engine inlet using a PI controller and a control valve. The lube oil cooler transfers heat from the lubrication oil to the cooling water circuit.
 
-Similar to the water tank system this model has been divided to two: the physical system and the control. More information about the models and FMUs can be found here.
+As with the water tank system, this model is divided into two parts: the physical system and the control system. Further details about the models and FMUs can be found [here](https://github.com/Novia-RDI-Seafaring/fmu-library/tree/main/models/loc).
+
+This is already setup on the file `exp2_loc.yaml`, to run this simply just call:
+
+```
+uv run experiments exp2_loc.yaml
+```
   
 ## Example 3: exp3_external_server.yaml
-Here you can find the explanation of the two other examples provided.
+This example has been made to show how to run the simulator connected to external OPC UA servers. The external server is configured in `servers/example_server.yaml`. Simply run the `servers/example_server.py` and afterward run the experiment:
+
+```
+uv run experiments exp3_external_server.yaml
+```
 
 # Contributing
 
