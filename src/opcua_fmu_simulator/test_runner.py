@@ -295,7 +295,7 @@ class TestSystem:
     async def initialize_test_params(self, test):
             print("Initializing test parameters...")
             self.config    = DataLoaderClass(test).data
-
+            print(self.config)
             try:
                 # Check FMU files
                 self.fmu_files = self.config.get("fmu_files")
@@ -367,13 +367,12 @@ class TestSystem:
     ###########################   MAIN LOOP   ######################################
     ################################################################################
     async def main_testing_loop(self):
-        # initialize fmu servers, clients and vairable id storage
+        # initialize fmu servers, clients and variable id storage
         
         # experiment_configs = [experiments/test1.yaml experiments/test2.yaml, ...]
         test_files = []
         for config in self.experiment_configs:
             test_files.append(os.path.join(config))
-
 
         #test_files = self.experiment_files
         #test_files = [os.path.join(self.experiment_files, i) for i in os.listdir(self.experiment_files)]

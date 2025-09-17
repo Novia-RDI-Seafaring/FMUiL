@@ -64,7 +64,9 @@ class OPCUAFMUServerSetup:
         await self.server.init()
         self.server.set_endpoint(self.url)
 
+    # We cannot set parameters since they have already values?
     async def set_variables_writable(self, obj, variables, reserved=False):
+        #print(variables) #DEBUG
         for var in variables:
             self.server_variables.append(var)
             if(reserved):
@@ -82,6 +84,7 @@ class OPCUAFMUServerSetup:
         await self.set_variables_writable(variables=self.reserved_variable_ids, obj= obj)
         await self.set_variables_writable(variables=self.fmu.fmu_inputs, obj= obj)
         await self.set_variables_writable(variables=self.fmu.fmu_outputs, obj= obj)
+        await self.set_variables_writable(variables=self.fmu.fmu_parameters, obj= obj)
         await self.setup_standard_methods(obj= obj)
     
     #######################################################
@@ -132,12 +135,13 @@ class OPCUAFMUServerSetup:
             time_step = Decimal(await self.get_value(variable="timestep")).quantize(Decimal(PRECISION_STR), rounding=ROUND_HALF_UP)
             self.server_time += system_timestep
             time_diff = (self.server_time - self.fmu_time).quantize(Decimal(PRECISION_STR), rounding=ROUND_HALF_UP)
+            # WHAT IS THIS???
             double_step = (2 * time_step).quantize(Decimal(PRECISION_STR), rounding=ROUND_HALF_UP)
 
             if time_diff >= time_step:
                 await self.single_simulation_loop()
             else:
-                logger.info(
+                logger.warning(
                     f"DID !NOT! update due to {self.server_time} - {self.fmu_time}: "
                     f"{self.server_time - self.fmu_time} < {time_step}"
                 )
@@ -147,10 +151,25 @@ class OPCUAFMUServerSetup:
 
 
     async def update_opc_and_fmu(self, parent, value):
-        node = self.server.get_node(self.server_variable_ids[value["variable"]])
-        await node.set_value(float(value["value"]))
-        self.fmu.fmu.setReal([self.fmu.fmu_parameters[value["variable"]]["id"]], [float(value["value"])])
-        # logger.info(f"\n\n\n\n server {self.fmu.fmu_name} WAS UPDATED")
+        variable = value["variable"]
+        new_value = float(value["value"])
+
+        # Update OPC server
+        node = self.server.get_node(self.server_variable_ids[variable])
+        await node.set_value(new_value)
+
+        # Only allow updating inputs or parameters (not outputs)
+        if variable in self.fmu.fmu_inputs:
+            var_id = self.fmu.fmu_inputs[variable]["id"]
+
+        # DO WE USE THIS ALSO TO PUT THE INITIAL VALUES???
+        elif variable in self.fmu.fmu_parameters:
+            var_id = self.fmu.fmu_parameters[variable]["id"]
+        else:
+            raise KeyError(f"Variable '{variable}' not found in FMU inputs or parameters.")
+
+        # Update FMU
+        self.fmu.fmu.setReal([var_id], [new_value])
     
     async def update_opc(self, parent, value):
         node = self.server.get_node(self.server_variable_ids[value["variable"]])
