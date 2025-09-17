@@ -48,7 +48,7 @@ class FmuLoader:
         # Setting up
         _logger.info("Run simulation \n")            
 
-        # Gathering the I/Os references TODO: Outside of simulation loop - This is done already?
+        # Gathering the I/Os references TODO: Outside of simulation loop - beforehand?
         for variable in self.model_description.modelVariables:
             if variable.causality == "input":    
                 self._add_input(variable=variable)
@@ -56,8 +56,7 @@ class FmuLoader:
                 self._add_output(variable=variable)
             elif variable.causality == "parameter":
                 self._add_parameter(variable=variable)
-                print(variable)
-
+                
         _logger.info(f"inp = {self.fmu_inputs}, \nout = {self.fmu_outputs}, \npar = {self.fmu_parameters}")
 
     def get_fmu_inputs(self) -> list[str]:
