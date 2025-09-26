@@ -4,8 +4,8 @@ from pathlib import Path
 import yaml
 
 # ----- EXTERNAL SERVERS -----
-class ExternalServerConfig(BaseModel):
-    pass
+#class ExternalServerConfig(BaseModel):
+#    pass
 
 # ----- SIMULATION SERVER -----
 class Edge(BaseModel):
@@ -37,6 +37,6 @@ class TestConfig(BaseModel):
 class ExperimentConfig(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
     fmu_files: List[str] = Field(description="List of FMU files")
-    external_servers: List[ExternalServerConfig] = Field(description="List of external servers")
+    external_servers: List[str] = Field(description="List of external servers")
     test: TestConfig = Field(description="The test section in your YAML")
     
