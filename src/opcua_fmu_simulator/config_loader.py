@@ -6,9 +6,8 @@ from pathlib import Path
 class DataLoaderClass:
     def __init__(self, file_path):
         self.file_path = file_path
-        self.data = self.load_file()
-        self.model = self.get_model()
-
+        self.model = self.load_model()
+    
     def load_file(self):
         try:
             with open(self.file_path) as file:
@@ -18,13 +17,19 @@ class DataLoaderClass:
         except yaml.YAMLError as e:
             raise ValueError(f"YAML parsing error in {self.file_path}: {e}")
 
-    def get_model(self):
-        "Return the config as a pydantic model ExperimentConfig"
+    def load_model(self):
         data = self.load_file()
+        # load as pydantic ExperimentConfig model
         try:
             return ExperimentConfig.model_validate(data)
         except ValidationError as e:
             raise ValueError(f"Config does not match ExperimentConfig schema: {e}")
+
+    def dump_json(self):
+        return self.model.model_dump_json(by_alias=True, indent=2)
+
+    def dump_dict(self):
+        return self.model.model_dump(by_alias=True)
 
     def save_json(self, name: str):
         """
@@ -34,32 +39,25 @@ class DataLoaderClass:
         # Create output path with .json extension
         base_path = Path(self.file_path).parent / f"{name}.json"
         output_path = self._get_unique_path(base_path)
-        
-        # dump from validated pydantic model with aliases
-        json_data = self.model.model_dump_json(by_alias=True, indent=2)
+
+        data = self.dump_json()
 
         with open(output_path, "w", encoding="utf-8") as f:
-            f.write(json_data)
-
-        return output_path
+            f.write(data)
 
     def save_yaml(self, name: str):
         """
         Save the Pydantic model as YAML to a new file with the specified name.
         If file exists, adds (1), (2), etc. to the name.
-        Always uses block style for lists.
         """
         # Create output path with .yaml extension
         base_path = Path(self.file_path).parent / f"{name}.yaml"
         output_path = self._get_unique_path(base_path)
         
-        # dump from validated pydantic model with aliases
-        data = self.model.model_dump(by_alias=True)
+        data = self.dump_dict()
 
         with open(output_path, "w", encoding="utf-8") as f:
-            yaml.dump(data, f, default_flow_style=False, sort_keys=False, indent=2, allow_unicode=True)
-
-        return output_path
+            yaml.safe_dump(data, f, allow_unicode=True, sort_keys=False)
 
     def _get_unique_path(self, base_path: Path) -> Path:
         """
