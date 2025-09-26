@@ -4,8 +4,8 @@ from pathlib import Path
 import yaml
 
 # ----- EXTERNAL SERVERS -----
-#class ExternalServerConfig(BaseModel):
-#    pass
+class ExternalServerConfig(BaseModel):
+    pass
 
 # ----- SIMULATION SERVER -----
 class Edge(BaseModel):
