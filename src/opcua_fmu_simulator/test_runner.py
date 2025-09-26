@@ -1,6 +1,6 @@
 import asyncio
 from .server_setup_dev import OPCUAFMUServerSetup
-from .config_loader import DataLoaderClass
+from .config_loader import ExperimentLoader
 from asyncua import Client, ua
 import os
 from pathlib import Path
@@ -294,7 +294,7 @@ class TestSystem:
 
     async def initialize_test_params(self, test):
             print("Initializing test parameters...")
-            self.config    = DataLoaderClass(test).dump_dict() # dump pydantic model as dict
+            self.config    = ExperimentLoader(test).dump_dict() # dump pydantic model as dict
 
             try:
                 # Check FMU files
