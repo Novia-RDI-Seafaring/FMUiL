@@ -294,7 +294,7 @@ class TestSystem:
 
     async def initialize_test_params(self, test):
             print("Initializing test parameters...")
-            self.config    = DataLoaderClass(test).data
+            self.config    = DataLoaderClass(test).dump_dict() # dump pydantic model as dict
 
             try:
                 # Check FMU files
