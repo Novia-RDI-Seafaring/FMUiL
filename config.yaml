@@ -12,7 +12,7 @@ logging:
 db:
   enabled: true        # true || false
   dir: db/             # where to store the database file
-  name: logs           # name of the database file (".db" will be added)
+  name: log            # name of the database file (".db" will be added)
 
 server:
   base_port: 7000

@@ -25,7 +25,7 @@ CREATE INDEX IF NOT EXISTS "idx_{table}_run_test_time"
 class SQLDB:
     """Tiny SQLite wrapper with a fixed schema but configurable table name."""
 
-    def __init__(self, table: str = "logs") -> None:
+    def __init__(self, table: str = "log") -> None:
         self.table = table
         cfg = load_config()
 
