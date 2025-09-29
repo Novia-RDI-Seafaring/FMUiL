@@ -18,7 +18,6 @@ from .infra.servers import server_manager
 from .infra.clients import client_manager
 
 getcontext().prec = 8
-DEFAULT_BASE_PORT = 7000 # port from which the server initialization begins TODO: Add configurable outside code
 DEFAULT_LOGGER_HEADER = "experiment_name, evaluation_name, evaluation_function, measured_value, experiment_result, system_timestamp\n"
 
 class ExperimentSystem:
@@ -375,7 +374,7 @@ class ExperimentSystem:
 
         for experiment_file in experiment_files:
             await self.initialize_experiment_params(experiment= experiment_file)
-            self.server_obj = await server_manager.create(experiment_config= self.config)
+            self.server_obj = await server_manager.create(experiment_config= self.config, port = 7100)
             self.gather_system_ids()
             self.client_obj = await client_manager.create(system_servers = self.server_obj.system_servers, 
                                                           remote_servers = self.server_obj.remote_servers, 

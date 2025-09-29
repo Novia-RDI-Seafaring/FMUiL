@@ -5,14 +5,15 @@ import asyncio
 
 class server_manager:
     # TODO: pass directly "FMU FILES" not whole experiment config file
+    # TODO: add 
     @classmethod
-    async def create(cls, experiment_config):
+    async def create(cls, experiment_config, port):
         self = cls()
         self.remote_servers = self.construct_remote_servers(experiment_config["external_servers"])
         self.fmu_files = experiment_config["fmu_files"]
         self._tasks: list[asyncio.Task] = []
         self.system_servers: dict[str, OPCUAFMUServerSetup] = {}
-        self.base_port = 7000
+        self.base_port = port
         await self.initialize_fmu_opc_servers()
         return self
     
