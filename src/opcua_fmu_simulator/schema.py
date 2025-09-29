@@ -44,7 +44,7 @@ class InitialModelConfig(BaseModel):
 
 # The "test" section in your YAML
 class TestConfig(BaseModel):
-    test_name: str = Field(description="Scenario name for logs")
+    experiment_name: str = Field(description="Scenario name for logs")
     timestep: float = Field(description="seconds, communication timestep")
     timing: Literal["simulation_time", "real_time"] = Field(description="simulation_time or real_time")
     stop_time: float = Field(description="seconds")
@@ -62,5 +62,5 @@ class ExperimentConfig(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
     fmu_files: List[str] = Field(description="List of FMU files")
     external_servers: List[str] = Field(description="List of external servers")
-    test: TestConfig = Field(description="The test section in your YAML")
+    experiment: TestConfig = Field(description="The test section in your YAML")
     

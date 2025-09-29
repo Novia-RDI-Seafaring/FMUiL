@@ -26,8 +26,8 @@ external_servers: []
 
 ################# Scenario #################
 
-test:
-  test_name: Water Level Control      # Scenario name for logs
+experiment:
+  experiment_name: Water Level Control      # Scenario name for logs
   timestep: 1                         # seconds, communication timestep
   timing: "simulation_time"           # simulation_time or real_time 
   stop_time: 300                      # seconds 
