@@ -1,0 +1,15 @@
+# config.yaml
+
+# experiments configuration
+experiments:
+  dir: experiments/
+
+# logging configuration
+logging:
+  dir: logss/           # where to store the logs file
+
+# database configuration
+database:
+  enabled: true        # true || false
+  dir: db/             # where to store the database file
+  name: logs           # name of the database file (".db" will be added)

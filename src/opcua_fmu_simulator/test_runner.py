@@ -17,6 +17,8 @@ import re
 from .infra.servers import server_manager
 from .infra.clients import client_manager
 
+from opcua_fmu_simulator.utils import LOGS_DIR
+
 getcontext().prec = 8
 DEFAULT_BASE_PORT = 7000 # port from which the server initialization begins
 DEFAULT_LOGGER_HEADER = "test_name, evaluation_name, evaluation_function, measured_value, test_result, system_timestamp\n"
@@ -39,13 +41,13 @@ class TestSystem:
         self.regex_parser_pattern    = r'\d+\.\d+|\d+|[a-zA-Z_][\w]*|[<>!=]=?|==|!=|[^\s\w\.]'
 
     def generate_logfile(self):
-        if not os.path.exists("logs"):
-            os.makedirs("logs")
-        file_path = os.path.join("logs", strftime("%Y_%m_%d_%H_%M_%S", gmtime()))
+        logs_dir = str(LOGS_DIR)
+        os.makedirs(logs_dir, exist_ok=True)
+        file_path = os.path.join(logs_dir, strftime("%Y_%m_%d_%H_%M_%S", gmtime()))
         if not os.path.exists(file_path):
             with open(file_path, 'w') as file:
                 file.write(DEFAULT_LOGGER_HEADER)
-        return file_path    
+        return file_path
     
     def log_result(self, criterea, measured_value, evaluation_result, simulation_time):
         system_output = f"{self.config['test']['test_name']},\

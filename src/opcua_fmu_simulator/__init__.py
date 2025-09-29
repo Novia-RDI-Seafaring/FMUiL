@@ -5,7 +5,8 @@ import asyncio
 import sys
 import os
 
-EXPERIMENTS_DIR = "experiments/"
+from opcua_fmu_simulator.utils import EXPERIMENTS_DIR
+#EXPERIMENTS_DIR = "experiments/"
 
 def main():
     """Main entry point for running experiments."""
