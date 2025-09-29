@@ -43,6 +43,9 @@
     - [3.2. External servers](#external-servers)
 - [4. Run experiments](#run-experiments)
 - [5. Example usage](#example-usage)
+  - [5.1 Example 1: exp1_water_tank.yaml](#example-usage)
+  - [5.2 Example 2: exp2_loc.yaml](#example-usage)
+  - [5.3 Example 3: exp3_external_server.yaml](#example-usage)
 - [6. Contributing](#contributing)
 - [7. Other](#other)
     - [7.1. Main contributors](#main-contributors)
@@ -210,20 +213,6 @@ To run specific experiments you pass the file names as:
 uv run experiments exp_a.yaml exp_b.yaml
 ```
 
-# Examples
-## Water Tank with control
-
-## Lubrication-oil cooling (LOC) with control
-
-## External server
-For `TEST03.yaml`, start the example remote server first:
-
-```powershell
-python servers/example_server.py
-```
-
-Logs are generated under `log/`.
-
 # How to log results
 
 The system logs all data required to evaluate a tests performance when the flag `save_logs: true`. The evaluation happens every communication timestep. The saved values are the following:
@@ -242,7 +231,9 @@ The system logs all data required to evaluate a tests performance when the flag 
 
 
 # Example usage
+This section provides details about the available examples and how to run them.
 
+## Example 1: exp1_water_tank.yaml 
 Let's take a look on this example system created by Mathworks: [Watertank Model](https://mathworks.com/help/slcontrol/ug/watertank-simulink-model.html) 
 
 The model consists of a **WaterTankSystem** and a **PI-controller** connected in a feedback loop. 
@@ -305,15 +296,33 @@ test:
     eval_2: "TankLevel_PI.CV_PumpCtrl_out < 20"
 
 ```
-This is already setup on the file `TEST01.yaml`, to run this simply just call the main:
+This is already setup on the file `exp1_water_tank.yaml`, to run this simply just call:
 
 ```
-python main.py
+uv run experiments exp1_water_tank.yaml
 ```
 The `.log` file is in `.csv` format and the results are easy to plot. In this particular scenario they should look something like this:
 <p align="center">
 <img src="./public/ExamplePlot.png" alt="OPCUA-FMU" width="500">
 </p>
+
+## Example 2: exp2_loc.yaml
+A lube oil cooling (LOC) system regulates the lubrication oil temperature at a constant setpoint at the engine inlet using a PI controller and a control valve. The lube oil cooler transfers heat from the lubrication oil to the cooling water circuit.
+
+As with the water tank system, this model is divided into two parts: the physical system and the control system. Further details about the models and FMUs can be found [here](https://github.com/Novia-RDI-Seafaring/fmu-library/tree/main/models/loc).
+
+This is already setup on the file `exp2_loc.yaml`, to run this simply just call:
+
+```
+uv run experiments exp2_loc.yaml
+```
+  
+## Example 3: exp3_external_server.yaml
+This example has been made to show how to run the simulator connected to external OPC UA servers. The external server is configured in `servers/example_server.yaml`. Simply run the `servers/example_server.py` and afterward run the experiment:
+
+```
+uv run experiments exp3_external_server.yaml
+```
 
 # Contributing
 
