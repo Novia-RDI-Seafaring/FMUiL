@@ -1,6 +1,6 @@
 from asyncua import Client, ua
 import logging
-logging.basicConfig(level=logging.warning) # required to enable log message print to terminal
+logging.basicConfig(level=logging.warning) 
 logger = logging.getLogger(__name__)
 import asyncio
 import sys
@@ -61,7 +61,7 @@ class client_manager:
                         else:
                             raise Exception(f"server {server} with object {obj} found no acceptable id namespace or name for variable {var}")
                         
-            # In the future this could be changed to move to the next experiment
+            # In the future this could be changed to move to the next experiment if an expection happens
             except Exception as e:
                 logging.error(f"Failed to connect to server {server} at {server_url}: {e}")
                 sys.exit(1)
@@ -92,7 +92,7 @@ class client_manager:
                     "variable": variable,
                     "value": float(initial_system_state[server][variable])
                 }
-                await object_node.call_method(ua.NodeId(1, 3), str(update_values)) # update fmu before updating values
+                await object_node.call_method(ua.NodeId(1, 3), str(update_values)) 
 
     async def close(self) -> None:
         """ 

@@ -11,14 +11,14 @@ import logging
 from .connections import parse_connections # Connection
 import time
 from time import gmtime, strftime
-logging.basicConfig(level=logging.ERROR) # required to get messages printed out
+logging.basicConfig(level=logging.ERROR) 
 logger = logging.getLogger(__name__)
 import re
 from .infra.servers import server_manager
 from .infra.clients import client_manager
 
 getcontext().prec = 8
-DEFAULT_BASE_PORT = 7000 # port from which the server initialization begins
+DEFAULT_BASE_PORT = 7000 # port from which the server initialization begins TODO: Add configurable outside code
 DEFAULT_LOGGER_HEADER = "test_name, evaluation_name, evaluation_function, measured_value, test_result, system_timestamp\n"
 
 class TestSystem:
@@ -66,7 +66,7 @@ class TestSystem:
     async def write_value(self, client_name:str, variable:str, value:str)->None:
         """
             write value to specific node in the system
-            clienet_name = client to desired server
+            client_name = client to desired server
         """
         # if it's part of the systems servers
         if (client_name in self.server_obj.system_servers):
@@ -151,8 +151,7 @@ class TestSystem:
         """
         sim_time = 0.0
         simulation_status = True
-        # TODO: PUT IN SETUP
-        timestep = float(test["timestep"])  # assumed constant across system
+        timestep = float(test["timestep"])  # communication timestep
 
         if timestep > test["stop_time"]:
             raise ValueError("stop_time has to be equal or greater than step_time")
@@ -294,8 +293,13 @@ class TestSystem:
 
     async def initialize_test_params(self, test):
             print("Initializing test parameters...")
+<<<<<<< HEAD
             self.config    = ExperimentLoader(test).dump_dict() # dump pydantic model as dict
 
+=======
+            self.config    = DataLoaderClass(test).data
+            
+>>>>>>> feature/parameters
             try:
                 # Check FMU files
                 self.fmu_files = self.config.get("fmu_files")
@@ -367,16 +371,12 @@ class TestSystem:
     ###########################   MAIN LOOP   ######################################
     ################################################################################
     async def main_testing_loop(self):
-        # initialize fmu servers, clients and vairable id storage
+        # initialize fmu servers, clients and variable id storage
         
-        # experiment_configs = [experiments/test1.yaml experiments/test2.yaml, ...]
+        # experiment_configs = [experiments/test1.yaml, experiments/test2.yaml, ...]
         test_files = []
         for config in self.experiment_configs:
             test_files.append(os.path.join(config))
-
-
-        #test_files = self.experiment_files
-        #test_files = [os.path.join(self.experiment_files, i) for i in os.listdir(self.experiment_files)]
 
         for test_file in test_files:
             await self.initialize_test_params(test= test_file)

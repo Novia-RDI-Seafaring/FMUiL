@@ -25,7 +25,7 @@ class OPCUAFMUServerSetup:
         self.opc_server_only_variables = ["timestep"] # variables reserved only for the server not fmu
         self.last_simulation_timestamp = 0.0
         
-        # resrved vairables have a namespace=2 
+        # reserved variables have a namespace=2 
         self.reserved_variable_ids = {
             "timestep": ua.NodeId(2,1),
             "server_time": ua.NodeId(2,2)
@@ -38,7 +38,7 @@ class OPCUAFMUServerSetup:
     
     async def write_value(self, variable:str, value:str)->None:
         # write value to specific node in the system
-        # clinet_name = client to desired server
+        # client_name = client to desired server
         node_id = self.server_variable_ids[variable]
         node_to = self.server.get_node(node_id)        
         await node_to.write_value(value)    
@@ -82,6 +82,7 @@ class OPCUAFMUServerSetup:
         await self.set_variables_writable(variables=self.reserved_variable_ids, obj= obj)
         await self.set_variables_writable(variables=self.fmu.fmu_inputs, obj= obj)
         await self.set_variables_writable(variables=self.fmu.fmu_outputs, obj= obj)
+        await self.set_variables_writable(variables=self.fmu.fmu_parameters, obj= obj)
         await self.setup_standard_methods(obj= obj)
     
     #######################################################
@@ -127,17 +128,16 @@ class OPCUAFMUServerSetup:
     @uamethod
     async def simulate_fmu(self, parent=None, value: str = None):
         try:
-            # Convert inputs to Decimal with defined precision
+            # Convert inputs to Decimal with defined precision TODO: should add the precision to be configurable outside code
             system_timestep = Decimal(value).quantize(Decimal(PRECISION_STR), rounding=ROUND_HALF_UP)
             time_step = Decimal(await self.get_value(variable="timestep")).quantize(Decimal(PRECISION_STR), rounding=ROUND_HALF_UP)
             self.server_time += system_timestep
             time_diff = (self.server_time - self.fmu_time).quantize(Decimal(PRECISION_STR), rounding=ROUND_HALF_UP)
-            double_step = (2 * time_step).quantize(Decimal(PRECISION_STR), rounding=ROUND_HALF_UP)
-
+            
             if time_diff >= time_step:
                 await self.single_simulation_loop()
             else:
-                logger.info(
+                logger.warning(
                     f"DID !NOT! update due to {self.server_time} - {self.fmu_time}: "
                     f"{self.server_time - self.fmu_time} < {time_step}"
                 )
@@ -147,10 +147,25 @@ class OPCUAFMUServerSetup:
 
 
     async def update_opc_and_fmu(self, parent, value):
-        node = self.server.get_node(self.server_variable_ids[value["variable"]])
-        await node.set_value(float(value["value"]))
-        self.fmu.fmu.setReal([self.fmu.fmu_parameters[value["variable"]]["id"]], [float(value["value"])])
-        # logger.info(f"\n\n\n\n server {self.fmu.fmu_name} WAS UPDATED")
+        variable = value["variable"]
+        new_value = float(value["value"])
+
+        # Update OPC server
+        node = self.server.get_node(self.server_variable_ids[variable])
+        await node.set_value(new_value)
+
+        # Only allow updating inputs or parameters (not outputs, do we need it?)
+        if variable in self.fmu.fmu_inputs:
+            var_id = self.fmu.fmu_inputs[variable]["id"]
+
+        elif variable in self.fmu.fmu_parameters:
+            var_id = self.fmu.fmu_parameters[variable]["id"]
+
+        else:
+            raise KeyError(f"Variable '{variable}' not found in FMU inputs or parameters.")
+
+        # Update FMU
+        self.fmu.fmu.setReal([var_id], [new_value])
     
     async def update_opc(self, parent, value):
         node = self.server.get_node(self.server_variable_ids[value["variable"]])

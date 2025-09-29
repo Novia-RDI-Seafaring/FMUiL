@@ -1,5 +1,4 @@
 from .operations import ops
-# from .system_tester import TestSystem
 from .test_runner import TestSystem
 import asyncio
 import sys
