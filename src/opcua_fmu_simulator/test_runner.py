@@ -293,13 +293,8 @@ class TestSystem:
 
     async def initialize_test_params(self, test):
             print("Initializing test parameters...")
-<<<<<<< HEAD
             self.config    = ExperimentLoader(test).dump_dict() # dump pydantic model as dict
 
-=======
-            self.config    = DataLoaderClass(test).data
-            
->>>>>>> feature/parameters
             try:
                 # Check FMU files
                 self.fmu_files = self.config.get("fmu_files")
