@@ -6,6 +6,7 @@ import sys
 import os
 
 from opcua_fmu_simulator.utils import EXPERIMENTS_DIR
+from opcua_fmu_simulator.db.connection import SQLDB
 #EXPERIMENTS_DIR = "experiments/"
 
 def main():
@@ -22,9 +23,21 @@ def main():
         print("Running specific experiments")
         experiment_configs = [f"{EXPERIMENTS_DIR}/{file_name}" for file_name in args]
 
+    # initialize database
+    db = SQLDB(table="logs")
+    db.ensure_schema()
+
     async def run_experiments():
-        experiments = TestSystem(experiment_configs=experiment_configs)
+        experiments = TestSystem(
+            experiment_configs=experiment_configs,
+            db=db
+        )
         await experiments.main_testing_loop()
     
-    asyncio.run(run_experiments())
+    try:
+        asyncio.run(run_experiments())
+    finally:
+        db.commit() # Commit any remaining transactions to the database
+        db.close() # Close the database connection to release resources
+
 

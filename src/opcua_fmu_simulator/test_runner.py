@@ -18,28 +18,30 @@ from .infra.servers import server_manager
 from .infra.clients import client_manager
 
 from opcua_fmu_simulator.utils import LOGS_DIR
+from opcua_fmu_simulator.db.connection import SQLDB
 
 getcontext().prec = 8
 DEFAULT_BASE_PORT = 7000 # port from which the server initialization begins
 DEFAULT_LOGGER_HEADER = "test_name, evaluation_name, evaluation_function, measured_value, test_result, system_timestamp\n"
 
 class TestSystem:
-    def __init__(self, experiment_configs: list[str]) -> None:
+    def __init__(self, experiment_configs: list[str], db: SQLDB) -> None:
         self.experiment_configs = experiment_configs
-        self.log_file    = self.generate_logfile()
-        self.config      = None 
-        self.fmu_files   = None
-        self.test        = None
-        self.save_logs   = None
-        self.timing      = None
+        self.log_file = self.generate_logfile()
+        self.config = None 
+        self.fmu_files = None
+        self.test = None
+        self.save_logs = None
+        self.timing = None
         self.connections = None # description of system loop definition from test
-        self.server_obj  = None
-        self.reading_condition_dict  = {}
+        self.server_obj = None
+        self.reading_condition_dict = {}
         self.evaluation_equation_dic = {}
-        self.system_description      = {}
-        self.system_node_ids         = {} # this is meant to take in all of the systems node id's
-        self.regex_parser_pattern    = r'\d+\.\d+|\d+|[a-zA-Z_][\w]*|[<>!=]=?|==|!=|[^\s\w\.]'
-
+        self.system_description = {}
+        self.system_node_ids = {} # this is meant to take in all of the systems node id's
+        self.regex_parser_pattern = r'\d+\.\d+|\d+|[a-zA-Z_][\w]*|[<>!=]=?|==|!=|[^\s\w\.]'
+        self.db = db
+            
     def generate_logfile(self):
         logs_dir = str(LOGS_DIR)
         os.makedirs(logs_dir, exist_ok=True)
@@ -57,6 +59,27 @@ class TestSystem:
             {evaluation_result},\
             {simulation_time}\n"
         self.log_system_output(output= system_output)
+
+    def log_results_in_db(
+        self, criterea: str, measured_value: float, evaluation_result: bool, simulation_time: float
+    ) -> None:
+        """Insert one result row into the database (if DB was injected)."""
+        if not self.db:
+            return
+        evaluation_fn = (
+            f"{self.evaluation_equation_dic[criterea]['target_obj']}."
+            f"{self.evaluation_equation_dic[criterea]['target_var']} "
+            f"{self.evaluation_equation_dic[criterea]['operator']} "
+            f"{self.evaluation_equation_dic[criterea]['value']}"
+        )
+        self.db.insert_eval(
+            test_name=self.config["test"]["test_name"],
+            evaluation_name=criterea,
+            evaluation_function=evaluation_fn,
+            measured_value=float(measured_value),
+            test_result=bool(evaluation_result),
+            system_timestamp=float(simulation_time),
+        )
     
         
     ########### SETTERS & GETTERS ########### 
@@ -242,6 +265,23 @@ class TestSystem:
                                 measured_value    = measured_value, 
                                 evaluation_result = evaluation_result, 
                                 simulation_time   = simulation_time)
+            
+            # log data in db
+            if self.db and self.db.enabled:
+                evaluation_fn = (
+                    f"{self.evaluation_equation_dic[criterea]['target_obj']}."
+                    f"{self.evaluation_equation_dic[criterea]['target_var']} "
+                    f"{self.evaluation_equation_dic[criterea]['operator']} "
+                    f"{self.evaluation_equation_dic[criterea]['value']}"
+                )
+                self.db.insert_eval(
+                    test_name=self.config["test"]["test_name"],
+                    evaluation_name=criterea,
+                    evaluation_function=evaluation_fn,
+                    measured_value=float(measured_value),
+                    test_result=bool(evaluation_result),
+                    system_timestamp=float(simulation_time),
+                )
             
             logger.info(Style.RESET_ALL)
 

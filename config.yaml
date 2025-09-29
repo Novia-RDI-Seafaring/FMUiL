@@ -6,7 +6,7 @@ experiments:
 
 # logging configuration
 logging:
-  dir: logss/           # where to store the logs file
+  dir: logs/           # where to store the logs file
 
 # database configuration
 database:
