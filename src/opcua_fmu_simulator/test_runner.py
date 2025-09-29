@@ -17,12 +17,13 @@ import re
 from .infra.servers import server_manager
 from .infra.clients import client_manager
 
-from opcua_fmu_simulator.utils import LOGS_DIR
+from opcua_fmu_simulator.config import load_config
 from opcua_fmu_simulator.db.connection import SQLDB
 
 getcontext().prec = 8
-DEFAULT_BASE_PORT = 7000 # port from which the server initialization begins
+DEFAULT_BASE_PORT = load_config().server.base_port
 DEFAULT_LOGGER_HEADER = "test_name, evaluation_name, evaluation_function, measured_value, test_result, system_timestamp\n"
+LOGS_DIR = load_config().logging.dir
 
 class TestSystem:
     def __init__(self, experiment_configs: list[str], db: SQLDB) -> None:
@@ -43,9 +44,8 @@ class TestSystem:
         self.db = db
             
     def generate_logfile(self):
-        logs_dir = str(LOGS_DIR)
-        os.makedirs(logs_dir, exist_ok=True)
-        file_path = os.path.join(logs_dir, strftime("%Y_%m_%d_%H_%M_%S", gmtime()))
+        os.makedirs(LOGS_DIR, exist_ok=True)
+        file_path = os.path.join(LOGS_DIR, strftime("%Y_%m_%d_%H_%M_%S", gmtime()))
         if not os.path.exists(file_path):
             with open(file_path, 'w') as file:
                 file.write(DEFAULT_LOGGER_HEADER)

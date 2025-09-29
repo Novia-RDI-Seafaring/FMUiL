@@ -1,9 +1,9 @@
-# src/mypackage/db/connection.py
+# src/opcua_fmu_simulator/db/connection.py
 from __future__ import annotations
 import sqlite3
 from pathlib import Path
-from opcua_fmu_simulator.utils import load_config, db_enabled, PROJECT_ROOT
 
+from opcua_fmu_simulator.config import load_config 
 
 # --- Fixed schema definition ---
 DB_SCHEMA = """
@@ -24,23 +24,21 @@ CREATE INDEX IF NOT EXISTS idx_{table}_names_time
 class SQLDB:
     """Tiny SQLite wrapper with a fixed schema but configurable table name."""
 
-    def __init__(self, table: str = "eval_logs") -> None:
+    def __init__(self, table: str = "logs") -> None:
         self.table = table
         cfg = load_config()
 
-        if not db_enabled(cfg):
+        if not cfg.db.enabled:
             self.enabled = False
             self.db_file: Path | None = None
             self.conn: sqlite3.Connection | None = None
             return
 
-        db_cfg = cfg["database"]
-        db_dir = PROJECT_ROOT / db_cfg.get("dir", "db/")
-        db_name = db_cfg.get("name", "logs")
-        db_dir.mkdir(parents=True, exist_ok=True)
+        # Ensure directory exists and compute file path from config
+        cfg.db.dir.mkdir(parents=True, exist_ok=True)
+        self.db_file = cfg.db.file  # respects .db extension logic in your model
 
         self.enabled = True
-        self.db_file = db_dir / f"{db_name}.db"
         self.conn = sqlite3.connect(self.db_file, check_same_thread=False)
         self.conn.execute("PRAGMA foreign_keys=ON;")
         self.conn.execute("PRAGMA busy_timeout=3000;")
