@@ -1,4 +1,4 @@
-from opcua_fmu_simulator.config_loader import DataLoaderClass
+from opcua_fmu_simulator.config_loader import ExperimentLoader, ExternalServerLoader
 from opcua_fmu_simulator.server_setup_dev import OPCUAFMUServerSetup
 from pathlib import Path
 import asyncio
@@ -16,7 +16,7 @@ class server_manager:
         await self.initialize_fmu_opc_servers()
         return self
     
-    def construct_remote_servers(self, remote_servers: list[str]) -> dict[str:DataLoaderClass]:
+    def construct_remote_servers(self, remote_servers: list[str]) -> dict[str:ExternalServerLoader]:
         """
         remote_servers = path to directory with remote server definitions
         this function iterates through all of them and adds them to a dictionaty in a structured manner
@@ -24,7 +24,7 @@ class server_manager:
         server_dict = {}
 
         for server_name in remote_servers:
-            server_desription = DataLoaderClass(server_name).data
+            server_desription = ExternalServerLoader(server_name).dump_dict()
             name = Path(server_name).stem
             server_dict[name] = server_desription
             
