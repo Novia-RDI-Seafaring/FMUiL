@@ -42,10 +42,20 @@ class TestSystem:
         self.system_node_ids = {} # this is meant to take in all of the systems node id's
         self.regex_parser_pattern = r'\d+\.\d+|\d+|[a-zA-Z_][\w]*|[<>!=]=?|==|!=|[^\s\w\.]'
         self.db = db
+        self.run_id = self.get_run_id()
+
+    def get_run_id(self) -> str:
+        """Generate (or return existing) unique id for this simulation run."""
+        if getattr(self, "run_id", None):
+            return self.run_id
+        # UTC timestamp like 2025_09_29_18_38_08
+        self.run_id = strftime("%Y_%m_%d_%H_%M_%S", gmtime())
+        return self.run_id
             
     def generate_logfile(self):
         os.makedirs(LOGS_DIR, exist_ok=True)
-        file_path = os.path.join(LOGS_DIR, strftime("%Y_%m_%d_%H_%M_%S", gmtime()))
+        name = self.get_run_id()   # ensure run_id exists
+        file_path = os.path.join(LOGS_DIR, name)
         if not os.path.exists(file_path):
             with open(file_path, 'w') as file:
                 file.write(DEFAULT_LOGGER_HEADER)
@@ -73,6 +83,7 @@ class TestSystem:
             f"{self.evaluation_equation_dic[criterea]['value']}"
         )
         self.db.insert_eval(
+            run_id=self.run_id,
             test_name=self.config["test"]["test_name"],
             evaluation_name=criterea,
             evaluation_function=evaluation_fn,
@@ -260,13 +271,15 @@ class TestSystem:
             if evaluation_result: logger.info(Fore.GREEN + f"test {variable} {op} {self.evaluation_equation_dic[criterea]['value']} = {evaluation_result} \n PASSED with value: {measured_value}")
             else:                 logger.info(Fore.RED   + f"test {variable} {op} {self.evaluation_equation_dic[criterea]['value']} = {evaluation_result} \n FAILED with value: {measured_value}")
             
+            # save log file
             if self.save_logs:
                 self.log_result(criterea          = criterea, 
                                 measured_value    = measured_value, 
                                 evaluation_result = evaluation_result, 
                                 simulation_time   = simulation_time)
+            logger.info(Style.RESET_ALL)
             
-            # log data in db
+            # save data in db
             if self.db and self.db.enabled:
                 evaluation_fn = (
                     f"{self.evaluation_equation_dic[criterea]['target_obj']}."
@@ -275,15 +288,14 @@ class TestSystem:
                     f"{self.evaluation_equation_dic[criterea]['value']}"
                 )
                 self.db.insert_eval(
+                    run_id=self.run_id,  # <— NEW
                     test_name=self.config["test"]["test_name"],
                     evaluation_name=criterea,
                     evaluation_function=evaluation_fn,
                     measured_value=float(measured_value),
                     test_result=bool(evaluation_result),
                     system_timestamp=float(simulation_time),
-                )
-            
-            logger.info(Style.RESET_ALL)
+                )  
 
 
     ###########################################################################

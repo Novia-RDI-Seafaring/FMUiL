@@ -7,18 +7,19 @@ from opcua_fmu_simulator.config import load_config
 
 # --- Fixed schema definition ---
 DB_SCHEMA = """
-CREATE TABLE IF NOT EXISTS {table} (
+CREATE TABLE IF NOT EXISTS "{table}" (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  test_name           TEXT   NOT NULL,
-  evaluation_name     TEXT   NOT NULL,
-  evaluation_function TEXT   NOT NULL,
-  measured_value      REAL   NOT NULL,
-  test_result         INTEGER NOT NULL,  -- 0/1
-  system_timestamp    REAL   NOT NULL,
-  created_unix        REAL   NOT NULL DEFAULT (unixepoch())
+  run_id             TEXT   NOT NULL, 
+  test_name          TEXT   NOT NULL,
+  evaluation_name    TEXT   NOT NULL,
+  evaluation_function TEXT  NOT NULL,
+  measured_value     REAL   NOT NULL,
+  test_result        INTEGER NOT NULL,    -- 0/1
+  system_timestamp   REAL   NOT NULL,
+  created_unix       REAL   NOT NULL DEFAULT (unixepoch())
 );
-CREATE INDEX IF NOT EXISTS idx_{table}_names_time
-  ON {table}(test_name, evaluation_name, system_timestamp);
+CREATE INDEX IF NOT EXISTS "idx_{table}_run_test_time"
+  ON "{table}"(run_id, test_name, system_timestamp);
 """
 
 class SQLDB:
@@ -53,6 +54,7 @@ class SQLDB:
     def insert_eval(
         self,
         *,
+        run_id: str,
         test_name: str,
         evaluation_name: str,
         evaluation_function: str,
@@ -60,14 +62,14 @@ class SQLDB:
         test_result: int | bool,
         system_timestamp: float,
     ) -> None:
-        """Insert one row. No-op if DB disabled."""
         if not self.enabled or self.conn is None:
             return
         self.conn.execute(
-            f"""INSERT INTO {self.table}
-                (test_name, evaluation_name, evaluation_function, measured_value, test_result, system_timestamp)
-                VALUES (?, ?, ?, ?, ?, ?)""",
+            f"""INSERT INTO "{self.table}"
+                (run_id, test_name, evaluation_name, evaluation_function, measured_value, test_result, system_timestamp)
+                VALUES (?, ?, ?, ?, ?, ?, ?)""",
             (
+                run_id,
                 test_name,
                 evaluation_name,
                 evaluation_function,
