@@ -50,6 +50,12 @@ class ExperimentSystem:
         os.makedirs(folder_path, exist_ok=True)
         return folder_path
     
+    async def log_requested_values(self):
+        for fmu, var in self.experimentLogger.logged_values:
+            node_id = self.system_node_ids[fmu][var]
+            value = await self.get_value(fmu, node_id)
+            await self.experimentLogger.log_value(fmu, var, value, self.simulation_time)
+        
     ########### SETTERS & GETTERS ########### 
     async def get_value(self, client_name: str, variable: ua.NodeId) -> None:
         client = self.client_obj.fetch_appropriacte_client(client_name=client_name)
@@ -172,7 +178,7 @@ class ExperimentSystem:
             #if self.save_values:
             #    self.log_values(experiment["logging"], simulation_time=sim_time)
             if self.save_values:
-                await self.experimentLogger.log_values(self.simulation_time)
+                await self.log_requested_values()
             # Time advancement
             sim_time += timestep
             self.simulation_time = sim_time
