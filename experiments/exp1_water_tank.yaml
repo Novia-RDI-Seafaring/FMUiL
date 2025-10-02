@@ -31,7 +31,8 @@ experiment:
   timestep: 1                         # seconds, communication timestep
   timing: "simulation_time"           # simulation_time or real_time 
   stop_time: 300                      # seconds 
-  save_logs: True                     # true/false
+  save_results: True                  # true/false for evaluation || EI TARVITA, jos experiment["evaluation"] == None ei logata
+  save_values: True                   # true/false for logging || EI TARVITA, jos experiment["logging"] == None ei logata
 
   initial_system_state:               # Define timestep and initial conditions
     
@@ -63,4 +64,7 @@ experiment:
   evaluation: 
     eval_1: "WaterTankSystem.PV_WaterLevel_out < 11.1"
     eval_2: "TankLevel_PI.CV_PumpCtrl_out < 20"
+
+  logging:
+    ["WaterTankSystem.PV_WaterLevel_out", "TankLevel_PI.CV_PumpCtrl_out"]
     

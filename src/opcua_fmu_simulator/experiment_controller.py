@@ -16,35 +16,46 @@ logger = logging.getLogger(__name__)
 import re
 from .infra.servers import server_manager
 from .infra.clients import client_manager
+#from logging_utils import ExperimentLogger
 
 getcontext().prec = 8
-DEFAULT_LOGGER_HEADER = "experiment_name, evaluation_name, evaluation_function, measured_value, experiment_result, system_timestamp\n"
+DEFAULT_LOGS = {"Evaluation":"experiment_name, evaluation_name, evaluation_function, measured_value, experiment_result, system_timestamp\n",
+                "Values":"Experiment_name, System, Variable, Value, Time\n"}
 
 class ExperimentSystem:
     def __init__(self, experiment_configs: list[str]) -> None:
         self.experiment_configs = experiment_configs
-        self.log_file    = self.generate_logfile()
+        self.log_file    = self.generate_logfiles(DEFAULT_LOGS)
         self.config      = None 
         self.fmu_files   = None
         self.experiment  = None
-        self.save_logs   = None
+        self.save_results= None
+        self.save_values = None
         self.timing      = None
         self.connections = None # description of system loop definition from experiment
+        self.logged_values = None
         self.server_obj  = None
+        self.simulation_time = None
         self.reading_condition_dict  = {}
         self.evaluation_equation_dic = {}
         self.system_description      = {}
         self.system_node_ids         = {} # this is meant to take in all of the systems node id's
         self.regex_parser_pattern    = r'\d+\.\d+|\d+|[a-zA-Z_][\w]*|[<>!=]=?|==|!=|[^\s\w\.]'
 
-    def generate_logfile(self):
-        if not os.path.exists("logs"):
-            os.makedirs("logs")
-        file_path = os.path.join("logs", strftime("%Y_%m_%d_%H_%M_%S", gmtime()))
-        if not os.path.exists(file_path):
-            with open(file_path, 'w') as file:
-                file.write(DEFAULT_LOGGER_HEADER)
-        return file_path    
+    def generate_logfiles(self, logs_with_headers):
+        # Create timestamped folder
+        timestamp = strftime("%Y_%m_%d_%H_%M_%S", gmtime())
+        folder_path = os.path.join("logs", timestamp)
+        os.makedirs(folder_path, exist_ok=True)
+
+        file_paths = []
+        for log_name, header in logs_with_headers.items():
+            file_path = os.path.join(folder_path, f"{log_name}.csv")
+            if not os.path.exists(file_path):
+                with open(file_path, "w") as f:
+                    f.write(header)
+            file_paths.append(file_path)
+        return file_paths 
     
     def log_result(self, criterea, measured_value, evaluation_result, simulation_time):
         system_output = f"{self.config['experiment']['experiment_name']},\
@@ -53,8 +64,17 @@ class ExperimentSystem:
             {measured_value},\
             {evaluation_result},\
             {simulation_time}\n"
-        self.log_system_output(output= system_output)
-    
+        self.write_to_log(output= system_output, filepath= self.log_file[0])
+
+    def write_log_values(self, fmu, variable, value):
+        system_output = f"{self.config['experiment']['experiment_name']},\
+            {fmu},\
+            {variable},\
+            {value},\
+            {self.simulation_time}\n"
+        self.write_to_log(output= system_output, filepath= self.log_file[1])
+        #system_output = (fmu, variable, value, self.simulation_time)
+        #self.write_to_log(output= system_output, filepath= self.log_file[1])  
         
     ########### SETTERS & GETTERS ########### 
     async def get_value(self, client_name: str, variable: ua.NodeId) -> None:
@@ -91,6 +111,14 @@ class ExperimentSystem:
             object_node = client.get_node(ua.NodeId(1, 1))
             await object_node.call_method(ua.NodeId(1, 2), str(float(timestep)))
         return
+    
+    async def log_values(self):
+        logged_values = [(num, part) for num, part in (item.split(".") for item in self.experiment["logging"])]
+        for fmu, var in logged_values:
+            value_nodid = self.system_node_ids[fmu][var]
+            value = await self.get_value(client_name= fmu, variable= value_nodid)       
+            self.write_log_values(fmu, var, value)
+        
     
     ################### SYSTEM UPDATES ########################
     async def run_single_loop(self):
@@ -149,8 +177,9 @@ class ExperimentSystem:
         - "real_time": waits so each step aligns with real wall-clock time
         """
         sim_time = 0.0
+        self.simulation_time = sim_time
         simulation_status = True
-        timestep = float(experiment["timestep"])  # communication timestep
+        timestep = float(experiment["timestep"])  # communication timestep        
 
         if timestep > experiment["stop_time"]:
             raise ValueError("stop_time has to be equal or greater than step_time")
@@ -172,9 +201,15 @@ class ExperimentSystem:
             # Evaluation logic
             if await self.check_reading_conditions(experiment["start_readings_conditions"]):
                 await self.check_outputs(experiment["evaluation"], simulation_time=sim_time)
-
+            
+            # Value logging 
+            #if self.save_values:
+            #    self.log_values(experiment["logging"], simulation_time=sim_time)
+            if self.save_values:
+                await self.log_values()
             # Time advancement
             sim_time += timestep
+            self.simulation_time = sim_time
 
             if self.timing == "real_time":
                 await self.regulate_timestep(start_time= start_wall_time, timestep= timestep)
@@ -208,8 +243,8 @@ class ExperimentSystem:
         self.connections = parse_connections(self.experiment["system_loop"])
         await self.run_multi_step_experiment(experiment=self.experiment)
 
-    def log_system_output(self, output):
-        with open(self.log_file, 'a') as file:            
+    def write_to_log(self, output, filepath, mode = "a"):
+        with open(filepath, mode) as file:            
             file.write(output)
 
     #######################################################################
@@ -221,7 +256,9 @@ class ExperimentSystem:
         """
         for criterea in self.evaluation_equation_dic:
             node = self.system_node_ids[self.evaluation_equation_dic[criterea]["target_obj"]][self.evaluation_equation_dic[criterea]["target_var"]]
+            # ongelmarivi:
             measured_value = self.client_obj.system_clients[self.evaluation_equation_dic[criterea]["target_obj"]].get_node(node)
+            ###
             measured_value = await measured_value.read_value()
             target_value = self.evaluation_equation_dic[criterea]["value"]
             op = self.evaluation_equation_dic[criterea]["operator"] 
@@ -233,7 +270,7 @@ class ExperimentSystem:
             if evaluation_result: logger.info(Fore.GREEN + f"experiment {variable} {op} {self.evaluation_equation_dic[criterea]['value']} = {evaluation_result} \n PASSED with value: {measured_value}")
             else:                 logger.info(Fore.RED   + f"experiment {variable} {op} {self.evaluation_equation_dic[criterea]['value']} = {evaluation_result} \n FAILED with value: {measured_value}")
             
-            if self.save_logs:
+            if self.save_results:
                 self.log_result(criterea          = criterea, 
                                 measured_value    = measured_value, 
                                 evaluation_result = evaluation_result, 
@@ -327,14 +364,22 @@ class ExperimentSystem:
                 if not isinstance(self.stop_time, (int, float)) or self.stop_time <= 0:
                     raise ValueError("'stop_time' must be a positive number")
 
-                self.save_logs = self.experiment.get("save_logs")
-                if not isinstance(self.save_logs, bool):
-                    raise ValueError("'save_logs' must be True or False")
+                self.save_results = self.experiment.get("save_results")
+                if not isinstance(self.save_results, bool):
+                    raise ValueError("'save_results' must be True or False")
+                
+                self.save_values = self.experiment.get("save_values")
+                if not isinstance(self.save_values, bool):
+                    raise ValueError("'save_values' must be True or False")
 
                 # Check initial system state
                 self.initial_system_state = self.experiment.get("initial_system_state", {})
                 if not isinstance(self.initial_system_state, dict):
                     raise ValueError("'initial_system_state' must be a dictionary")
+                
+                self.logged_values = self.experiment.get("logging", [])
+                if not isinstance(self.logged_values, list):
+                    raise ValueError("'logging' must be a dict")
 
                 # For reading conditions
                 self._parse_conditions(
@@ -365,16 +410,17 @@ class ExperimentSystem:
     ###########################   MAIN LOOP   ######################################
     ################################################################################
     async def main_experiment_loop(self):
-        # initialize fmu servers, clients and variable id storage
-        
-        # experiment_configs = [experiments/experiment1.yaml, experiments/experiment2.yaml, ...]
+
         experiment_files = []
         for config in self.experiment_configs:
             experiment_files.append(os.path.join(config))
 
+        # generoi tässä kansio
+
         for experiment_file in experiment_files:
             await self.initialize_experiment_params(experiment= experiment_file)
-            self.server_obj = await server_manager.create(experiment_config= self.config, port = 7100)
+            # logger generator for an experiment
+            self.server_obj = await server_manager.create(experiment_config= self.config, port = 7000)
             self.gather_system_ids()
             self.client_obj = await client_manager.create(system_servers = self.server_obj.system_servers, 
                                                           remote_servers = self.server_obj.remote_servers, 

@@ -48,7 +48,8 @@ class TestConfig(BaseModel):
     timestep: float = Field(description="seconds, communication timestep")
     timing: Literal["simulation_time", "real_time"] = Field(description="simulation_time or real_time")
     stop_time: float = Field(description="seconds")
-    save_logs: bool = Field(description="true/false")
+    save_results: bool = Field(description="true/false")
+    save_values: bool = Field(description="true/false")
 
     initial_system_state: Dict[str, InitialModelConfig] = Field(description="Define timestep and initial conditions")
     
@@ -56,6 +57,7 @@ class TestConfig(BaseModel):
     start_readings_conditions: Dict[str, str] = Field(description="Logging starts, when this condition is met")
     system_loop: List[Edge] = Field(description="The system loop is made according to the block diagram")
     evaluation: Dict[str, str] = Field(description="These values are logged and they also return true/false depending if the condition is satisfied")
+    logging: list[str] = Field(description="These values are logged and they also return true/false depending if the condition is satisfied")
 
 # Top-level config
 class ExperimentConfig(BaseModel):

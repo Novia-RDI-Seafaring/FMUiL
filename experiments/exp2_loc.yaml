@@ -19,7 +19,8 @@ experiment:
   timestep: 0.5     
   timing: "simulation_time"  
   stop_time: 1000.0  
-  save_logs: true
+  save_results: True                 
+  save_values: True  
   initial_system_state:
     
     LOC_Control:
@@ -47,3 +48,6 @@ experiment:
     eval_1: "LOC_System.temperature_oil < 58"
     eval_2: "LOC_System.temperature_cooling_liquid_out < 40"
     eval_3: "LOC_Control.position_valve > 0"
+  
+  logging:
+    []

@@ -1,4 +1,4 @@
-url: opc.tcp://localhost:7500/freeopcua/server/
+url: opc.tcp://0.0.0.0:7500/freeopcua/server/
 
 objects:
   sample_opc_object:
