@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 import re
 from .infra.servers import server_manager
 from .infra.clients import client_manager
-#from logging_utils import ExperimentLogger
+from .logging_utils import ExperimentLogger
 
 getcontext().prec = 8
 DEFAULT_LOGS = {"Evaluation":"experiment_name, evaluation_name, evaluation_function, measured_value, experiment_result, system_timestamp\n",
@@ -25,7 +25,8 @@ DEFAULT_LOGS = {"Evaluation":"experiment_name, evaluation_name, evaluation_funct
 class ExperimentSystem:
     def __init__(self, experiment_configs: list[str]) -> None:
         self.experiment_configs = experiment_configs
-        self.log_file    = self.generate_logfiles(DEFAULT_LOGS)
+        self.log_folder    = self.generate_log()
+        self.experimentLogger = None
         self.config      = None 
         self.fmu_files   = None
         self.experiment  = None
@@ -41,41 +42,14 @@ class ExperimentSystem:
         self.system_description      = {}
         self.system_node_ids         = {} # this is meant to take in all of the systems node id's
         self.regex_parser_pattern    = r'\d+\.\d+|\d+|[a-zA-Z_][\w]*|[<>!=]=?|==|!=|[^\s\w\.]'
-
-    def generate_logfiles(self, logs_with_headers):
-        # Create timestamped folder
+    
+    ########### Utils ###########    
+    def generate_log(self):
         timestamp = strftime("%Y_%m_%d_%H_%M_%S", gmtime())
         folder_path = os.path.join("logs", timestamp)
         os.makedirs(folder_path, exist_ok=True)
-
-        file_paths = []
-        for log_name, header in logs_with_headers.items():
-            file_path = os.path.join(folder_path, f"{log_name}.csv")
-            if not os.path.exists(file_path):
-                with open(file_path, "w") as f:
-                    f.write(header)
-            file_paths.append(file_path)
-        return file_paths 
+        return folder_path
     
-    def log_result(self, criterea, measured_value, evaluation_result, simulation_time):
-        system_output = f"{self.config['experiment']['experiment_name']},\
-            {criterea},\
-            {self.evaluation_equation_dic[criterea]['target_obj']}.{self.evaluation_equation_dic[criterea]['target_var']} {self.evaluation_equation_dic[criterea]['operator']} {self.evaluation_equation_dic[criterea]['value']},\
-            {measured_value},\
-            {evaluation_result},\
-            {simulation_time}\n"
-        self.write_to_log(output= system_output, filepath= self.log_file[0])
-
-    def write_log_values(self, fmu, variable, value):
-        system_output = f"{self.config['experiment']['experiment_name']},\
-            {fmu},\
-            {variable},\
-            {value},\
-            {self.simulation_time}\n"
-        self.write_to_log(output= system_output, filepath= self.log_file[1])
-        #system_output = (fmu, variable, value, self.simulation_time)
-        #self.write_to_log(output= system_output, filepath= self.log_file[1])  
-        
     ########### SETTERS & GETTERS ########### 
     async def get_value(self, client_name: str, variable: ua.NodeId) -> None:
         client = self.client_obj.fetch_appropriacte_client(client_name=client_name)
@@ -111,14 +85,6 @@ class ExperimentSystem:
             object_node = client.get_node(ua.NodeId(1, 1))
             await object_node.call_method(ua.NodeId(1, 2), str(float(timestep)))
         return
-    
-    async def log_values(self):
-        logged_values = [(num, part) for num, part in (item.split(".") for item in self.experiment["logging"])]
-        for fmu, var in logged_values:
-            value_nodid = self.system_node_ids[fmu][var]
-            value = await self.get_value(client_name= fmu, variable= value_nodid)       
-            self.write_log_values(fmu, var, value)
-        
     
     ################### SYSTEM UPDATES ########################
     async def run_single_loop(self):
@@ -206,7 +172,7 @@ class ExperimentSystem:
             #if self.save_values:
             #    self.log_values(experiment["logging"], simulation_time=sim_time)
             if self.save_values:
-                await self.log_values()
+                await self.experimentLogger.log_values(self.simulation_time)
             # Time advancement
             sim_time += timestep
             self.simulation_time = sim_time
@@ -243,10 +209,6 @@ class ExperimentSystem:
         self.connections = parse_connections(self.experiment["system_loop"])
         await self.run_multi_step_experiment(experiment=self.experiment)
 
-    def write_to_log(self, output, filepath, mode = "a"):
-        with open(filepath, mode) as file:            
-            file.write(output)
-
     #######################################################################
     ################   CHECK SYSTEM OUTPUTS   #############################
     #######################################################################
@@ -271,10 +233,10 @@ class ExperimentSystem:
             else:                 logger.info(Fore.RED   + f"experiment {variable} {op} {self.evaluation_equation_dic[criterea]['value']} = {evaluation_result} \n FAILED with value: {measured_value}")
             
             if self.save_results:
-                self.log_result(criterea          = criterea, 
-                                measured_value    = measured_value, 
-                                evaluation_result = evaluation_result, 
-                                simulation_time   = simulation_time)
+                self.experimentLogger.log_result(criterea          = criterea, 
+                                                 measured_value    = measured_value, 
+                                                 evaluation_result = evaluation_result, 
+                                                 simulation_time   = simulation_time)
             
             logger.info(Style.RESET_ALL)
 
@@ -399,12 +361,15 @@ class ExperimentSystem:
                 self.system_loop = self.experiment.get("system_loop", [])
                 if not isinstance(self.system_loop, list):
                     raise ValueError("'system_loop' must be a list of connections")
+                
+                # Create logger for the experiment
+                self.experimentLogger = ExperimentLogger(self)
 
             except KeyError as e:
                 raise ValueError(f"Config missing required key: {e}")
             except TypeError as e:
                 raise ValueError(f"Config has wrong type: {e}")
-
+            
             
     ################################################################################
     ###########################   MAIN LOOP   ######################################
@@ -414,8 +379,6 @@ class ExperimentSystem:
         experiment_files = []
         for config in self.experiment_configs:
             experiment_files.append(os.path.join(config))
-
-        # generoi tässä kansio
 
         for experiment_file in experiment_files:
             await self.initialize_experiment_params(experiment= experiment_file)

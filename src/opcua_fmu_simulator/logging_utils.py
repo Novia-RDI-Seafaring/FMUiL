@@ -1,5 +1,62 @@
 import os
-from time import gmtime, strftime
+
+# This will be changed
+DEFAULT_LOGS = {"Evaluation":"experiment_name, evaluation_name, evaluation_function, measured_value, experiment_result, system_timestamp\n",
+                "Values":"Experiment_name, System, Variable, Value, Time\n"}
 
 class ExperimentLogger:
-    pass
+    def __init__(self, system: "ExperimentSystem") -> None:
+        self.system = system
+        self.experiment_name = system.experiment["experiment_name"]
+        self.config = system.config
+        self.evaluation_equations = system.evaluation_equation_dic
+        self.get_value = system.get_value
+        self.experiment = system.experiment
+        self.node_ids = system.system_node_ids
+        self.log_file = self.generate_logfiles(system.log_folder) # tämä täytyy tehdä 
+
+    def generate_logfiles(self, folder_path, logs_with_headers=DEFAULT_LOGS):
+
+        # Subfolder for the experiment
+        print(self.experiment_name)
+        experiment_folder = os.path.join(folder_path, self.experiment_name)
+        os.makedirs(experiment_folder, exist_ok=True)
+
+        file_paths = []
+        for log_name, header in logs_with_headers.items():
+            file_path = os.path.join(experiment_folder, f"{log_name}.csv")
+            if not os.path.exists(file_path):
+                with open(file_path, "w") as f:
+                    f.write(header)
+            file_paths.append(file_path)
+
+        print(file_paths)
+        return file_paths
+    
+    def log_result(self, criterea, measured_value, evaluation_result, simulation_time):
+        system_output = f"{self.config['experiment']['experiment_name']},\
+            {criterea},\
+            {self.evaluation_equations[criterea]['target_obj']}.{self.evaluation_equations[criterea]['target_var']} {self.evaluation_equations[criterea]['operator']} {self.evaluation_equations[criterea]['value']},\
+            {measured_value},\
+            {evaluation_result},\
+            {simulation_time}\n"
+        self.write_to_log(output= system_output, filepath= self.log_file[0])
+
+    async def log_values(self, simulation_time):
+        logged_values = [(num, part) for num, part in (item.split(".") for item in self.experiment["logging"])]
+        for fmu, var in logged_values:
+            value_nodid = self.node_ids[fmu][var]
+            value = await self.get_value(client_name= fmu, variable= value_nodid)       
+            self.write_log_values(fmu, var, value, simulation_time)
+
+    def write_log_values(self, fmu, variable, value, sim_time):
+        system_output = f"{self.config['experiment']['experiment_name']},\
+            {fmu},\
+            {variable},\
+            {value},\
+            {sim_time}\n"
+        self.write_to_log(output= system_output, filepath= self.log_file[1])
+    
+    def write_to_log(self, output, filepath, mode = "a"):
+        with open(filepath, mode) as file:            
+            file.write(output)
