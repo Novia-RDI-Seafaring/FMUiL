@@ -62,8 +62,14 @@ experiment:
   ################# evaluation #################
   # These values are logged and they also return true/false depending if the condition is satisfied
   evaluation: 
-    eval_1: "WaterTankSystem.PV_WaterLevel_out < 11.1"
-    eval_2: "TankLevel_PI.CV_PumpCtrl_out < 20"
+
+    eval_1:
+      condition: "WaterTankSystem.PV_WaterLevel_out < 11.1"
+      enabled: True
+
+    eval_2: 
+      condition: "TankLevel_PI.CV_PumpCtrl_out < 20"
+      enabled: True
 
   logging:
     ["WaterTankSystem.PV_WaterLevel_out", "TankLevel_PI.CV_PumpCtrl_out"]

@@ -42,6 +42,11 @@ class InitialModelConfig(BaseModel):
     model_config = ConfigDict(extra="allow")  # accept arbitrary signal/param fields
     timestep: float = Field(description="This has to be defined for every fmu")
 
+# Evaluation section
+class EvaluationCriteria(BaseModel):
+    condition: str = Field(description="The condition to be evaluated")
+    enabled: bool = Field(default=True, description="Whether the evaluation is performed")
+
 # The "test" section in your YAML
 class TestConfig(BaseModel):
     experiment_name: str = Field(description="Scenario name for logs")
@@ -50,14 +55,13 @@ class TestConfig(BaseModel):
     stop_time: float = Field(description="seconds")
     save_results: bool = Field(description="true/false")
     save_values: bool = Field(description="true/false")
-
     initial_system_state: Dict[str, InitialModelConfig] = Field(description="Define timestep and initial conditions")
     
     # Fields that are actually in the YAML under test section
     start_readings_conditions: Dict[str, str] = Field(description="Logging starts, when this condition is met")
     system_loop: List[Edge] = Field(description="The system loop is made according to the block diagram")
-    evaluation: Dict[str, str] = Field(description="These values are logged and they also return true/false depending if the condition is satisfied")
-    logging: list[str] = Field(description="These values are logged and they also return true/false depending if the condition is satisfied")
+    evaluation: dict[str, EvaluationCriteria] = Field(description="These values are logged and they also return true/false depending if the condition is satisfied")
+    logging: List[str] = Field(description="These values are logged and they also return true/false depending if the condition is satisfied")
 
 # Top-level config
 class ExperimentConfig(BaseModel):
@@ -65,4 +69,7 @@ class ExperimentConfig(BaseModel):
     fmu_files: List[str] = Field(description="List of FMU files")
     external_servers: List[str] = Field(description="List of external servers")
     experiment: TestConfig = Field(description="The test section in your YAML")
+
+
+
     
