@@ -19,38 +19,38 @@ from .infra.clients import client_manager
 from .logging_utils import ExperimentLogger
 
 getcontext().prec = 8
-DEFAULT_LOGS = {"Evaluation":"experiment_name, evaluation_name, evaluation_function, measured_value, experiment_result, system_timestamp\n",
-                "Values":"Experiment_name, System, Variable, Value, Time\n"}
 
 class ExperimentSystem:
     def __init__(self, experiment_configs: list[str]) -> None:
         self.experiment_configs = experiment_configs
-        self.log_folder    = self.generate_log()
-        self.experimentLogger = None
-        self.config      = None 
-        self.fmu_files   = None
-        self.experiment  = None
-        self.save_results= None
-        self.save_values = None
-        self.timing      = None
-        self.connections = None # description of system loop definition from experiment
-        self.logged_values = None
-        self.server_obj  = None
-        self.simulation_time = None
+        self.log_folder         = self.generate_log()
+        self.experimentLogger   = None
+        self.config             = None 
+        self.fmu_files          = None
+        self.experiment         = None
+        self.timing             = None
+        self.connections        = None # description of system loop definition from experiment
+        self.logged_values      = None
+        self.server_obj         = None
+        self.simulation_time    = None
         self.reading_condition_dict  = {}
         self.evaluation_equation_dic = {}
-        self.system_description      = {}
         self.system_node_ids         = {} # this is meant to take in all of the systems node id's
         self.regex_parser_pattern    = r'\d+\.\d+|\d+|[a-zA-Z_][\w]*|[<>!=]=?|==|!=|[^\s\w\.]'
     
-    ########### Utils ###########    
+    ########### Utils ###########
+    """
+    Utility functions for logging
+    """    
     def generate_log(self):
+    # Generates general folder with timestamp for the whole experiment cycle 
         timestamp = strftime("%Y_%m_%d_%H_%M_%S", gmtime())
         folder_path = os.path.join("logs", timestamp)
         os.makedirs(folder_path, exist_ok=True)
         return folder_path
     
     async def log_requested_values(self):
+    # Uses get_value to get current value and logs it using the experimentlogger
         for fmu, var in self.experimentLogger.logged_values:
             node_id = self.system_node_ids[fmu][var]
             value = await self.get_value(fmu, node_id)
@@ -58,6 +58,9 @@ class ExperimentSystem:
         
     ########### SETTERS & GETTERS ########### 
     async def get_value(self, client_name: str, variable: ua.NodeId) -> None:
+        """
+        Gets certain value from a specific opc ua simulation server
+        """
         client = self.client_obj.fetch_appropriacte_client(client_name=client_name)
         node = client.get_node(variable)
         return await node.read_value() 
@@ -86,6 +89,9 @@ class ExperimentSystem:
             await node.write_value(ua.DataValue(ua.Variant(value, variant1.VariantType)))            
             
     async def run_system_updates(self, timestep):
+        """
+        Calls method "..." from all the opc ua simulation servers
+        """
         for key in self.client_obj.system_clients.keys():
             client = self.client_obj.system_clients[key]
             object_node = client.get_node(ua.NodeId(1, 1))
@@ -142,8 +148,6 @@ class ExperimentSystem:
 
         return True
 
-
-        
     ################################################
     ############### SYSTEM TESTS ###################
     ################################################
@@ -179,11 +183,9 @@ class ExperimentSystem:
             if await self.check_reading_conditions(experiment["start_evaluating_conditions"]):
                 await self.check_outputs(experiment["evaluation"], simulation_time=sim_time)
             
-            # Value logging 
-            #if self.save_values:
-            #    self.log_values(experiment["logging"], simulation_time=sim_time)
-            if self.save_values:
-                await self.log_requested_values()
+            # Value logging
+            await self.log_requested_values()
+
             # Time advancement
             sim_time += timestep
             self.simulation_time = sim_time
@@ -198,14 +200,16 @@ class ExperimentSystem:
                 print("Simulation ended\n\n ")
 
     async def regulate_timestep(self, start_time: float, timestep: float):
+        """
+        Checks if we are simulating faster than real time.
+        """
         elapsed = time.time() - start_time
         sleep_duration = timestep - elapsed
         if sleep_duration > 0:
             await asyncio.sleep(sleep_duration)
         elif sleep_duration < 0:
             logger.error("DURANTION OF LOOP EXCEEDS TIMESTEP!")
-            # ADD MESSAGE TO LOG FILES
-            
+            # WARNING
             
     async def run_experiment(self) -> None:
         """
@@ -254,13 +258,15 @@ class ExperimentSystem:
     #####################   INIT SYSTEM IDS   #################################
     ###########################################################################
     def gather_system_ids(self):
+        """
+        placeholder
+        """
         for server_name in self.server_obj.system_servers:
             self.system_node_ids[server_name] = self.server_obj.system_servers[server_name].server_variable_ids
 
-    
     def _parse_conditions(self, conditions_dict, store_dict_name, description=""):
         """
-        Generic parser for reading or evaluation conditions.
+        Generic parser for reading and evaluation conditions.
         
         conditions_dict: dict of {name: {"condition": str, "enabled": bool}}
         store_dict_name: string, attribute name to store parsed data
@@ -277,7 +283,7 @@ class ExperimentSystem:
         parsed_dict = {}
 
         for condition_name, cond_data in conditions_dict.items():
-            # Support both old style (string) and new style (dict)
+            # Support both old (string) and new (dict), maybe not necessary?
             if isinstance(cond_data, str):
                 cond_str = cond_data
                 enabled = True
@@ -319,88 +325,85 @@ class ExperimentSystem:
         setattr(self, store_dict_name, parsed_dict)
 
 
-
     async def initialize_experiment_params(self, experiment):
-            print("Initializing experiment parameters...")
-            self.config    = ExperimentLoader(experiment).dump_dict() # dump pydantic model as dict
+        """
+        placeholder
+        """
+        print("Initializing experiment parameters...")
+        self.config    = ExperimentLoader(experiment).dump_dict() # dump pydantic model as dict
 
-            try:
-                # Check FMU files
-                self.fmu_files = self.config.get("fmu_files")
-                if not isinstance(self.fmu_files, list) or not self.fmu_files:
-                    raise ValueError("'fmu_files' must be a non-empty list of FMU paths")
+        try:
+            # Check FMU files
+            self.fmu_files = self.config.get("fmu_files")
+            if not isinstance(self.fmu_files, list) or not self.fmu_files:
+                raise ValueError("'fmu_files' must be a non-empty list of FMU paths")
 
-                # Check external servers
-                self.external_servers = self.config.get("external_servers", [])
-                if not isinstance(self.external_servers, list):
-                    raise ValueError("'external_servers' must be a list")
+            # Check external servers
+            self.external_servers = self.config.get("external_servers", [])
+            if not isinstance(self.external_servers, list):
+                raise ValueError("'external_servers' must be a list")
 
-                # Check experiment section
-                self.experiment = self.config.get("experiment")
-                if not isinstance(self.experiment, dict):
-                    raise ValueError("'experiment' section must be a dictionary")
+            # Check experiment section
+            self.experiment = self.config.get("experiment")
+            if not isinstance(self.experiment, dict):
+                raise ValueError("'experiment' section must be a dictionary")
 
-                # Individual experiment parameters
-                self.experiment_name = self.experiment.get("experiment_name")
-                if not isinstance(self.experiment_name, str) or not self.experiment_name:
-                    raise ValueError("'experiment_name' must be a non-empty string")
+            # Individual experiment parameters
+            self.experiment_name = self.experiment.get("experiment_name")
+            if not isinstance(self.experiment_name, str) or not self.experiment_name:
+                raise ValueError("'experiment_name' must be a non-empty string")
 
-                self.timestep = self.experiment.get("timestep")
-                if not isinstance(self.timestep, (int, float)) or self.timestep <= 0:
-                    raise ValueError("'timestep' must be a positive number")
+            # Timestep
+            self.timestep = self.experiment.get("timestep")
+            if not isinstance(self.timestep, (int, float)) or self.timestep <= 0:
+                raise ValueError("'timestep' must be a positive number")
 
-                self.timing = self.experiment.get("timing")
-                if self.timing not in ["simulation_time", "real_time"]:
-                    raise ValueError("'timing' must be either 'simulation_time' or 'real_time'")
+            # Simulation or realtime
+            self.timing = self.experiment.get("timing")
+            if self.timing not in ["simulation_time", "real_time"]:
+                raise ValueError("'timing' must be either 'simulation_time' or 'real_time'")
 
-                self.stop_time = self.experiment.get("stop_time")
-                if not isinstance(self.stop_time, (int, float)) or self.stop_time <= 0:
-                    raise ValueError("'stop_time' must be a positive number")
+            # Simulation stop time
+            self.stop_time = self.experiment.get("stop_time")
+            if not isinstance(self.stop_time, (int, float)) or self.stop_time <= 0:
+                raise ValueError("'stop_time' must be a positive number")
 
-                self.save_results = self.experiment.get("save_results")
-                if not isinstance(self.save_results, bool):
-                    raise ValueError("'save_results' must be True or False")
-                
-                self.save_values = self.experiment.get("save_values")
-                if not isinstance(self.save_values, bool):
-                    raise ValueError("'save_values' must be True or False")
-
-                # Check initial system state
-                self.initial_system_state = self.experiment.get("initial_system_state", {})
-                if not isinstance(self.initial_system_state, dict):
-                    raise ValueError("'initial_system_state' must be a dictionary")
-                
-                self.logged_values = self.experiment.get("logging", [])
-                if not isinstance(self.logged_values, list):
-                    raise ValueError("'logging' must be a dict")
-
-                # For reading conditions
-                self._parse_conditions(
-                    conditions_dict=self.experiment.get("start_evaluating_conditions", {}),
-                    store_dict_name="reading_condition_dict",
-                    description="start evaluaiting condition"
-                )
-
-                # For evaluation conditions
-                self._parse_conditions(
-                    conditions_dict=self.experiment.get("evaluation", {}),
-                    store_dict_name="evaluation_equation_dic",
-                    description="evaluation condition"
-                )
-
-                # System loop checks
-                self.system_loop = self.experiment.get("system_loop", [])
-                if not isinstance(self.system_loop, list):
-                    raise ValueError("'system_loop' must be a list of connections")
-                
-                # Create logger for the experiment
-                self.experimentLogger = ExperimentLogger(self)
-
-            except KeyError as e:
-                raise ValueError(f"Config missing required key: {e}")
-            except TypeError as e:
-                raise ValueError(f"Config has wrong type: {e}")
+            #Check initial system state
+            self.initial_system_state = self.experiment.get("initial_system_state", {})
+            if not isinstance(self.initial_system_state, dict):
+                raise ValueError("'initial_system_state' must be a dictionary")
             
+            # Logged values
+            self.logged_values = self.experiment.get("logging", [])
+            if not isinstance(self.logged_values, list):
+                raise ValueError("'logging' must be a dict")
+
+            # For reading conditions
+            self._parse_conditions(
+                conditions_dict=self.experiment.get("start_evaluating_conditions", {}),
+                store_dict_name="reading_condition_dict",
+                description="start evaluaiting condition"
+            )
+
+            # For evaluation conditions
+            self._parse_conditions(
+                conditions_dict=self.experiment.get("evaluation", {}),
+                store_dict_name="evaluation_equation_dic",
+                description="evaluation condition"
+            )
+
+            # System loop checks
+            self.system_loop = self.experiment.get("system_loop", [])
+            if not isinstance(self.system_loop, list):
+                raise ValueError("'system_loop' must be a list of connections")
+            
+            # Create logger for the experiment
+            self.experimentLogger = ExperimentLogger(self)
+
+        except KeyError as e:
+            raise ValueError(f"Config missing required key: {e}")
+        except TypeError as e:
+            raise ValueError(f"Config has wrong type: {e}")
             
     ################################################################################
     ###########################   MAIN LOOP   ######################################
