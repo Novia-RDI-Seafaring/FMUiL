@@ -16,8 +16,6 @@ experiment:
   timestep: 1                   
   timing: "real_time"  
   stop_time: 30.0  
-  save_results: True                 
-  save_values: True  
   initial_system_state:
     
     gain:
@@ -32,7 +30,9 @@ experiment:
     
   ################# evaluation #################
   evaluation: 
-    eval_1: "gain.output_gain > 0"
+    gain:
+      condition: "gain.output_gain > 0"
+      enabled: true
 
   logging:
     ["example_server.custom_variable"]

@@ -46,7 +46,6 @@ class ExperimentLogger:
                 with open(file_path, "w") as f:
                     f.write(header)
             file_paths.append(file_path)
-
         return file_paths
     
     def log_result(self, criterea, measured_value, evaluation_result, simulation_time):

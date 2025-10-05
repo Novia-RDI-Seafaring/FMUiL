@@ -18,9 +18,7 @@ experiment:
   experiment_name: Lube Oil Cooling
   timestep: 0.5     
   timing: "simulation_time"  
-  stop_time: 1000.0  
-  save_results: True                 
-  save_values: True  
+  stop_time: 100.0  
   initial_system_state:
     
     LOC_Control:
@@ -44,10 +42,16 @@ experiment:
       to:   LOC_System.position_valve_in
 
   ################# evaluation #################
+
+    # System evaluation functions, enable: true/false
   evaluation: 
-    eval_1: "LOC_System.temperature_oil < 58"
-    eval_2: "LOC_System.temperature_cooling_liquid_out < 40"
-    eval_3: "LOC_Control.position_valve > 0"
-  
+    Alarm_temp_oil:
+      condition: "LOC_System.temperature_oil < 58"
+      enabled: true
+    Alarm_cooling: 
+      condition: "LOC_System.temperature_cooling_liquid_out < 40"
+      enabled: true
+
+  # These values are logged in separate log
   logging:
-    []
+    ["LOC_Control.position_valve"]

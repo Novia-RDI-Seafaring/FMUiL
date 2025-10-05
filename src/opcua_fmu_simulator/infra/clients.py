@@ -51,12 +51,13 @@ class client_manager:
                 self.system_node_ids[server] = {}
                 for obj in self.remote_servers[server]["objects"]:
                     for var in self.remote_servers[server]["objects"][obj]:
-                        keys = self.remote_servers[server]["objects"][obj][var].keys()
-                        if "name" in keys:
+                        var_data = self.remote_servers[server]["objects"][obj][var]
+                        keys = var_data.keys()
+                        if "name" in keys and var_data["name"] is not None:
                             self.system_node_ids[server][var] = ua.NodeId(self.remote_servers[server]["objects"][obj][var]["name"])
                         elif("id" in keys and "ns" in keys):
                             id = self.remote_servers[server]["objects"][obj][var]["id"]
-                            ns = self.remote_servers[server]["objects"][obj][var]["ns"]
+                            ns = self.remote_servers[server]["objects"][obj][var]["ns"]                            
                             self.system_node_ids[server][var] = ua.NodeId(Identifier= id, NamespaceIndex= ns)
                         else:
                             raise Exception(f"server {server} with object {obj} found no acceptable id namespace or name for variable {var}")

@@ -19,9 +19,6 @@ class SampleOpcObject(BaseModel):
     custom_variable: CustomVariable = Field(
         ..., description="First custom variable for this OPC UA object."
     )
-    custom_variable2: CustomVariable = Field(
-        ..., description="Second custom variable for this OPC UA object."
-    )
 
 class ExternalServerConfig(BaseModel):
     url: str = Field(
