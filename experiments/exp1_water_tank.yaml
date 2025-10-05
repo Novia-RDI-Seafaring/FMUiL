@@ -49,7 +49,7 @@ experiment:
       Kp: 1.6                         # FMU parameter
 
   start_evaluating_conditions: # Start evaluating conditions 
-    #condition_01: "TankLevel_PI.CV_PumpCtrl_out > 0.01" # Logging starts, when this condition is met
+    condition_01: "TankLevel_PI.CV_PumpCtrl_out > 0.01" # Logging starts, when this condition is met
 
   # The system loop is made according to the block diagram  
   system_loop: 
@@ -65,11 +65,11 @@ experiment:
 
     eval_1:
       condition: "WaterTankSystem.PV_WaterLevel_out < 11.1"
-      enabled: True
+      enabled: true
 
     eval_2: 
       condition: "TankLevel_PI.CV_PumpCtrl_out < 20"
-      enabled: True
+      enabled: false
 
   logging:
     ["WaterTankSystem.PV_WaterLevel_out", "TankLevel_PI.CV_PumpCtrl_out"]

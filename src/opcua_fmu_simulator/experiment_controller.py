@@ -227,25 +227,28 @@ class ExperimentSystem:
         """
         evaluation of system outputs, this function reads the "evaluation" section of the yaml file
         """
-        for criterea in self.evaluation_equation_dic:
-            node = self.system_node_ids[self.evaluation_equation_dic[criterea]["target_obj"]][self.evaluation_equation_dic[criterea]["target_var"]]
-            measured_value = self.client_obj.system_clients[self.evaluation_equation_dic[criterea]["target_obj"]].get_node(node)
-            measured_value = await measured_value.read_value()
-            target_value = self.evaluation_equation_dic[criterea]["value"]
-            op = self.evaluation_equation_dic[criterea]["operator"] 
-            
-            # compare the two values Tästä alaspäin omaksi ->>
-            evaluation_result = ops[op](measured_value, target_value)
-            variable = self.evaluation_equation_dic[criterea]["target_var"]
+        for criterea, criterea_data in self.evaluation_equation_dic.items():
+            if not criterea_data.get("enabled", True):
+                continue  # skip disabled evaluations
 
-            if evaluation_result: logger.info(Fore.GREEN + f"experiment {variable} {op} {self.evaluation_equation_dic[criterea]['value']} = {evaluation_result} \n PASSED with value: {measured_value}")
-            else:                 logger.info(Fore.RED   + f"experiment {variable} {op} {self.evaluation_equation_dic[criterea]['value']} = {evaluation_result} \n FAILED with value: {measured_value}")
-            
-            if self.save_results:
-                self.experimentLogger.log_result(criterea          = criterea, 
-                                                 measured_value    = measured_value, 
-                                                 evaluation_result = evaluation_result, 
-                                                 simulation_time   = simulation_time)
+            node = self.system_node_ids[criterea_data["target_obj"]][criterea_data["target_var"]]
+            measured_value = self.client_obj.system_clients[criterea_data["target_obj"]].get_node(node)
+            measured_value = await measured_value.read_value()
+
+            target_value = criterea_data["value"]
+            op = criterea_data["operator"]
+
+            # compare the two values
+            evaluation_result = ops[op](measured_value, target_value)
+
+            # save result only if this specific condition is enabled
+            if criterea_data.get("enabled", True):
+                self.experimentLogger.log_result(
+                    criterea=criterea,
+                    measured_value=measured_value,
+                    evaluation_result=evaluation_result,
+                    simulation_time=simulation_time,
+                )
 
     ###########################################################################
     #####################   INIT SYSTEM IDS   #################################
