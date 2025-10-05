@@ -48,8 +48,8 @@ experiment:
       Ki: 0.08                        # FMU parameter
       Kp: 1.6                         # FMU parameter
 
-  start_readings_conditions: 
-    condition_01: "TankLevel_PI.CV_PumpCtrl_out > 0.01" # Logging starts, when this condition is met
+  start_evaluating_conditions: # Start evaluating conditions 
+    #condition_01: "TankLevel_PI.CV_PumpCtrl_out > 0.01" # Logging starts, when this condition is met
 
   # The system loop is made according to the block diagram  
   system_loop: 

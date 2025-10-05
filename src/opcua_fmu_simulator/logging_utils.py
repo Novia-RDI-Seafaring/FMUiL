@@ -7,7 +7,6 @@ DEFAULT_LOGS = {"Evaluation":"experiment_name, evaluation_name, evaluation_funct
 class ExperimentLogger:
     def __init__(self, system: "ExperimentSystem") -> None:
         self.system = system     
-        #self.get_value = system.get_value
         self.log_file = self.generate_logfiles(system.log_folder) 
     
     @property
@@ -37,7 +36,6 @@ class ExperimentLogger:
 
     def generate_logfiles(self, folder_path, logs_with_headers=DEFAULT_LOGS):
         # Subfolder for the experiment
-        print(self.experiment_name)
         experiment_folder = os.path.join(folder_path, self.experiment_name)
         os.makedirs(experiment_folder, exist_ok=True)
 
@@ -49,7 +47,6 @@ class ExperimentLogger:
                     f.write(header)
             file_paths.append(file_path)
 
-        print(file_paths)
         return file_paths
     
     def log_result(self, criterea, measured_value, evaluation_result, simulation_time):
@@ -60,12 +57,6 @@ class ExperimentLogger:
             {evaluation_result},\
             {simulation_time}\n"
         self.write_to_log(output= system_output, filepath= self.log_file[0])
-
-  #  async def log_values(self, simulation_time):
-  #      for fmu, var in logged_values:
-  #          value_nodid = self.node_ids[fmu][var]
-  #          value = await self.get_value(client_name= fmu, variable= value_nodid)       
-  #          self.write_log_values(fmu, var, value, simulation_time)
 
     async def log_value(self, fmu, variable, value, sim_time):
         system_output = f"{self.config['experiment']['experiment_name']},\

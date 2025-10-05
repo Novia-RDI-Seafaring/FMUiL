@@ -53,12 +53,12 @@ class TestConfig(BaseModel):
     timestep: float = Field(description="seconds, communication timestep")
     timing: Literal["simulation_time", "real_time"] = Field(description="simulation_time or real_time")
     stop_time: float = Field(description="seconds")
-    save_results: bool = Field(description="true/false")
-    save_values: bool = Field(description="true/false")
+    save_results: bool = Field(description="true/false") # POIS
+    save_values: bool = Field(description="true/false") # POIS
     initial_system_state: Dict[str, InitialModelConfig] = Field(description="Define timestep and initial conditions")
     
     # Fields that are actually in the YAML under test section
-    start_readings_conditions: Dict[str, str] = Field(description="Logging starts, when this condition is met")
+    start_evaluating_conditions: Optional[Dict[str, str]] = Field(default=None, description="Evluating starts, when this condition is met")
     system_loop: List[Edge] = Field(description="The system loop is made according to the block diagram")
     evaluation: dict[str, EvaluationCriteria] = Field(description="These values are logged and they also return true/false depending if the condition is satisfied")
     logging: List[str] = Field(description="These values are logged and they also return true/false depending if the condition is satisfied")

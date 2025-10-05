@@ -123,21 +123,26 @@ class ExperimentSystem:
 
     async def check_reading_conditions(self, conditions):
         """
-        checks that the conditions required to start readings are met
+        Checks that all reading conditions are met.
+        Returns True if no conditions are defined.
         """
+        if not self.reading_condition_dict:
+            return True
+
         for condition in self.reading_condition_dict:
             node = self.system_node_ids[self.reading_condition_dict[condition]["target_obj"]][self.reading_condition_dict[condition]["target_var"]]
             measured_value = self.client_obj.system_clients[self.reading_condition_dict[condition]["target_obj"]].get_node(node)
             measured_value = await measured_value.read_value()
             eval_criterea = self.reading_condition_dict[condition]["value"] 
             op            = self.reading_condition_dict[condition]["operator"]
-            result        = ops[op](measured_value, eval_criterea) 
-            variable      = self.reading_condition_dict[condition]["target_var"]
 
-            if result:  logger.info(Fore.GREEN + f"condition  {variable} {op} {eval_criterea}  PASSED \nwith value: {measured_value}")
-            else:       logger.info(Fore.RED + f"condition {variable} {op} {eval_criterea} FAILED \nwith value: {measured_value}")
+            # Fail early if one condition is not met
+            if not ops[op](measured_value, eval_criterea):
+                return False  
 
-            return result
+        return True
+
+
         
     ################################################
     ############### SYSTEM TESTS ###################
@@ -171,7 +176,7 @@ class ExperimentSystem:
             await self.run_single_loop()
 
             # Evaluation logic
-            if await self.check_reading_conditions(experiment["start_readings_conditions"]):
+            if await self.check_reading_conditions(experiment["start_evaluating_conditions"]):
                 await self.check_outputs(experiment["evaluation"], simulation_time=sim_time)
             
             # Value logging 
@@ -224,14 +229,12 @@ class ExperimentSystem:
         """
         for criterea in self.evaluation_equation_dic:
             node = self.system_node_ids[self.evaluation_equation_dic[criterea]["target_obj"]][self.evaluation_equation_dic[criterea]["target_var"]]
-            # ongelmarivi:
             measured_value = self.client_obj.system_clients[self.evaluation_equation_dic[criterea]["target_obj"]].get_node(node)
-            ###
             measured_value = await measured_value.read_value()
             target_value = self.evaluation_equation_dic[criterea]["value"]
             op = self.evaluation_equation_dic[criterea]["operator"] 
             
-            # compare the two values
+            # compare the two values Tästä alaspäin omaksi ->>
             evaluation_result = ops[op](measured_value, target_value)
             variable = self.evaluation_equation_dic[criterea]["target_var"]
 
@@ -243,9 +246,6 @@ class ExperimentSystem:
                                                  measured_value    = measured_value, 
                                                  evaluation_result = evaluation_result, 
                                                  simulation_time   = simulation_time)
-            
-            logger.info(Style.RESET_ALL)
-
 
     ###########################################################################
     #####################   INIT SYSTEM IDS   #################################
@@ -259,40 +259,62 @@ class ExperimentSystem:
         """
         Generic parser for reading or evaluation conditions.
         
-        conditions_dict: dict of {name: "FMU.variable operator value"}
+        conditions_dict: dict of {name: {"condition": str, "enabled": bool}}
         store_dict_name: string, attribute name to store parsed data
         """
         print(f"Parsing {description}s...")
+
+        if not conditions_dict:
+            setattr(self, store_dict_name, {})
+            return 
+
         if not isinstance(conditions_dict, dict):
             raise ValueError(f"{description.capitalize()}s must be a dictionary")
 
         parsed_dict = {}
 
-        for condition_name, cond_str in conditions_dict.items():
+        for condition_name, cond_data in conditions_dict.items():
+            # Support both old style (string) and new style (dict)
+            if isinstance(cond_data, str):
+                cond_str = cond_data
+                enabled = True
+            elif isinstance(cond_data, dict) and "condition" in cond_data:
+                cond_str = cond_data["condition"]
+                enabled = cond_data.get("enabled", True)
+            else:
+                raise ValueError(
+                    f"{description.capitalize()} '{condition_name}' must be a string or dict with 'condition'"
+                )
+
             try:
                 match = re.findall(self.regex_parser_pattern, cond_str)
                 if not match or len(match) != 4:
-                    raise ValueError(f"{description.capitalize()} '{condition_name}' does not match expected pattern")
+                    raise ValueError(
+                        f"{description.capitalize()} '{condition_name}' does not match expected pattern"
+                    )
 
                 target_obj, target_var, operator, value_str = match
 
-                # Convert value to float
                 try:
                     value = float(value_str)
                 except ValueError:
-                    raise ValueError(f"{description.capitalize()} '{condition_name}' has invalid numeric value: '{value_str}'")
+                    raise ValueError(
+                        f"{description.capitalize()} '{condition_name}' has invalid numeric value: '{value_str}'"
+                    )
 
                 parsed_dict[condition_name] = {
                     "target_obj": target_obj,
                     "target_var": target_var,
                     "operator": operator,
-                    "value": value
+                    "value": value,
+                    "enabled": enabled,
                 }
 
             except Exception as e:
                 print(f"Error parsing {description} '{condition_name}': {e}")
 
         setattr(self, store_dict_name, parsed_dict)
+
 
 
     async def initialize_experiment_params(self, experiment):
@@ -351,9 +373,9 @@ class ExperimentSystem:
 
                 # For reading conditions
                 self._parse_conditions(
-                    conditions_dict=self.experiment.get("start_readings_conditions", {}),
+                    conditions_dict=self.experiment.get("start_evaluating_conditions", {}),
                     store_dict_name="reading_condition_dict",
-                    description="reading condition"
+                    description="start evaluaiting condition"
                 )
 
                 # For evaluation conditions
