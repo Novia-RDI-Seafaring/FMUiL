@@ -15,6 +15,7 @@ class FmuLoader:
                         instanceName='instance1')
 
         self.fmu.instantiate()
+        self.fmu.setupExperiment(startTime=0.0)
         self.fmu.enterInitializationMode()      
         self.fmu.exitInitializationMode()
         self.fmu_inputs = {}

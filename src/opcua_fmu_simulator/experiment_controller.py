@@ -18,7 +18,7 @@ from .infra.servers import server_manager
 from .infra.clients import client_manager
 from .logging_utils import ExperimentLogger
 
-getcontext().prec = 8
+getcontext().prec = 7 #Simulink FMU default is 1e-6, these needs to be rounded womewhere
 
 class ExperimentSystem:
     def __init__(self, experiment_configs: list[str]) -> None:
