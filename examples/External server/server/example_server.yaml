@@ -5,9 +5,9 @@ objects:
     my_opc_variable: 
       ns: 5
       id: 4
-
     custom_variable2:
       name: "custom_variable"
+
      
            
       
