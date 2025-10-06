@@ -3,7 +3,6 @@ from pydantic import BaseModel, Field, field_validator, ConfigDict
 from pathlib import Path
 import yaml
 
-# ----- EXTERNAL SERVERS -----
 class CustomVariable(BaseModel):
     id: Optional[int] = Field(
         None, description="Numeric identifier of the OPC UA variable."
@@ -15,17 +14,12 @@ class CustomVariable(BaseModel):
         None, description="Fully qualified OPC UA variable name (e.g., 'ns=5;i=4')."
     )
 
-class SampleOpcObject(BaseModel):
-    custom_variable: CustomVariable = Field(
-        ..., description="First custom variable for this OPC UA object."
-    )
-
 class ExternalServerConfig(BaseModel):
     url: str = Field(
         ..., description="OPC UA server endpoint URL (e.g., 'opc.tcp://host:port/path')."
     )
-    objects: Dict[str, SampleOpcObject] = Field(
-        ..., description="Mapping of OPC UA objects by name."
+    objects: Dict[str, Dict[str, CustomVariable]] = Field(
+        ..., description="Mapping of OPC UA objects by name. Each object has arbitrary variables."
     )
 
 # ----- SIMULATION SERVER -----

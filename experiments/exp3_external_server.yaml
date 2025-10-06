@@ -35,6 +35,6 @@ experiment:
       enabled: true
 
   logging:
-    ["example_server.custom_variable"]
+    ["example_server.custom_variable", "example_server.custom_variable2"]
 
 
