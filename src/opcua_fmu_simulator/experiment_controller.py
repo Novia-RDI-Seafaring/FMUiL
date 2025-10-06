@@ -18,7 +18,7 @@ from .infra.servers import server_manager
 from .infra.clients import client_manager
 from .logging_utils import ExperimentLogger
 
-getcontext().prec = 7 #Simulink FMU default is 1e-6, these needs to be rounded womewhere
+getcontext().prec = 7 #Simulink FMU default is 1e-6, these should be rounded somewhere
 
 class ExperimentSystem:
     def __init__(self, experiment_configs: list[str]) -> None:
@@ -395,7 +395,7 @@ class ExperimentSystem:
                 raise ValueError("'system_loop' must be a list of connections")
             
             # Create logger for the experiment
-            self.experimentLogger = ExperimentLogger(self)
+            self.experimentLogger = ExperimentLogger(system = self)
 
         except KeyError as e:
             raise ValueError(f"Config missing required key: {e}")
