@@ -1,11 +1,12 @@
-from .fmu_loader import FmuLoader
+from FMUiL.models import FmuLoader
 from asyncua import Server, ua
 import asyncio
 import datetime
 from asyncua.common.methods import uamethod
 import logging
-logger = logging.getLogger(__name__)
 from decimal import Decimal, getcontext, ROUND_HALF_UP
+
+logger = logging.getLogger(__name__)
 
 getcontext().prec = 4
 PRECISION_STR = "0.0001"

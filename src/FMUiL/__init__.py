@@ -1,5 +1,5 @@
-from .operations import ops
-from .experiment_controller import ExperimentSystem
+from FMUiL.utils.operations import ops
+from FMUiL.simulator.experiment_controller import ExperimentSystem
 import asyncio
 import sys
 import os

@@ -1,10 +1,10 @@
 [project]
-name = "opcua_fmu_simulator"
+name = "FMUiL"
 version = "0.1.0"
-description = "Add your description here"
+description = "Functional Mock-up Units in the loop simulations"
 readme = "README.md"
 requires-python = ">=3.11"
-scripts = { experiments = "opcua_fmu_simulator:main" }
+scripts = { experiments = "FMUiL:main" }
 dependencies = [
     "aiofiles>=24.1.0",
     "aiosqlite>=0.21.0",

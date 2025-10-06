@@ -1,5 +1,5 @@
 import yaml
-from opcua_fmu_simulator.schema import ExperimentConfig, ExternalServerConfig
+from FMUiL.schema import ExperimentConfig, ExternalServerConfig
 from pydantic import ValidationError
 from pathlib import Path
 

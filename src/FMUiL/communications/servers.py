@@ -1,5 +1,5 @@
-from opcua_fmu_simulator.config_loader import ExperimentLoader, ExternalServerLoader
-from opcua_fmu_simulator.server_setup_dev import OPCUAFMUServerSetup
+from FMUiL.models import ExternalServerLoader
+from FMUiL.communications.server_setup_dev import OPCUAFMUServerSetup
 from pathlib import Path
 import asyncio
 

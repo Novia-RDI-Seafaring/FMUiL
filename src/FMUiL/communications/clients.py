@@ -1,7 +1,5 @@
 from asyncua import Client, ua
 import logging
-logging.basicConfig(level=logging.warning) 
-logger = logging.getLogger(__name__)
 import asyncio
 import sys
 
@@ -35,7 +33,6 @@ class client_manager:
                 logging.info(f"Connected to server {server_name} at {server.url}")
             except Exception as e:
                 logging.error(f"Failed to connect to server {server_name} at {server.url}: {e}")
-        logger.info(f"system clients clients setup: {self.system_clients}")
         
     async def create_external_clients(self) -> None:
         # TODO: REMOVE SYSTEM NODE ID INITIALIZATION FROM HERE, SEPARATE THE FUNCTIONALITY
