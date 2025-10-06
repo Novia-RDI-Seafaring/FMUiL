@@ -123,9 +123,6 @@ class ExperimentSystem:
                 variable    = update.to_var,
                 value       = value
             )
-            
-            logger.info(f"\n\n passed fmu {update.from_fmu} var {update.from_var} with {value}, to fmu {update.to_fmu} var {update.to_var} \n\n")
-
 
     async def check_reading_conditions(self, conditions):
         """
@@ -416,7 +413,6 @@ class ExperimentSystem:
 
         for experiment_file in experiment_files:
             await self.initialize_experiment_params(experiment= experiment_file)
-            # logger generator for an experiment
             self.server_obj = await server_manager.create(experiment_config= self.config, port = 7000)
             self.gather_system_ids()
             self.client_obj = await client_manager.create(system_servers = self.server_obj.system_servers, 
