@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Functional Mock-up Units in the loop simulations"
 readme = "README.md"
 requires-python = ">=3.11"
-scripts = { experiments = "FMUiL:main" }
+scripts = { experiments = "FMUiL.cli:app" }
 dependencies = [
     "aiofiles>=24.1.0",
     "aiosqlite>=0.21.0",
@@ -31,6 +31,7 @@ dependencies = [
     "setuptools>=80.9.0",
     "six>=1.17.0",
     "sortedcontainers>=2.4.0",
+    "typer>=0.19.2",
     "typing-extensions>=4.15.0",
     "wheel>=0.45.1",
 ]
@@ -44,3 +45,6 @@ where = ["src"]
 
 [tool.setuptools.package-dir]
 "" = "src"
+
+[tool.uvicorn.scripts]
+experiments = "FMUiL.cli:app"
