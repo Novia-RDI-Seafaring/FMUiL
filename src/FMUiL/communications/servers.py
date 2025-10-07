@@ -32,7 +32,7 @@ class server_manager:
         return server_dict
 
     async def initialize_fmu_opc_servers(self) -> None:
-        for fmu_file in self.fmu_files:
+        for fmu_file in self.fmu_files:            
             self.base_port+=1
             server =  await OPCUAFMUServerSetup.async_server_init(
                 fmu=fmu_file, 

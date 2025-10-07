@@ -21,9 +21,10 @@ logger = logging.getLogger(__name__)
 getcontext().prec = 7 #Simulink FMU default is 1e-6, these should be rounded somewhere
 
 class ExperimentSystem:
-    def __init__(self, experiment_configs: list[str]) -> None:
+    def __init__(self, experiment_configs: list[str], base_port) -> None:
         self.experiment_configs = experiment_configs
         self.log_folder         = self.generate_log()
+        self.base_port          = base_port
         self.experimentLogger   = None
         self.config             = None 
         self.fmu_files          = None
@@ -413,7 +414,7 @@ class ExperimentSystem:
 
         for experiment_file in experiment_files:
             await self.initialize_experiment_params(experiment= experiment_file)
-            self.server_obj = await server_manager.create(experiment_config= self.config, port = 7000)
+            self.server_obj = await server_manager.create(experiment_config= self.config, port = self.base_port)
             self.gather_system_ids()
             self.client_obj = await client_manager.create(system_servers = self.server_obj.system_servers, 
                                                           remote_servers = self.server_obj.remote_servers, 
