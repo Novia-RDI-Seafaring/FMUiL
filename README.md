@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://github.com/Novia-RDI-Seafaring/opcua-fmu-simulator"><img src="./public/fmuil.png" alt="OPCUA-FMU" width="200">
+  <a href="https://github.com/Novia-RDI-Seafaring/opcua-fmu-simulator"><img src="[./public/fmuil.png](https://github.com/Novia-RDI-Seafaring/opcua-fmu-simulator/blob/refactor/structure/public/FMUiL.png)" alt="OPCUA-FMU" width="200">
 </a>
 </p>
 
