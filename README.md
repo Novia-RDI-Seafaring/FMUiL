@@ -1,11 +1,11 @@
 <p align="center">
-  <a href="https://github.com/Novia-RDI-Seafaring/opcua-fmu-simulator"><img src="./public/opcua_fmu_logo.png" alt="OPCUA-FMU" width="200">
+  <a href="https://github.com/Novia-RDI-Seafaring/opcua-fmu-simulator"><img src="./public/fmuil.png" alt="OPCUA-FMU" width="200">
 </a>
 </p>
 
 
 <p align="center">
-    <b>OPC-UA and FMU Simulator</b> <br />
+    <b>Functional Mock-up Unit in the loop (FMUiL)</b> <br />
     Perform X-in-the-Loop (XiL) simulation tests with FMU simulation models and communication over OPC-UA.
 </p>
 
@@ -34,7 +34,7 @@
   </a>
 </p>
 
-# OPCUA-FMU Simulator
+# FMUiL
 **Table of content**
 - [1. Features](#features)
 - [2. Installation](#installation)
@@ -135,17 +135,17 @@ The test file allows users to configure the following parameters:
 
     test:
       test_name: "a unique test name"
-      timestep: 0.5                             # in seconds
-      timing:  "simulation_time" or "real_time" 
-      stop_time: 100.0                          # duration of the test 
-      save_logs: true                           # boolean
+      timestep: 0.5                             # Communication timestep in seconds
+      timing:  "simulation_time" or "real_time" # As fast as possible or real time
+      stop_time: 100.0                          # Duration of the test 
       test_description: "a description of the test"
 
       initial_system_state:
         FMU_Model_Name:
           FMU_input_name1: "desired initial value"
           FMU_input_name2: "desired initial value"
-          FMU_input_name3: "desired initial value"
+          FMU_parameter_name1: "desired initial value"
+          FMU_parameter_name2: "desired initial value"
 
         example_server:
           opcua_object01_variable1: "desired initial value"
@@ -154,6 +154,7 @@ The test file allows users to configure the following parameters:
         condition_name: "FMU_Model_Name.FMU_input_name1 > 10"
         # the object and variable have to be part of a created or external server 
         # operators supported: '+' '-' '<' '<=' '>' '>='
+        # Evaluation starts when this condition(s) is met, can be empty to always evaluate
 
       system_loop: # definition how the systems are connected 
         - from: source_object.source_variable
@@ -162,9 +163,16 @@ The test file allows users to configure the following parameters:
         - from: source_object.source_variable
           to:   target_object.target_variable
 
-      evaluation: 
-        eval_1: "object.value < 11.1"
-        eval_2: "object.value > 20"
+      evaluation: # Evaluation criteria, will log true/false depending if the condition is met
+        eval_1: 
+          condition: "object.value < 11.1"
+          enabled: true
+        eval_2: 
+          condition: "object.value < 11.1"
+          enabled: false
+
+      logging:
+        ["fmu.variable","opc.variable"]
 ```
 
 ## External Servers
@@ -174,7 +182,7 @@ The OPCUA-FMU-Simulator allows users to integrate external servers alongside the
 **Example server definition:**
 
 ```yaml
-    url: opc.tcp://localhost:5000/opcua/server/ #server url
+    url: opc.tcp://localhost:4840/opcua/server/ #server url
 
     # object definition, used objects/variables must be specified
     objects:
@@ -192,25 +200,33 @@ The OPCUA-FMU-Simulator allows users to integrate external servers alongside the
           ns: 5
 ```  
  
-Set `url` to match the server address. Specify variables using OPC UA node id and namespace or their BrowseNames.  Include the server in your simulation by adding the YAML file path in your test definition:
+Set `url` to match the server address. Specify variables using OPC UA node id and namespace or their BrowseNames. Include the server in your simulation by adding the YAML file path in your test definition:
 ```yaml
 external_servers: ["path/to/server_description.yaml"]
 ```
 
 
 ## Run experiments
-Experiments are specified as `.yaml` files and are stored in the `/experiments` folder. Experiments can be run with the provided ´uv´ scripts.
+Experiments are specified as `.yaml` files and are stored in the `/experiments` folder. Experiments can be run with the provided ´uv´ scripts. This needs updating when the new version is published.
 
 ### Run all experiments
 Runs every experiment file in the `/experiments` folder:
 ```powershell
-uv run experiments
+uv run fmuil run-all
 ```
 ### Run specific experiments
 To run specific experiments you pass the file names as:
+
+
+### Options
+It is possible to define the experiment folder, default is `/experiments`, from which the server creation starts.
 ```powershell
-# Multiple files
-uv run experiments exp_a.yaml exp_b.yaml
+--experiment-dir path/to/directory
+```
+
+It is possible to define the port number, from which the server creation starts. Default is `7000`
+```powershell
+--port 1234
 ```
 
 # How to log results
