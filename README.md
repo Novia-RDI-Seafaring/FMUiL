@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://github.com/Novia-RDI-Seafaring/opcua-fmu-simulator"><img src="./public/fmuil.png" alt="OPCUA-FMU" width="200">
+  <a href="https://github.com/Novia-RDI-Seafaring/opcua-fmu-simulator"><img src="./public/FMUiL.png" alt="FMUiL" width="200">
 </a>
 </p>
 
@@ -102,7 +102,7 @@
 # Configure experiments
 
 ## Experiment configuration
-The test file allows users to configure the following parameters:
+The experiment file allows users to configure the following parameters:
 
 - **FMUs** included in the simulation  
 - **External OPC UA servers** used  
@@ -110,13 +110,16 @@ The test file allows users to configure the following parameters:
   - Test name  
   - Communication timestep  
   - Simulation or real-time mode  
-  - Simulation stop time  
-  - Logging (enabled/disabled)  
-  - Test description  
+  - Simulation stop time
+  - experiment description  
 - **Initial system inputs** for all FMUs and external servers  
-- **Conditions for starting logging**  
+- **Conditions for start evaluation**  
 - **System loop definition** (from-to)  
-- **Simulation evaluation criteria**  
+- **Simulation evaluation criteria**
+  - condition
+  - enabled
+- **Logged values** 
+
 
 **Example configuration file:**
 
@@ -231,7 +234,9 @@ It is possible to define the port number, from which the server creation starts.
 
 # How to log results
 
-The system logs all data required to evaluate a tests performance when the flag `save_logs: true`. The evaluation happens every communication timestep. The saved values are the following:
+## Evaluation
+
+The system logs all data required to evaluate a tests performance when the flag `save_logs: true`. The evaluation happens every communication timestep. Only FMU variables can be currently evaluated. The saved values are the following:
  
 - `test_name`: Given name of the test under test_name 
 
@@ -244,6 +249,10 @@ The system logs all data required to evaluate a tests performance when the flag 
 - `test_result`: Boolean value if the condition is met
 
 - `system_timestamp`: system time at the time of the evaluation 
+
+## Logging
+
+It is possible to log any output values from FMUs or external servers.
 
 
 # Example usage
