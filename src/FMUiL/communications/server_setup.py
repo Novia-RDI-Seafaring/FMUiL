@@ -1,4 +1,4 @@
-from FMUiL.models import FmuLoader
+from FMUiL.handlers import FmuHandler
 from asyncua import Server, ua
 import asyncio
 import datetime
@@ -12,7 +12,7 @@ getcontext().prec = 4
 PRECISION_STR = "0.0001"
 COMPARISON_PRECISION = Decimal("0.0001")
 
-class OPCUAFMUServerSetup:
+class InternalServerSetup:
     def __init__(self) -> None:
         self.server_started = asyncio.Event()
         self.server = None
@@ -47,7 +47,7 @@ class OPCUAFMUServerSetup:
     @classmethod
     async def async_server_init(cls, fmu:str, port:int):
         self = cls()
-        self.fmu:FmuLoader = FmuLoader(fmu_file=fmu)
+        self.fmu:FmuHandler = FmuHandler(fmu_file=fmu)
         self.url = self.construct_server_url(port)
         await self.setup_sequence()
         self.idx = int(await self.server.register_namespace(self.url))

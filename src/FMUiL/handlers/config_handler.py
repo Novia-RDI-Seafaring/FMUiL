@@ -1,14 +1,14 @@
 import yaml
-from FMUiL.schema import ExperimentConfig, ExternalServerConfig
+from FMUiL.schemas import ExperimentConfig, ExternalServerConfig
 from pydantic import ValidationError
 from pathlib import Path
 
-class ExperimentLoader:
+class ExperimentHandler:
     def __init__(self, file_path):
         self.file_path = file_path
         self.model = self.load_model()
     
-    def load_file(self):
+    def _load_file(self):
         try:
             with open(self.file_path) as file:
                 return yaml.safe_load(file)
@@ -18,7 +18,7 @@ class ExperimentLoader:
             raise ValueError(f"YAML parsing error in {self.file_path}: {e}")
 
     def load_model(self):
-        data = self.load_file()
+        data = self._load_file()
         # load as pydantic ExperimentConfig model
         try:
             return ExperimentConfig.model_validate(data)
@@ -85,7 +85,7 @@ class ExperimentLoader:
             counter += 1
 
 # external server
-class ExternalServerLoader:
+class ExternalServerHandler:
     def __init__(self, file_path):
         self.file_path = file_path
         self.model = self.load_model()

@@ -1,13 +1,15 @@
 import typer
 import asyncio
 import os
-from FMUiL.simulator.experiment_controller import ExperimentSystem
+from FMUiL.handlers.simulation_handler import SimulationHandler
+
+# Env import
 
 app = typer.Typer(help="Run FMUiL experiments and simulations")
 
 
 async def run_experiments(experiment_configs: list[str], port: int = 7500):
-    experiments = ExperimentSystem(experiment_configs=experiment_configs, base_port=port)
+    experiments = SimulationHandler(experiment_configs=experiment_configs, base_port=port)
     await experiments.main_experiment_loop()
 
 # TODO: muokkaa --experiment-dir option komento selkeemmäksi

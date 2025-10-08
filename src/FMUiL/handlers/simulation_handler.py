@@ -1,7 +1,8 @@
-from FMUiL.communications import OPCUAFMUServerSetup
+from __future__ import annotations
+
 from FMUiL.communications import server_manager
 from FMUiL.communications import client_manager
-from FMUiL.models import ExperimentLoader
+from config_handler import ExperimentHandler
 from FMUiL.logger import ExperimentLogger
 from FMUiL.utils import ops
 
@@ -10,17 +11,69 @@ from asyncua import ua
 import os
 from decimal import getcontext
 import logging
-from .connections import parse_connections # Connection
 import time
 from time import gmtime, strftime
 import re
+
+from dataclasses import dataclass
+from typing import Iterable, List, Dict
 
 logging.basicConfig(level=logging.ERROR) 
 logger = logging.getLogger(__name__)
 
 getcontext().prec = 7 #Simulink FMU default is 1e-6, these should be rounded somewhere
 
-class ExperimentSystem:
+@dataclass(frozen=True)
+class Connection:
+    """A single unidirectional connection:  from_fmu.var  →  to_fmu.var"""
+    from_fmu: str
+    from_var: str
+    to_fmu: str
+    to_var: str
+
+    @staticmethod
+    def _split(endpoint: str) -> tuple[str, str]:
+        """
+        Split an endpoint of the form 'FMU_NAME.variable_name'
+        into ('FMU_NAME', 'variable_name').
+
+        Raises ValueError if the endpoint is malformed.
+        """
+        try:
+            fmu, var = endpoint.split(".", maxsplit=1)
+        except ValueError:        # no dot or too many dots ?
+            raise ValueError(
+                f"Endpoint '{endpoint}' must be of the form <FMU>.<variable>"
+            ) from None
+        if not fmu or not var:
+            raise ValueError(f"Endpoint '{endpoint}' is missing FMU or variable name")
+        return fmu, var
+
+    @classmethod
+    def from_raw(cls, raw: Dict[str, str]) -> "Connection":
+        """Create a Connection from a raw dict with keys 'from' and 'to'."""
+        from_fmu, from_var = cls._split(raw["from"])
+        to_fmu,   to_var   = cls._split(raw["to"])
+        return cls(from_fmu, from_var, to_fmu, to_var)
+
+
+def parse_connections(raw_connections: Iterable[Dict[str, str]]) -> List[Connection]:
+    """
+    Convert a list of raw dicts (e.g. loaded from YAML) into Connection objects.
+
+    >>> raw = [
+    ...   {"from": "LOC_SYSTEM.OUTPUT_temperature_cold_circuit_outlet",
+    ...    "to":   "LOC_CNTRL_v2_customPI.INPUT_temperature_lube_oil"},
+    ...   {"from": "LOC_CNTRL_v2_customPI.OUTPUT_control_valve_position",
+    ...    "to":   "LOC_SYSTEM.INPUT_control_valve_position"},
+    ... ]
+    >>> conns = parse_connections(raw)
+    >>> conns[0].from_fmu, conns[0].from_var
+    ('LOC_SYSTEM', 'OUTPUT_temperature_cold_circuit_outlet')
+    """
+    return [Connection.from_raw(item) for item in raw_connections]
+
+class SimulationHandler:
     def __init__(self, experiment_configs: list[str], base_port) -> None:
         self.experiment_configs = experiment_configs
         self.log_folder         = self.generate_log()
@@ -62,7 +115,7 @@ class ExperimentSystem:
         """
         Gets certain value from a specific opc ua simulation server
         """
-        client = self.client_obj.fetch_appropriacte_client(client_name=client_name)
+        client = self.client_obj.get_client(client_name=client_name)
         node = client.get_node(variable)
         return await node.read_value() 
 
@@ -72,8 +125,8 @@ class ExperimentSystem:
             client_name = client to desired server
         """
         # if it's part of the systems servers
-        if (client_name in self.server_obj.system_servers):
-                object_node = self.client_obj.system_clients[client_name].get_node(ua.NodeId(1, 1))
+        if (client_name in self.server_obj.internal_servers):
+                object_node = self.client_obj.internal_clients[client_name].get_node(ua.NodeId(1, 1))
                 update_values = {
                     "variable": variable,
                     "value": value
@@ -82,8 +135,8 @@ class ExperimentSystem:
         
         # if it's an external server
         else:
-            node_id = self.client_obj.system_node_ids[client_name][variable]
-            client = self.client_obj.fetch_appropriacte_client(client_name=client_name)
+            node_id = self.client_obj.node_ids[client_name][variable]
+            client = self.client_obj.get_client(client_name=client_name)
             node = client.get_node(node_id)
             datavalue1 = await node.read_data_value()
             variant1 = datavalue1.Value
@@ -93,8 +146,8 @@ class ExperimentSystem:
         """
         Calls method "..." from all the opc ua simulation servers
         """
-        for key in self.client_obj.system_clients.keys():
-            client = self.client_obj.system_clients[key]
+        for key in self.client_obj.internal_clients.keys():
+            client = self.client_obj.internal_clients[key]
             object_node = client.get_node(ua.NodeId(1, 1))
             await object_node.call_method(ua.NodeId(1, 2), str(float(timestep)))
         return
@@ -135,7 +188,7 @@ class ExperimentSystem:
 
         for condition in self.reading_condition_dict:
             node = self.system_node_ids[self.reading_condition_dict[condition]["target_obj"]][self.reading_condition_dict[condition]["target_var"]]
-            measured_value = self.client_obj.system_clients[self.reading_condition_dict[condition]["target_obj"]].get_node(node)
+            measured_value = self.client_obj.internal_clients[self.reading_condition_dict[condition]["target_obj"]].get_node(node)
             measured_value = await measured_value.read_value()
             eval_criterea = self.reading_condition_dict[condition]["value"] 
             op            = self.reading_condition_dict[condition]["operator"]
@@ -234,7 +287,7 @@ class ExperimentSystem:
                 continue  # skip disabled evaluations
 
             node = self.system_node_ids[criterea_data["target_obj"]][criterea_data["target_var"]]
-            measured_value = self.client_obj.system_clients[criterea_data["target_obj"]].get_node(node)
+            measured_value = self.client_obj.internal_clients[criterea_data["target_obj"]].get_node(node)
             measured_value = await measured_value.read_value()
 
             target_value = criterea_data["value"]
@@ -259,8 +312,8 @@ class ExperimentSystem:
         """
         placeholder
         """
-        for server_name in self.server_obj.system_servers:
-            self.system_node_ids[server_name] = self.server_obj.system_servers[server_name].server_variable_ids
+        for server_name in self.server_obj.internal_servers:
+            self.system_node_ids[server_name] = self.server_obj.internal_servers[server_name].server_variable_ids
 
     def _parse_conditions(self, conditions_dict, store_dict_name, description=""):
         """
@@ -328,7 +381,7 @@ class ExperimentSystem:
         placeholder
         """
         print("Initializing experiment parameters...")
-        self.config    = ExperimentLoader(experiment).dump_dict() # dump pydantic model as dict
+        self.config    = ExperimentHandler(experiment).dump_dict() # dump pydantic model as dict
 
         try:
             # Check FMU files
@@ -416,9 +469,9 @@ class ExperimentSystem:
             await self.initialize_experiment_params(experiment= experiment_file)
             self.server_obj = await server_manager.create(experiment_config= self.config, port = self.base_port)
             self.gather_system_ids()
-            self.client_obj = await client_manager.create(system_servers = self.server_obj.system_servers, 
-                                                          remote_servers = self.server_obj.remote_servers, 
-                                                          system_node_ids= self.system_node_ids)
+            self.client_obj = await client_manager.create(internal_servers = self.server_obj.internal_servers, 
+                                                          external_servers = self.server_obj.remote_servers, 
+                                                          node_ids= self.system_node_ids)
             
             await self.run_experiment()
             await self.server_obj.close()

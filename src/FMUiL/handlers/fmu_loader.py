@@ -3,7 +3,7 @@ import logging
 
 _logger = logging.getLogger(__name__)
 
-class FmuLoader:
+class FmuHandler:
     def __init__(self, fmu_file) -> None:
         
         self.model_description = fmpy.read_model_description(fmu_file)  

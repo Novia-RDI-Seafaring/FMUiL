@@ -5,7 +5,7 @@ DEFAULT_LOGS = {"Evaluation":"experiment_name, evaluation_name, evaluation_funct
                 "Values":"Experiment_name, System, Variable, Value, Time\n"}
 
 class ExperimentLogger:
-    def __init__(self, system: "ExperimentSystem") -> None:
+    def __init__(self, system: "SimulationHandler") -> None:
         self.system = system     
         self.log_file = self.generate_logfiles(system.log_folder) 
     
