@@ -1,0 +1,57 @@
+# This is an example configuration for Lube oil cooling system
+#
+# FMUs and system description can be found here:
+# https://github.com/Novia-RDI-Seafaring/fmu-library/tree/main/models/loc
+#_____________________________________________________________________________________________________________
+
+################# FMUs and OPC UA Servers #################
+
+fmu_files: 
+  ["experiments/fmus/LOC_Control.fmu",
+   "experiments/fmus/LOC_System.fmu"]
+
+external_servers: []
+
+################# Scenario #################
+
+experiment:
+  experiment_name: Lube Oil Cooling
+  timestep: 0.5     
+  timing: "simulation_time"  
+  stop_time: 100.0  
+  initial_system_state:
+    
+    LOC_Control:
+      timestep: 0.1
+      setpoint_temperature_oil: 50
+
+    LOC_System:  
+      timestep: 0.1
+      temperature_cooling_liquid_in: 35 
+      mass_flow_cooling_liquid_in: 20
+      engine_load: 1 # 0-1 <-> 0-100%
+
+  start_readings_conditions: 
+    condition_01: "LOC_System.temperature_oil > 0"
+
+  system_loop: 
+    - from: LOC_System.temperature_oil
+      to:   LOC_Control.temperature_oil_in
+
+    - from: LOC_Control.position_valve
+      to:   LOC_System.position_valve_in
+
+  ################# evaluation #################
+
+    # System evaluation functions, enable: true/false
+  evaluation: 
+    Alarm_temp_oil:
+      condition: "LOC_System.temperature_oil < 58"
+      enabled: true
+    Alarm_cooling: 
+      condition: "LOC_System.temperature_cooling_liquid_out < 40"
+      enabled: true
+
+  # These values are logged in separate log
+  logging:
+    ["LOC_Control.position_valve"]
