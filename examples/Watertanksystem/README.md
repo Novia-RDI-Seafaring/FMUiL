@@ -64,7 +64,7 @@ test:
 This is already setup on the file `exp1_water_tank.yaml`, to run this simply just call:
 
 ```
-uv run experiments exp1_water_tank.yaml
+uv run fmuil -d "examples\Watertanksystem" run "exp1_water_tank.yaml"
 ```
 The `.log` file is in `.csv` format and the results are easy to plot. In this particular scenario they should look something like this:
 <p align="center">

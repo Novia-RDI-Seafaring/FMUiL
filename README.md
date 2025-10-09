@@ -180,7 +180,7 @@ The experiment file allows users to configure the following parameters:
 
 ## External Servers
 
-The OPCUA-FMU-Simulator allows users to integrate external servers alongside their FMUs. These servers are specified in the configuration file under the external server section using the server description file. To add an server, create a `.yaml` file describing your server.  
+The FMUiL allows users to integrate external servers alongside their FMUs. These servers are specified in the configuration file under the external server section using the server description file. To add an server, create a `.yaml` file describing your server.  
 
 **Example server definition:**
 
@@ -212,6 +212,9 @@ external_servers: ["path/to/server_description.yaml"]
 ## Run experiments
 Experiments are specified as `.yaml` files and are stored in the `/experiments` folder. Experiments can be run with the provided ´uv´ scripts. This needs updating when the new version is published.
 
+TODO: Complete overhaul
+E.Q. uv run fmuil -d "examples\Watertanksystem" run "exp1_water_tank.yaml"
+
 ### Run all experiments
 Runs every experiment file in the `/experiments` folder:
 ```powershell
@@ -224,12 +227,14 @@ To run specific experiments you pass the file names as:
 ### Options
 It is possible to define the experiment folder, default is `/experiments`, from which the server creation starts.
 ```powershell
---experiment-dir path/to/directory
+-d path/to/directory 
 ```
 
 It is possible to define the port number, from which the server creation starts. Default is `7000`
 ```powershell
 --port 1234
+#or
+-p 1234
 ```
 
 # How to log results
