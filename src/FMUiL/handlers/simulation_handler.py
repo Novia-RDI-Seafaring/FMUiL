@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from FMUiL.communications import server_manager
 from FMUiL.communications import client_manager
-from config_handler import ExperimentHandler
+from FMUiL.handlers.config_handler import ExperimentHandler
 from FMUiL.logger import ExperimentLogger
 from FMUiL.utils import ops
 

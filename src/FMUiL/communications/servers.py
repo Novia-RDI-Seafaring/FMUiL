@@ -1,4 +1,3 @@
-from FMUiL.handlers import ExternalServerHandler
 from FMUiL.communications.server_setup import InternalServerSetup
 from pathlib import Path
 import asyncio
@@ -17,7 +16,8 @@ class server_manager:
         await self.initialize_fmu_opc_servers()
         return self
     
-    def construct_remote_servers(self, remote_servers: list[str]) -> dict[str:ExternalServerHandler]:
+    def construct_remote_servers(self, remote_servers: list[str]) -> dict[str, "ExternalServerHandler"]:
+        from FMUiL.handlers.config_handler import ExternalServerHandler
         """
         remote_servers = path to directory with remote server definitions
         this function iterates through all of them and adds them to a dictionaty in a structured manner

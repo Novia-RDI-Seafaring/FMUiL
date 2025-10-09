@@ -1,4 +1,3 @@
-from FMUiL.handlers import FmuHandler
 from asyncua import Server, ua
 import asyncio
 import datetime
@@ -46,6 +45,7 @@ class InternalServerSetup:
     
     @classmethod
     async def async_server_init(cls, fmu:str, port:int):
+        from FMUiL.handlers import FmuHandler
         self = cls()
         self.fmu:FmuHandler = FmuHandler(fmu_file=fmu)
         self.url = self.construct_server_url(port)
