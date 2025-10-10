@@ -2,7 +2,7 @@ import typer
 import asyncio
 import os
 from pathlib import Path
-from FMUiL.handlers.simulation_handler import SimulationHandler
+from .handlers.simulation_handler import SimulationHandler
 
 app = typer.Typer(help="Run FMUiL experiments and simulations.")
 
@@ -18,6 +18,7 @@ def main(
         "-d",
         help="Path to the folder containing experiment YAML files."
     ),
+    # currently not useful
     show_folder: bool = typer.Option(
         False,
         "--show-folder",

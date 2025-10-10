@@ -68,5 +68,5 @@ experiment:
 
   # These values are logged in separate log
   logging:
-    ["WaterTankSystem.PV_WaterLevel_out"]
+    ["WaterTankSystem.PV_WaterLevel_out", "TankLevel_PI.CV_PumpCtrl_out"]
     

@@ -1,6 +1,6 @@
-## Example 3: exp3_external_server.yaml
-This example has been made to show how to run the simulator connected to external OPC UA servers. The external server is configured in `servers/example_server.yaml`. Simply run the `servers/example_server.py` and afterward run the experiment:
+## Example 3: External server
+This example has been made to show how to run the simulator connected to external OPC UA servers. The external server is configured in `examples/External server/servers/example_server.yaml`. Simply run the `example_server.py` and afterward run the experiment:
 
 ```
-uv run experiments exp3_external_server.yaml
+uv run fmuil -d "examples\External server" run "exp3_external_server.yaml"
 ```

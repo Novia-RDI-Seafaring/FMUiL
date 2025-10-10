@@ -1,4 +1,4 @@
-## Example 1: exp1_water_tank.yaml 
+## Example 1: WaterTankSystem
 Let's take a look on this example system created by Mathworks: [Watertank Model](https://mathworks.com/help/slcontrol/ug/watertank-simulink-model.html) 
 
 The model consists of a **WaterTankSystem** and a **PI-controller** connected in a feedback loop. 
@@ -23,29 +23,32 @@ This creates a closed-loop system where:
 This can now be configred in the configuration file as follows:
 
 ```yaml
-fmu_files: ["FMUs/WaterTankSystem.fmu",
-            "FMUs/TankLevel_PI.fmu"]
+################# FMUs and OPC UA Servers #################
+
+fmu_files: ["examples/Watertanksystem/FMUs/WaterTankSystem.fmu",
+            "examples/Watertanksystem/FMUs/TankLevel_PI.fmu"]
 
 external_servers: []
 
-test:
-  test_name: Water Level Control      # Scenario name for logs
-  timestep: 1                         # seconds, communication timestep
-  timing: "simulation_time"           # simulation_time or real_time 
-  stop_time: 300.0                    # seconds 
-  save_logs: true                     # true/false
+################# Experiment #################
 
-  initial_system_state:               # Define timestep and initial conditions
-    
-    WaterTankSystem:                  # Model description -> "Model name"
-      timestep: 0.2                   # This has to be defined for every fmu
-    
+experiment:
+  experiment_name: Water Level Control # Experiment name for logs
+  timestep: 1                          # seconds, communication timestep
+  timing: "simulation_time"            # simulation_time or real_time 
+  stop_time: 300                       # seconds 
+
+  initial_system_state:                # Define timestep and initial conditions
+    WaterTankSystem:                   # Model description -> "Model name"
+      timestep: 0.2                    # This has to be defined for every fmu
+      A: 20                            # FMU parameter
+      b: 5                             # FMU parameter
+      a: 2                             # FMU parameter
     TankLevel_PI:             
       timestep: 1
-      SP_WaterLevel_in: 10            # Input for the TankLevel_PI    
-
-  start_readings_conditions: 
-    condition_01: "TankLevel_PI.CV_PumpCtrl_out > 0.01" # Logging starts, when this condition is met
+      SP_WaterLevel_in: 10             # Input for the TankLevel_PI - this stays constant during the simulation
+      Ki: 0.08                         # FMU parameter
+      Kp: 1.6                          # FMU parameter
 
   # The system loop is made according to the block diagram  
   system_loop: 
@@ -55,10 +58,23 @@ test:
     - from: WaterTankSystem.PV_WaterLevel_out
       to:   TankLevel_PI.PV_WaterLevel_in
 
-  # These values are logged and they also return true/false depending if the condition is satisfied
+  ################# evaluation & logging #################
+
+  start_evaluating_conditions: # Start evaluating conditions 
+    condition_01: "TankLevel_PI.CV_PumpCtrl_out > 0.01" # Logging starts, when this condition is met (Empty if no condition)
+
+  # System evaluation functions, enable: true/false
   evaluation: 
-    eval_1: "WaterTankSystem.PV_WaterLevel_out < 11.1"
-    eval_2: "TankLevel_PI.CV_PumpCtrl_out < 20"
+    eval_1:
+      condition: "WaterTankSystem.PV_WaterLevel_out < 11.1"
+      enabled: false
+    eval_2: 
+      condition: "TankLevel_PI.CV_PumpCtrl_out < 20"
+      enabled: true
+
+  # These values are logged in separate log
+  logging:
+    ["WaterTankSystem.PV_WaterLevel_out", "TankLevel_PI.CV_PumpCtrl_out"]
 
 ```
 This is already setup on the file `exp1_water_tank.yaml`, to run this simply just call:
@@ -66,7 +82,7 @@ This is already setup on the file `exp1_water_tank.yaml`, to run this simply jus
 ```
 uv run fmuil -d "examples\Watertanksystem" run "exp1_water_tank.yaml"
 ```
-The `.log` file is in `.csv` format and the results are easy to plot. In this particular scenario they should look something like this:
+The `Values` file, found in: `logs/timestamp/Water level control/`  is in `.csv` format and the results are easy to plot. In this particular scenario they should look something like this:
 <p align="center">
 <img src="../../public/ExamplePlot.png" alt="OPCUA-FMU" width="500">
 </p>

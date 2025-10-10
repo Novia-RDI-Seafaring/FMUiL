@@ -42,10 +42,7 @@
     - [3.1. Experiment configuration](#experiment-configuration)
     - [3.2. External servers](#external-servers)
 - [4. Run experiments](#run-experiments)
-- [5. Example usage](#example-usage)
-  - [5.1 Example 1: exp1_water_tank.yaml](#example-usage)
-  - [5.2 Example 2: exp2_loc.yaml](#example-usage)
-  - [5.3 Example 3: exp3_external_server.yaml](#example-usage)
+- [5. Examples](#example-usage)
 - [6. Contributing](#contributing)
 - [7. Other](#other)
     - [7.1. Main contributors](#main-contributors)
@@ -210,149 +207,124 @@ external_servers: ["path/to/server_description.yaml"]
 
 
 ## Run experiments
-Experiments are specified as `.yaml` files and are stored in the `/experiments` folder. Experiments can be run with the provided ´uv´ scripts. This needs updating when the new version is published.
+Experiments are defined as `.yaml` files and are located by default in the `/experiments` folder. 
+You can change this folder using the `-d` or `--experiments-dir` option.
 
-TODO: Complete overhaul
-E.Q. uv run fmuil -d "examples\Watertanksystem" run "exp1_water_tank.yaml"
+During development, you can run experiments using the provided `uv` scripts. Once the package is installed, you can use the `fmuil` command directly. 
 
 ### Run all experiments
-Runs every experiment file in the `/experiments` folder:
+Run every experiment file in the default `/experiments` folder:
+
 ```powershell
 uv run fmuil run-all
 ```
-### Run specific experiments
-To run specific experiments you pass the file names as:
 
+If your experiments are in a different folder, specify the path using the -d or --experiments-dir option:
 
-### Options
-It is possible to define the experiment folder, default is `/experiments`, from which the server creation starts.
 ```powershell
--d path/to/directory 
+uv run fmuil -d "path/to/experiments" run-all
 ```
 
-It is possible to define the port number, from which the server creation starts. Default is `7000`
+After installation (when fmuil is available as a system command):
+```powershell
+fmuil run-all
+# or
+fmuil -d "path/to/experiments" run-all
+```
+### Run specific experiments
+To run a specific experiment, use the `run` command and provide the experiment file name:
+
+```powershell
+uv run fmuil run "exp1_water_tank.yaml"
+```
+If your experiments are in a different folder, specify the path using the -d or --experiments-dir option:
+
+```powershell
+uv run fmuil -d "path/to/experiments" run "exp1_water_tank.yaml"
+```
+
+After installation:
+
+``` powershell
+fmuil run "exp1_water_tank.yaml"
+# or
+fmuil -d "path/to/experiments" run "exp1_water_tank.yaml"
+```
+### Options
+
+It is possible to define the port number, from which the server creation starts. Default is `7500`.
 ```powershell
 --port 1234
-#or
+# or
 -p 1234
 ```
 
 # How to log results
+FMUiL supports conditional evaluation of FMU variables, which starts when specified start_evaluating_conditions are met. Each evaluation rule can be enabled or disabled.
+
+Traditional logging allows recording FMU or server variables by adding them to the logging list in the experiment YAML.
+
 
 ## Evaluation
 
-The system logs all data required to evaluate a tests performance when the flag `save_logs: true`. The evaluation happens every communication timestep. Only FMU variables can be currently evaluated. The saved values are the following:
+FMUiL supports conditional logging, referred to as evaluation, which begins only when specific start conditions are met.
+The start_evaluating_conditions block can define zero or more logical expressions that determine when test evaluations should start. Once any of these conditions become true, the system begins evaluating and logging results.
+
+Each evaluation rule is defined under the evaluation section and can be individually enabled or disabled using the enabled flag.
+
+All logged evaluation data is saved to: `logs/timestamp/experiment_name/evaluation.csv` and consist of:
  
-- `test_name`: Given name of the test under test_name 
-
+- `experiment_name`: Given name of the experiment under experiment_name 
 - `evaluation_name`: Name of the evaluation metric defined in the test
-
 - `evaluation_function`: Evaluation function defined in the configuration
-
 - `measured_value`: Value of the variable during the time of the test
-
-- `test_result`: Boolean value if the condition is met
-
+- `experiment_result`: Boolean value if the condition is met
 - `system_timestamp`: system time at the time of the evaluation 
+> **NOTE:** Evaluation only works for FMU variables. For external variables use logging.
 
 ## Logging
 
-It is possible to log any output values from FMUs or external servers.
-
-
-# Example usage
-This section provides details about the available examples and how to run them.
-
-## Example 1: exp1_water_tank.yaml 
-Let's take a look on this example system created by Mathworks: [Watertank Model](https://mathworks.com/help/slcontrol/ug/watertank-simulink-model.html) 
-
-The model consists of a **WaterTankSystem** and a **PI-controller** connected in a feedback loop. 
-The goal of this system is for the PI-controller to maintain the water level in the tank as close as possible to a defined setpoint (`SP`). It does this by adjusting the voltage applied to a pump (`CV`), which controls the inflow of water, while continuously receiving measurements (`PV`) from the WaterTankSystem.
-
-Both systems have been implemented as FMUs: `WaterTankSystem.fmu` and `TankLevel_PI.fmu`.  
-
-- **TankLevel_PI.fmu** (the PI controller) has two inputs:  
-  - `SP_WaterLevel` — the **setpoint (SP)** that the controller aims to reach.  
-  - `PV_WaterLevel_in` — the **process value (PV)**, i.e., the current water level measurement from the WaterTankSystem’s output `PV_WaterLevel_out`.  
-
-  Its output is:  
-  - `CV_PumpCtrl_out` — the **control value (CV)** that drives the pump to adjust the water inflow.  
-
-- **WaterTankSystem.fmu** has one input:  
-  - `CV_PumpCtrl_in` — the **control value (CV)** from the PI-controller.  
-
-This creates a closed-loop system where:
-<p align="center">
-<img src="./public/BlockDiagram.png" alt="OPCUA-FMU" width="500">
-</p>
-This can now be configred in the configuration file as follows:
+It is also possible to use traditional variable logging. This is done by adding `FMU.Variable` to the logging list in the experiment file, e.q.
 
 ```yaml
-fmu_files: ["FMUs/WaterTankSystem.fmu",
-            "FMUs/TankLevel_PI.fmu"]
-
-external_servers: []
-
-test:
-  test_name: Water Level Control      # Scenario name for logs
-  timestep: 1                         # seconds, communication timestep
-  timing: "simulation_time"           # simulation_time or real_time 
-  stop_time: 300.0                    # seconds 
-  save_logs: true                     # true/false
-
-  initial_system_state:               # Define timestep and initial conditions
-    
-    WaterTankSystem:                  # Model description -> "Model name"
-      timestep: 0.2                   # This has to be defined for every fmu
-    
-    TankLevel_PI:             
-      timestep: 1
-      SP_WaterLevel_in: 10            # Input for the TankLevel_PI    
-
-  start_readings_conditions: 
-    condition_01: "TankLevel_PI.CV_PumpCtrl_out > 0.01" # Logging starts, when this condition is met
-
-  # The system loop is made according to the block diagram  
-  system_loop: 
-    - from: TankLevel_PI.CV_PumpCtrl_out
-      to:   WaterTankSystem.CV_PumpCtrl_in
-    
-    - from: WaterTankSystem.PV_WaterLevel_out
-      to:   TankLevel_PI.PV_WaterLevel_in
-
-  # These values are logged and they also return true/false depending if the condition is satisfied
-  evaluation: 
-    eval_1: "WaterTankSystem.PV_WaterLevel_out < 11.1"
-    eval_2: "TankLevel_PI.CV_PumpCtrl_out < 20"
-
+# General
+logging:
+  ["fmu.variable", "server.node"]
+# from example 3:
+logging:
+  ["gain.output","example_server.my_opc_variable"]
 ```
-This is already setup on the file `exp1_water_tank.yaml`, to run this simply just call:
+This will create an `values.csv` in `logs/timestamp/experiment_name/` that contains:
 
-```
-uv run experiments exp1_water_tank.yaml
-```
-The `.log` file is in `.csv` format and the results are easy to plot. In this particular scenario they should look something like this:
-<p align="center">
-<img src="./public/ExamplePlot.png" alt="OPCUA-FMU" width="500">
-</p>
+- `experiment_name`: Given name of the experiment under experiment_name 
+- `System`: Name of the FMU or server
+- `Variable`: Name of the variable
+- `Value`: Value of the variable 
+- `Time`: Simulation time 
 
-## Example 2: exp2_loc.yaml
-A lube oil cooling (LOC) system regulates the lubrication oil temperature at a constant setpoint at the engine inlet using a PI controller and a control valve. The lube oil cooler transfers heat from the lubrication oil to the cooling water circuit.
+# Examples
+This package is shipped with three examples that showcases some of the functionality of the package. More information about individual examples can be found in `/examples`. To get an comprehensive look how to package works, please take a look at the WaterTankSystem example. 
 
-As with the water tank system, this model is divided into two parts: the physical system and the control system. Further details about the models and FMUs can be found [here](https://github.com/Novia-RDI-Seafaring/fmu-library/tree/main/models/loc).
+To run all the examples you can run:
+```powershell
+uv run fmuil run-all
+```
+This should run all the examples, except the `exp3_external_server.yaml`, which needs an external server from `/experiments/servers/example_server.py`. It uses the default `experiments` folder as the source for the experiment files. These examples can also be run individually straight from the `examples` folder:
 
-This is already setup on the file `exp2_loc.yaml`, to run this simply just call:
+WaterTankSystem:
+```powershell
+uv run fmuil -d "examples\Watertanksystem" run "exp1_water_tank.yaml"
+``` 
+Lube oil cooling:
 
-```
-uv run experiments exp2_loc.yaml
-```
-  
-## Example 3: exp3_external_server.yaml
-This example has been made to show how to run the simulator connected to external OPC UA servers. The external server is configured in `servers/example_server.yaml`. Simply run the `servers/example_server.py` and afterward run the experiment:
+```powershell
+uv run fmuil -d "examples\Lube oil cooling" run "exp2_loc.yaml"
+``` 
+External server example:
 
-```
-uv run experiments exp3_external_server.yaml
-```
+```powershell
+uv run fmuil -d "examples\External server" run "exp3_external_server.yaml"
+``` 
 
 # Contributing
 
