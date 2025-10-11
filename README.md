@@ -133,8 +133,8 @@ The experiment file allows users to configure the following parameters:
                       "path03 to your external server yaml description"
                       ]
 
-    test:
-      test_name: "a unique test name"
+    experiment:
+      experiment_name: "a unique test name"
       timestep: 0.5                             # Communication timestep in seconds
       timing:  "simulation_time" or "real_time" # As fast as possible or real time
       stop_time: 100.0                          # Duration of the test 
@@ -165,10 +165,10 @@ The experiment file allows users to configure the following parameters:
 
       evaluation: # Evaluation criteria, will log true/false depending if the condition is met
         eval_1: 
-          condition: "object.value < 11.1"
+          condition: "fmu1.value < 11.1"
           enabled: true
         eval_2: 
-          condition: "object.value < 11.1"
+          condition: "fmu2.value < 11.1"
           enabled: false
 
       logging:
