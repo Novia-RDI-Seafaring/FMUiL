@@ -1,7 +1,5 @@
-from typing import List, Literal, Dict, Any, Optional
+from typing import List, Literal, Dict, Optional
 from pydantic import BaseModel, Field, field_validator, ConfigDict
-from pathlib import Path
-import yaml
 
 class CustomVariable(BaseModel):
     id: Optional[int] = Field(
@@ -39,7 +37,7 @@ class EvaluationCriteria(BaseModel):
     enabled: bool = Field(default=True, description="Whether the evaluation is performed")
 
 # The "experiment" section in your YAML
-class TestConfig(BaseModel):
+class ExperimentConfig(BaseModel):
     experiment_name: str = Field(description="Experiment name")
     timestep: float = Field(description="Communication timestep in seconds, e.g., when FMU's exchange data")
     timing: Literal["simulation_time", "real_time"] = Field(description="simulation_time performs simulations as fast as possible, real_time simulates in real time")
@@ -62,16 +60,16 @@ class TestConfig(BaseModel):
     
     # Fields that are actually in the YAML under test section
     start_evaluating_conditions: Optional[Dict[str, str]] = Field(default=None, description="Evaluating starts, when these condition are met")
-    system_loop: List[Edge] = Field(description="Defines how fmus and opc objects are connected")
+    system_loop: Optional[List[Edge]] = Field(description="Defines how fmus and opc objects are connected")
     evaluation: Optional[dict[str, EvaluationCriteria]] = Field(description= "Evaluation criteria for the system. Each key identifies the test criterion name.")
     logging: List[str] = Field(description="List of simulation variable names to be logged. Example: WaterTankSystem.PV_WaterLevel_out")
 
 # Top-level config
-class ExperimentConfig(BaseModel):
+class SimulationConfig(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
     fmu_files: List[str] = Field(description="List of relative FMU filepaths, example: fmus/WaterTankSystem.fmu")
     external_servers: List[str] = Field(description="List of relative filepaths to external server configuration file, example: servers/example_server.yaml")
-    experiment: TestConfig = Field(description="The experiment section in your configuration file")
+    experiment: ExperimentConfig = Field(description="The experiment section in your configuration file")
 
 
 

@@ -16,7 +16,7 @@ from time import gmtime, strftime
 import re
 
 from dataclasses import dataclass
-from typing import Iterable, List, Dict
+from typing import Iterable, List, Dict, Optional
 
 logging.basicConfig(level=logging.ERROR) 
 logger = logging.getLogger(__name__)
@@ -57,9 +57,10 @@ class Connection:
         return cls(from_fmu, from_var, to_fmu, to_var)
 
 
-def parse_connections(raw_connections: Iterable[Dict[str, str]]) -> List[Connection]:
+def parse_connections(raw_connections: Optional[Iterable[Dict[str, str]]]) -> List[Connection]:
     """
     Convert a list of raw dicts (e.g. loaded from YAML) into Connection objects.
+    Allows raw_connections to be None (returns an empty list).
 
     >>> raw = [
     ...   {"from": "LOC_SYSTEM.OUTPUT_temperature_cold_circuit_outlet",
@@ -71,6 +72,8 @@ def parse_connections(raw_connections: Iterable[Dict[str, str]]) -> List[Connect
     >>> conns[0].from_fmu, conns[0].from_var
     ('LOC_SYSTEM', 'OUTPUT_temperature_cold_circuit_outlet')
     """
+    if raw_connections is None:
+        return []
     return [Connection.from_raw(item) for item in raw_connections]
 
 class SimulationHandler:
@@ -445,8 +448,8 @@ class SimulationHandler:
 
             # System loop checks
             self.system_loop = self.experiment.get("system_loop", [])
-            if not isinstance(self.system_loop, list):
-                raise ValueError("'system_loop' must be a list of connections")
+            if self.system_loop is not None and not isinstance(self.system_loop, list):
+                raise ValueError("'system_loop' must be a list of connections or None")
             
             # Create logger for the experiment
             self.experimentLogger = ExperimentLogger(system = self)

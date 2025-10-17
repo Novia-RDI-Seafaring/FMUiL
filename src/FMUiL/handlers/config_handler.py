@@ -1,5 +1,5 @@
 import yaml
-from FMUiL.schemas import ExperimentConfig, ExternalServerConfig
+from FMUiL.schemas import SimulationConfig, ExternalServerConfig
 from pydantic import ValidationError
 from pathlib import Path
 
@@ -21,7 +21,7 @@ class ExperimentHandler:
         data = self._load_file()
         # load as pydantic ExperimentConfig model
         try:
-            return ExperimentConfig.model_validate(data)
+            return SimulationConfig.model_validate(data)
         except ValidationError as e:
             raise ValueError(f"Config does not match ExperimentConfig schema: {e}")
 

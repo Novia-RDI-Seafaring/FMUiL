@@ -1,3 +1,3 @@
-from .schema import ExperimentConfig, ExternalServerConfig
+from .schema import SimulationConfig, ExternalServerConfig
 
-__all__ = ["ExperimentConfig", "ExternalServerConfig"]
+__all__ = ["SimulationConfig", "ExternalServerConfig"]
