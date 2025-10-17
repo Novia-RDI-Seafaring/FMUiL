@@ -38,7 +38,7 @@ class EvaluationCriteria(BaseModel):
     condition: str = Field(description="The condition to be evaluated, e.g., WaterTankSystem.PV_WaterLevel_out < 11.1")
     enabled: bool = Field(default=True, description="Whether the evaluation is performed")
 
-# The "test" section in your YAML
+# The "experiment" section in your YAML
 class TestConfig(BaseModel):
     experiment_name: str = Field(description="Experiment name")
     timestep: float = Field(description="Communication timestep in seconds, e.g., when FMU's exchange data")
@@ -63,7 +63,7 @@ class TestConfig(BaseModel):
     # Fields that are actually in the YAML under test section
     start_evaluating_conditions: Optional[Dict[str, str]] = Field(default=None, description="Evaluating starts, when these condition are met")
     system_loop: List[Edge] = Field(description="Defines how fmus and opc objects are connected")
-    evaluation: dict[str, EvaluationCriteria] = Field(description= "Evaluation criteria for the system. Each key identifies the test criterion name.")
+    evaluation: Optional[dict[str, EvaluationCriteria]] = Field(description= "Evaluation criteria for the system. Each key identifies the test criterion name.")
     logging: List[str] = Field(description="List of simulation variable names to be logged. Example: WaterTankSystem.PV_WaterLevel_out")
 
 # Top-level config
