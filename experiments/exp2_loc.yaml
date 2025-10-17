@@ -18,7 +18,7 @@ experiment:
   experiment_name: Lube Oil Cooling
   timestep: 0.5     
   timing: "simulation_time"  
-  stop_time: 100.0  
+  stop_time: 600.0  
   initial_system_state:
     
     LOC_Control:

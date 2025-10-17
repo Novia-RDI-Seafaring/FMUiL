@@ -35,6 +35,6 @@ experiment:
       enabled: true
 
   logging:
-    ["gain.output","example_server.my_opc_variable"]
+    ["gain.output_gain","example_server.my_opc_variable"]
 
 

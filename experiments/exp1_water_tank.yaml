@@ -46,11 +46,11 @@ experiment:
   
   # The system loop is made according to the block diagram  
   system_loop: 
-   # - from: TankLevel_PI.CV_PumpCtrl_out
-   #   to:   WaterTankSystem.CV_PumpCtrl_in
+    - from: TankLevel_PI.CV_PumpCtrl_out
+      to:   WaterTankSystem.CV_PumpCtrl_in
     
-   # - from: WaterTankSystem.PV_WaterLevel_out
-   #   to:   TankLevel_PI.PV_WaterLevel_in
+    - from: WaterTankSystem.PV_WaterLevel_out
+      to:   TankLevel_PI.PV_WaterLevel_in
 
   ################# evaluation & logging #################
 
@@ -59,12 +59,12 @@ experiment:
 
   # System evaluation functions, enable: true/false
   evaluation: 
-   # eval_1:
-    #  condition: "WaterTankSystem.PV_WaterLevel_out < 11.1"
-     # enabled: false
-   # eval_2: 
-    #  condition: "TankLevel_PI.CV_PumpCtrl_out < 20"
-     # enabled: true
+    eval_1:
+      condition: "WaterTankSystem.PV_WaterLevel_out < 11.1"
+      enabled: false
+    eval_2: 
+      condition: "TankLevel_PI.CV_PumpCtrl_out < 20"
+      enabled: true
 
   # These values are logged in separate log
   logging:
