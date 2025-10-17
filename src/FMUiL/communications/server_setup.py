@@ -3,6 +3,7 @@ import asyncio
 import datetime
 from asyncua.common.methods import uamethod
 import logging
+import time
 from decimal import Decimal, getcontext, ROUND_HALF_UP
 
 logger = logging.getLogger(__name__)
@@ -124,8 +125,35 @@ class InternalServerSetup:
             fmu_output = self.fmu.fmu.getReal([output_id])
             node = self.server.get_node(self.server_variable_ids[output])
             await node.set_value(float(fmu_output[0]))
-            
 
+    @uamethod
+    async def simulate_fmu(self, parent=None, value: str = None):
+        try:
+            # Convert input timestep to Decimal with configured precision
+            system_timestep = Decimal(value).quantize(Decimal(PRECISION_STR), rounding=ROUND_HALF_UP)
+
+            self.server_time += system_timestep
+            start_wall_time = time.perf_counter()
+
+            # Step FMU until it catches up to system time
+            while self.fmu_time < self.server_time:              
+                await self.single_simulation_loop()
+                print(f"FMU time updated to {self.fmu_time}")
+
+            # Measure wall-clock time and compare if the simulation takes longer || THIS IS NOT TESTED FUNCTIONALITY
+            elapsed_wall_time = time.perf_counter() - start_wall_time
+            simulated_time_advanced = float(system_timestep)
+
+            if elapsed_wall_time > simulated_time_advanced:
+                logger.warning(
+                    f"Real-time overrun: simulation took {elapsed_wall_time:.4f}s "
+                    f"for {simulated_time_advanced:.4f}s of simulated time "
+                    f"(lag: {elapsed_wall_time - simulated_time_advanced:.4f}s)"
+                )
+
+        except Exception as e:
+            logger.error(f"Exception in simulate_fmu: {e}")    
+    """
     @uamethod
     async def simulate_fmu(self, parent=None, value: str = None):
         try:
@@ -134,9 +162,10 @@ class InternalServerSetup:
             time_step = Decimal(await self.get_value(variable="timestep")).quantize(Decimal(PRECISION_STR), rounding=ROUND_HALF_UP)
             self.server_time += system_timestep
             time_diff = (self.server_time - self.fmu_time).quantize(Decimal(PRECISION_STR), rounding=ROUND_HALF_UP)
-            
-            if time_diff >= time_step:
+            print(time_diff)
+            if time_diff <= time_step:
                 await self.single_simulation_loop()
+                print(self.fmu_time)
             else:
                 logger.warning(
                     f"DID !NOT! update due to {self.server_time} - {self.fmu_time}: "
@@ -145,7 +174,7 @@ class InternalServerSetup:
                 
         except Exception as e:
             logger.error(f"Exception in simulate_fmu: {e}")
-
+    """
 
     async def update_opc_and_fmu(self, parent, value):
         variable = value["variable"]

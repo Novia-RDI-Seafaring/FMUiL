@@ -28,18 +28,18 @@ external_servers: []
 
 experiment:
   experiment_name: Water Level Control # Experiment name for logs
-  timestep: 1                          # seconds, communication timestep
+  timestep: 0.5                       # seconds, communication timestep
   timing: "simulation_time"            # simulation_time or real_time 
-  stop_time: 300                       # seconds 
+  stop_time: 60                        # seconds 
 
   initial_system_state:                # Define timestep and initial conditions
     WaterTankSystem:                   # Model description -> "Model name"
-      timestep: 0.2                    # This has to be defined for every fmu
+      timestep: 0.1                    # This has to be defined for every fmu
       A: 20                            # FMU parameter
       b: 5                             # FMU parameter
       a: 2                             # FMU parameter
     TankLevel_PI:             
-      timestep: 1
+      timestep: 0.5
       SP_WaterLevel_in: 10             # Input for the TankLevel_PI - this stays constant during the simulation
       Ki: 0.08                         # FMU parameter
       Kp: 1.6                          # FMU parameter
