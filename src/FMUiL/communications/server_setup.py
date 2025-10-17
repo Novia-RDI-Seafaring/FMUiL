@@ -152,28 +152,6 @@ class InternalServerSetup:
 
         except Exception as e:
             logger.error(f"Exception in simulate_fmu: {e}")    
-    """
-    @uamethod
-    async def simulate_fmu(self, parent=None, value: str = None):
-        try:
-            # Convert inputs to Decimal with defined precision TODO: should add the precision to be configurable outside code
-            system_timestep = Decimal(value).quantize(Decimal(PRECISION_STR), rounding=ROUND_HALF_UP)
-            time_step = Decimal(await self.get_value(variable="timestep")).quantize(Decimal(PRECISION_STR), rounding=ROUND_HALF_UP)
-            self.server_time += system_timestep
-            time_diff = (self.server_time - self.fmu_time).quantize(Decimal(PRECISION_STR), rounding=ROUND_HALF_UP)
-            print(time_diff)
-            if time_diff <= time_step:
-                await self.single_simulation_loop()
-                print(self.fmu_time)
-            else:
-                logger.warning(
-                    f"DID !NOT! update due to {self.server_time} - {self.fmu_time}: "
-                    f"{self.server_time - self.fmu_time} < {time_step}"
-                )
-                
-        except Exception as e:
-            logger.error(f"Exception in simulate_fmu: {e}")
-    """
 
     async def update_opc_and_fmu(self, parent, value):
         variable = value["variable"]
