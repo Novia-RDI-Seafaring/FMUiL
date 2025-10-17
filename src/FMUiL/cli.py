@@ -3,6 +3,7 @@ import asyncio
 import os
 from pathlib import Path
 from .handlers.simulation_handler import SimulationHandler
+from .logger.plotting import Plotter
 
 app = typer.Typer(help="Run FMUiL experiments and simulations.")
 
@@ -94,6 +95,52 @@ def run(ctx: typer.Context, experiment_name: str, port: int = typer.Option(7500,
     experiment_config = os.path.join(experiments_dir, experiment_name)
 
     asyncio.run(run_experiments([experiment_config], port))
+
+
+# -----------------------------
+# Command: plot
+# -----------------------------
+@app.command(help="Create plots from CSV data files")
+def plot(
+    data_files: list[str] = typer.Argument(..., help="Paths to CSV data files to plot"),
+    labels: list[str] = typer.Option([], "--label", "-l", help="Custom labels for each data file (optional)"),
+    output: str = typer.Option("plot.pdf", "--output", "-o", help="Output filename for the plot"),
+    title: str = typer.Option("Data Analysis", "--title", "-t", help="Title for the plot"),
+    show_legend: bool = typer.Option(True, "--legend/--no-legend", help="Show/hide legend"),
+):
+    """Create plots from CSV data files with custom labels and styling."""
+    
+    if len(labels) > 0 and len(labels) != len(data_files):
+        typer.echo("Error: Number of labels must match number of data files", err=True)
+        raise typer.Exit(1)
+    
+    typer.echo(f"Creating plot from {len(data_files)} data files...")
+    
+    plotter = Plotter()
+    
+    # Add data files with optional labels
+    for i, data_file in enumerate(data_files):
+        if i < len(labels):
+            label = labels[i]
+        else:
+            label = None
+        
+        try:
+            plotter.add_data(path=data_file, label=label)
+            typer.echo(f"Added data file: {data_file}")
+        except Exception as e:
+            typer.echo(f"Error loading {data_file}: {e}", err=True)
+            raise typer.Exit(1)
+    
+    # Create and save plots
+    try:
+        plotter.create_plots(title=title, show_legend=show_legend)
+        plotter.save_plots(output)
+        plotter.close_plots()
+        typer.echo(f"Plot saved to: {output}")
+    except Exception as e:
+        typer.echo(f"Error creating plot: {e}", err=True)
+        raise typer.Exit(1)
 
 
 # -----------------------------

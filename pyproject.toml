@@ -9,13 +9,23 @@ dependencies = [
     "asyncua>=1.1.8",
     "colorama>=0.4.6",
     "fmpy>=0.3.26",
+    "matplotlib>=3.10.7",
+    "mpl-panel-builder>=0.6.1",
     "numpy>=2.3.3",
+    "pandas>=2.3.3",
     "pydantic>=2.11.7",
     "pywin32>=311",
     "pyyaml>=6.0.2",
     "typer>=0.19.2",
     "typing-extensions>=4.15.0",
-    ]
+]
+
+[project.optional-dependencies]
+plotting = [
+    "matplotlib>=3.10.7",
+    "mpl-panel-builder>=0.6.1",
+    "pandas>=2.3.3",
+]
 
 [build-system]
 requires = ["setuptools>=61.0", "wheel"]
