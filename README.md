@@ -351,11 +351,11 @@ We welcome contributions! Please follow these steps:
 If you use this package in your research, please cite it using the following BibTeX entry:
 
 ```bibtex
-@misc{OPCUA-FMU-Simulator,
-  author = {Dimitrios Bouzoulas, Kristian Klemets, Mikael Manngård},
-  title = {OPCUA-FMU Simulator},
+@misc{FMUiL,
+  author = {Kristian Klemets, Dimitrios Bouzoulas, Mikael Manngård},
+  title = {FMUiL: Functional Mock-Up Units In the Loop},
   year = {2025},
-  howpublished = {\url{https://github.com/Novia-RDI-Seafaring/opcua-fmu-simulator}},
+  howpublished = {\url{https://github.com/Novia-RDI-Seafaring/FMUiL}},
 }
 ```
 
