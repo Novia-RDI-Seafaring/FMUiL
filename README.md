@@ -352,8 +352,8 @@ If you use this package in your research, please cite it using the following Bib
 
 ```bibtex
 @misc{FMUiL,
-  author = {Kristian Klemets, Dimitrios Bouzoulas, Mikael Manngård},
-  title = {FMUiL: Functional Mock-Up Units In the Loop},
+  author = {Klemets, Kristian and Bouzoulas, Dimitrios and Manngård, Mikael},
+  title = {{FMUiL}: Functional Mock-Up Units In the Loop},
   year = {2025},
   howpublished = {\url{https://github.com/Novia-RDI-Seafaring/FMUiL}},
 }
