@@ -41,8 +41,8 @@ experiment:
     TankLevel_PI:             
       timestep: 0.5
       SP_WaterLevel_in: 10             # Input for the TankLevel_PI - this stays constant during the simulation
-      Ki: 0.08                         # FMU parameter
-      Kp: 1.6                          # FMU parameter
+      Ki: 0.1                         # FMU parameter
+      Kp: 1.5                          # FMU parameter
   
   # The system loop is made according to the block diagram  
   system_loop: 
@@ -54,16 +54,13 @@ experiment:
 
   ################# evaluation & logging #################
 
-  start_evaluating_conditions: # Start evaluating conditions 
-    condition_01: "TankLevel_PI.CV_PumpCtrl_out > 0.01" # Logging starts, when this condition is met (Empty if no condition)
-
   # System evaluation functions, enable: true/false
   evaluation: 
     eval_1:
-      condition: "WaterTankSystem.PV_WaterLevel_out < 11.1"
-      enabled: false
+      condition: "WaterTankSystem.PV_WaterLevel_out > 11.0"
+      enabled: true
     eval_2: 
-      condition: "TankLevel_PI.CV_PumpCtrl_out < 20"
+      condition: "TankLevel_PI.CV_PumpCtrl_out < 0.0"
       enabled: true
 
   # These values are logged in separate log

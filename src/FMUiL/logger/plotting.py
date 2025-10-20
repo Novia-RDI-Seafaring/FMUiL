@@ -1,6 +1,9 @@
 import matplotlib.pyplot as plt
 import mpl_panel_builder as mpb
+from pydantic import BaseModel, Field, ConfigDict
+from typing import List, Literal, Optional
 import pandas as pd
+import os
 
 DEFAULT_CONFIG = {
     "panel": {
@@ -21,13 +24,12 @@ DEFAULT_CONFIG = {
     },
     "style": {
         "rc_params": {
-            "font.size": 8,
+            "font.size": 6,
             "text.usetex": False,
             "font.family": "serif",
             "mathtext.fontset": "stix",
             "mathtext.default": "regular",
             "legend.fontsize": 6,
-
         }
     },
     "output": {
@@ -36,61 +38,166 @@ DEFAULT_CONFIG = {
     }
 }
 
-PLOT_COLORS = ["1971c2", "f08c00", "2f9e44", "e03131" ]
+class AlarmColors(BaseModel):
+    warning: str = Field(default="#FBBD23")
+    alarm: str = Field(default="#F97316")
+    success: str = Field(default="#36D399")
+    error: str = Field(default="#F87272")
 
+class LineStyles(BaseModel):
+    line_styles: List[Literal["-", "--", "-.", ":"]] = Field(
+        default_factory=lambda: ["-", "--", "-.", ":"]
+    )
+    primary_color: str = Field(default="#1971c2")
+    width: float = Field(default=1.5)
+    alpha: float = Field(default=1.0)
+
+class ShadeStyles(BaseModel):
+    color: str = Field(default="#F87272")
+    alpha: float = Field(default=0.5)
+
+class Styles(BaseModel):
+    line_styles: LineStyles = Field(default_factory=LineStyles)
+    shade_styles: ShadeStyles = Field(default_factory=ShadeStyles)
+    alarms: AlarmColors = Field(default_factory=AlarmColors)
+    panels_config: dict = Field(default_factory=dict)
+
+class Experiment(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+    
+    name: str
+    path: str
+    validation_data: pd.DataFrame = Field(default_factory=pd.DataFrame)
+    evaluation_data: pd.DataFrame = Field(default_factory=pd.DataFrame)
+    label: str
+    evaluate: bool = Field(default=True)
+
+class Panels(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+    
+    axes: List[plt.Axes]
+    variables: List[str]
+
+STYLES = Styles(panels_config=DEFAULT_CONFIG)
+
+########################################################
 class Plotter:
-    def __init__(self, config: dict = DEFAULT_CONFIG):
-        self.config = config
+    def __init__(self, styles: Styles = None, path: str = None):
+        self.styles = styles or STYLES
+        self.path = path
         self.experiments = []
-        self.figures = []  # Store created figures
+        self.panels: Optional[Panels] = None
+        self.current_figure: Optional[plt.Figure] = None
 
-    def add_data(self, path: str, label: str = None):
-        """Add a data file to the plotter with optional custom label. Returns self for method chaining."""
-        data = self.load_data(path)
+    def add_data(self, dir_path: str, label: str = None, evaluate: bool = True):
+        """Load Values and Evaluation data from directory and store in Experiment model."""
+        if not os.path.isdir(dir_path):
+            raise ValueError(f"Expected directory with Values.csv: {dir_path}")
+
+        files = {f.lower(): os.path.join(dir_path, f) for f in os.listdir(dir_path)}
+        values_path = files.get("values.csv")
+        eval_path = files.get("evaluation.csv")
+
+        # Load data
+        validation_data = self._load_data(values_path) if values_path else pd.DataFrame()
+        evaluation_data = pd.DataFrame()  # Default to empty
         
-        # Use custom label if provided, otherwise create from path and data
-        if label:
-            experiment_name = label
-        else:
-            # Create unique experiment name based on file path and data
-            exp_names = data["Experiment_name"].unique()
-            if len(exp_names) == 1:
-                base_name = exp_names[0]
-            else:
-                base_name = f"experiment_{len(self.experiments) + 1}"
-            
-            # Extract timestamp from path for uniqueness
-            import os
-            path_parts = path.split(os.sep)
-            timestamp = None
-            for part in path_parts:
-                if part.startswith("2025_") and "_" in part:
-                    timestamp = part
-                    break
-            
-            if timestamp:
-                experiment_name = f"{base_name}_{timestamp}"
-            else:
-                experiment_name = f"{base_name}_{len(self.experiments) + 1}"
-        
-        self.experiments.append({
-            'name': experiment_name,
-            'data': data,
-            'path': path
-        })
+        # Only process evaluation data if evaluate=True
+        if evaluate and eval_path:
+            evaluation_data = self._load_data(eval_path)
+            if not evaluation_data.empty:
+                evaluation_data = self._process_evaluation_data(evaluation_data)
+
+        # Create experiment name
+        experiment_name = label if label else os.path.basename(dir_path)
+
+        # Create and store experiment
+        experiment = Experiment(
+            name=experiment_name,
+            path=values_path or "",
+            validation_data=validation_data,
+            evaluation_data=evaluation_data,
+            label=label or experiment_name,
+            evaluate=evaluate
+        )
+        self.experiments.append(experiment)
         return self
 
-    def list_experiments(self):
-        """List all available experiment names."""
-        if not self.experiments:
-            print("No experiments added.")
-            return []
+    def _create_panels(self):
+        """Create panels based on experiments and variables."""
+        # Get all unique variables
+        all_variables = self._get_all_variables()
+        if not all_variables:
+            print("No variables found in the data.")
+            return
         
-        experiment_names = [exp['name'] for exp in self.experiments]
-        print(f"Available experiments: {experiment_names}")
-        return experiment_names
+        # Calculate grid dimensions
+        cols = min(3, len(all_variables))
+        rows = (len(all_variables) + cols - 1) // cols
+        
+        # Create figure and panels
+        mpb.configure(self.styles.panels_config)
+        mpb.set_rc_style()
+        figure, axs = mpb.create_panel(rows=rows, cols=cols)
+        
+        # Flatten axes
+        if rows == 1:
+            axes_flat = axs[0] if cols > 1 else [axs[0][0]]
+        else:
+            axes_flat = [axs[i][j] for i in range(rows) for j in range(cols)]
+        
+        # Hide unused subplots
+        for idx in range(len(all_variables), len(axes_flat)):
+            axes_flat[idx].set_visible(False)
+        
+        # Store panels and figure reference
+        self.panels = Panels(axes=axes_flat, variables=all_variables)
+        self.current_figure = figure
 
-    def load_data(self, path: str):
+    def _plot_panel(self, ax, variable, show_legend):
+        """Plot all experiments for a single variable panel."""
+        for exp_idx, exp in enumerate(self.experiments):
+            if exp.validation_data.empty:
+                continue
+                
+            exp_name = exp.name
+            exp_data = exp.validation_data
+            exp_eval = exp.evaluation_data
+            
+            # Get styling
+            primary_color = self.styles.line_styles.primary_color
+            line_style = self.styles.line_styles.line_styles[exp_idx % len(self.styles.line_styles.line_styles)] if self.styles.line_styles.line_styles else '-'
+            line_width = self.styles.line_styles.width
+            line_alpha = self.styles.line_styles.alpha
+            
+            if variable in exp_data['Variable'].values:
+                systems_with_var = exp_data[exp_data['Variable'] == variable]['System'].unique()
+                legend_added = False
+                
+                for system in systems_with_var:
+                    plot_data = exp_data[
+                        (exp_data["System"] == system) & (exp_data["Variable"] == variable)
+                    ].sort_values("Time")
+                    
+                    if not plot_data.empty:
+                        # Plot value
+                        legend_added = self._plot_value(ax, plot_data, exp_name, primary_color, line_style, line_width, line_alpha, legend_added)
+                        # Plot evaluation only if evaluate=True
+                        if exp.evaluate:
+                            self._plot_evaluation(ax, plot_data, exp_eval, system, variable, primary_color, line_style, line_width, line_alpha)
+        
+        # Configure panel
+        ax.autoscale(enable=True, tight=True)
+        ax.set_xlabel("Time")
+        ax.set_ylabel(variable)
+        ax.grid(False)
+        
+        if show_legend:
+            ax.legend(loc='upper right', framealpha=0.5)
+        else:
+            ax.legend().set_visible(False)
+
+    def _load_data(self, path: str):
         """Load CSV data with multiple encoding attempts."""
         encodings = ['utf-8-sig', 'utf-8', 'latin-1', 'cp1252', 'iso-8859-1']
         df = None
@@ -110,155 +217,163 @@ class Plotter:
             if df[col].dtype == 'object':
                 df[col] = df[col].str.strip()
         return df
+    
+    def _process_evaluation_data(self, eval_df):
+        """Process evaluation data to extract System and Variable columns."""
+        # Normalize types
+        if 'experiment_result' in eval_df.columns:
+            eval_df['experiment_result'] = eval_df['experiment_result'].astype(str).str.strip().str.lower().map({'true': True, 'false': False})
+        if 'system_timestamp' in eval_df.columns:
+            eval_df['system_timestamp'] = pd.to_numeric(eval_df['system_timestamp'], errors='coerce')
+        if 'measured_value' in eval_df.columns:
+            eval_df['measured_value'] = pd.to_numeric(eval_df['measured_value'], errors='coerce')
+
+        # Parse System and Variable from evaluation_function like "System.Variable op threshold"
+        sys_vals = []
+        if 'evaluation_function' in eval_df.columns:
+            for expr in eval_df['evaluation_function'].astype(str).fillna(''):
+                lhs = expr.split('>')[0].split('<')[0].split('>=')[0].split('<=')[0].split('==')[0].split('!=')[0].strip()
+                # lhs expected "System.Variable"
+                if '.' in lhs:
+                    system_name, variable_name = lhs.split('.', 1)
+                else:
+                    system_name, variable_name = None, None
+                sys_vals.append((system_name, variable_name))
+        if sys_vals:
+            eval_df['System'] = [sv[0] for sv in sys_vals]
+            eval_df['Variable'] = [sv[1] for sv in sys_vals]
+
+        return eval_df
+    
+    def _plot_value(self, ax, plot_data, exp_name, primary_color, line_style, line_width, line_alpha, legend_added):
+        """Plot the main value line."""
+        base_label = exp_name if not legend_added else "_nolegend_"
+        ax.plot(
+            plot_data['Time'], plot_data['Value'],
+            linewidth=line_width,
+            label=base_label,
+            color=primary_color,
+            linestyle=line_style,
+            dash_capstyle='butt',
+            dash_joinstyle='miter',
+            zorder=0.6,
+            alpha=line_alpha,
+        )
+        return True
+
+    def _plot_evaluation(self, ax, plot_data, exp_eval, system, variable, primary_color, line_style, line_width, line_alpha):
+        """Plot evaluation overlays (shading and red segments)."""
+        if exp_eval.empty or not {'System', 'Variable', 'system_timestamp', 'experiment_result'}.issubset(exp_eval.columns):
+            return False
+
+        eval_mask_all = (
+            (exp_eval['System'] == system) &
+            (exp_eval['Variable'] == variable)
+        )
+        eval_seq = exp_eval.loc[eval_mask_all, ['system_timestamp', 'experiment_result']]\
+            .dropna()\
+            .sort_values('system_timestamp')
+
+        start_time = float(plot_data['Time'].min())
+        end_time = float(plot_data['Time'].max())
+
+        intervals_all = []  # (start, end, state_bool)
+        current_state = False  # default to non-violation
+        current_start = start_time
+
+        for ts, res in zip(eval_seq['system_timestamp'], eval_seq['experiment_result']):
+            ts_f = float(ts)
+            if ts_f <= start_time:
+                current_state = bool(res)
+                current_start = start_time
+                continue
+            if ts_f >= end_time:
+                intervals_all.append((current_start, end_time, current_state))
+                current_start = end_time
+                current_state = bool(res)
+                break
+            intervals_all.append((current_start, ts_f, current_state))
+            current_start = ts_f
+            current_state = bool(res)
+
+        if current_start < end_time:
+            intervals_all.append((current_start, end_time, current_state))
+
+        # Full-panel shading for True intervals
+        shade_color = self.styles.shade_styles.color
+        shade_alpha = self.styles.shade_styles.alpha
+        for s, e, st in intervals_all:
+            if e <= s or (st is not True):
+                continue
+            ax.axvspan(s, e, color=shade_color, alpha=shade_alpha, linewidth=0, zorder=0.2)
+
+        # Overlay red segments (True) using the same linestyle
+        for s, e, st in intervals_all:
+            if e <= s or (st is not True):
+                continue
+            seg = plot_data[(plot_data['Time'] >= s) & (plot_data['Time'] <= e)]
+            if seg.empty:
+                continue
+            ax.plot(
+                seg['Time'], seg['Value'],
+                linewidth=line_width,
+                label="_nolegend_",
+                color=shade_color,
+                linestyle=line_style,
+                dash_capstyle='butt',
+                dash_joinstyle='miter',
+                zorder=0.7,
+                alpha=line_alpha,
+            )
+        return True
+
+    def _get_all_variables(self):
+        """Get all unique variables across experiments."""
+        all_variables = set()
+        for exp in self.experiments:
+            if not exp.validation_data.empty:
+                variables = exp.validation_data['Variable'].unique()
+                all_variables.update(variables)
+        return sorted(list(all_variables))
 
     def create_plots(self, title: str = "All Experiments - Variable Analysis", 
-                    show_legend: bool = True, legend_position: str = "best"):
-        """Create plots and store them in self.figures.
-        
-        Args:
-            title: Title for the overall plot
-            show_legend: Whether to show legends on all panels
-            legend_position: Position of the legend ('best', 'upper right', 'lower left', etc.)
-        """
+                    show_legend: bool = True, legend_position: str = "upper right"):
         if not self.experiments:
             print("No experiments added. Call add_data() first.")
             return self
         
-        # Clear existing figures
-        self.figures = []
+        # Create panels based on experiments and variables
+        self._create_panels()
         
-        # Get all unique variables across all experiments
-        all_variables = set()
-        for exp in self.experiments:
-            variables = exp['data']['Variable'].unique()
-            all_variables.update(variables)
-        
-        all_variables = sorted(list(all_variables))
-        n_variables = len(all_variables)
-        
-        if n_variables == 0:
-            print("No variables found in the data.")
-            return self
-        
-        # Calculate grid dimensions
-        cols = min(3, n_variables)
-        rows = (n_variables + cols - 1) // cols
-        
-        # Configure and create figure
-        mpb.configure(self.config)
-        mpb.set_rc_style()
-        fig, axs = mpb.create_panel(rows=rows, cols=cols)
-        
-        # Flatten axs for easier indexing
-        if rows == 1:
-            axs_flat = axs[0] if cols > 1 else [axs[0][0]]
-        else:
-            axs_flat = [axs[i][j] for i in range(rows) for j in range(cols)]
-        
-        # Plot each variable in its own panel
-        for var_idx, variable in enumerate(all_variables):
-            if var_idx >= len(axs_flat):
-                break
-                
-            ax = axs_flat[var_idx]
-            
-            # Get the system name for this variable (from first experiment that has it)
-            system_name = None
-            for exp in self.experiments:
-                exp_data = exp['data']
-                if variable in exp_data['Variable'].values:
-                    systems_with_var = exp_data[exp_data['Variable'] == variable]['System'].unique()
-                    if len(systems_with_var) > 0:
-                        system_name = systems_with_var[0]  # Use first system found
-                        break
-            
-            # Plot this variable from all experiments
-            for exp_idx, exp in enumerate(self.experiments):
-                exp_name = exp['name']
-                exp_data = exp['data']
-                
-                # Get color for this experiment (cycle through PLOT_COLORS)
-                color = f"#{PLOT_COLORS[exp_idx % len(PLOT_COLORS)]}"
-                
-                # Check if this experiment has this variable
-                if variable in exp_data['Variable'].values:
-                    # Get all systems that have this variable
-                    systems_with_var = exp_data[exp_data['Variable'] == variable]['System'].unique()
-                    
-                    for system in systems_with_var:
-                        # Get data for this system-variable combination
-                        plot_data = exp_data[
-                            (exp_data["System"] == system) & (exp_data["Variable"] == variable)
-                        ].sort_values("Time")
-                        
-                        if not plot_data.empty:
-                            ax.plot(plot_data["Time"], plot_data["Value"], 
-                                   linewidth=1.5, label=exp_name, color=color)
-            
-            # Set labels (font sizes from config)
-            ax.set_xlabel("Time")
-            ax.set_ylabel(variable)
-            ax.grid(True, alpha=0.3)
-            
-            # Set panel title to System name
-            if system_name:
-                ax.set_title(system_name)
-            
-            # Add legend inside panel (best position)
-            if show_legend:
-                ax.legend(loc='best')
-            else:
-                ax.legend().set_visible(False)
-        
-        # Hide unused subplots
-        for idx in range(n_variables, len(axs_flat)):
-            axs_flat[idx].set_visible(False)
-
-        # Store the figure
-        self.figures.append(fig)
-        print(f"Created plot with {n_variables} variables")
-        
+        # Plot each variable in its panel
+        for var_idx, variable in enumerate(self.panels.variables):
+            if var_idx < len(self.panels.axes):
+                self._plot_panel(self.panels.axes[var_idx], variable, show_legend)
+        print(f"Created plot with {len(self.panels.variables)} variables")
         return self
 
-    def get_consistent_legend_elements(self):
-        """Get consistent legend elements across all experiments and systems."""
-        legend_elements = set()
-        for exp in self.experiments:
-            exp_name = exp['name']
-            exp_data = exp['data']
-            systems = exp_data['System'].unique()
-            for system in systems:
-                legend_elements.add(f"{exp_name}: {system}")
-        return sorted(list(legend_elements))
-
     def save_plots(self, filename: str = "all_experiments_plot.pdf"):
-        """Save all stored figures to disk.
+        """Save the current figure to disk.
         
         Args:
-            filename: Output filename (if multiple figures, will add index)
+            filename: Output filename
         """
-        if not self.figures:
-            print("No figures to save. Call create_plots() first.")
+        if not self.current_figure:
+            print("No figure to save. Call create_plots() first.")
             return self
         
-        for i, fig in enumerate(self.figures):
-            if len(self.figures) == 1:
-                output_filename = filename
-            else:
-                name, ext = filename.rsplit('.', 1)
-                output_filename = f"{name}_{i+1}.{ext}"
-            
-            mpb.save_panel(fig, output_filename)
-            print(f"Saved plot to: {output_filename}")
+        mpb.save_panel(self.current_figure, filename)
+        print(f"Saved plot to: {filename}")
         
         return self
 
     def close_plots(self):
-        """Close all stored figures to free memory."""
-        for fig in self.figures:
-            plt.close(fig)
-        self.figures = []
-        print("Closed all figures")
+        """Close the current figure to free memory."""
+        if self.current_figure:
+            plt.close(self.current_figure)
+            self.current_figure = None
+        self.panels = None
+        print("Closed figure")
         return self
 
 
@@ -267,9 +382,9 @@ def main():
     
     plt = Plotter()
     # add data from log files
-    plt.add_data(path="logs/2025_10_17_19_33_35/Water Level Control/Values.csv", label="PI-controller - $K_p =  1.6$")
-    plt.add_data(path="logs/2025_10_17_19_34_45/Water Level Control/Values.csv", label="PI-controller - $K_p =  2.6$")
-    plt.add_data(path="logs/2025_10_17_19_35_52/Water Level Control/Values.csv", label=f"PI-controller - $K_p = 0.6$")
+    plt.add_data(dir_path="logs/2025_10_20_13_36_18/Water Level Control", label=f"MiL: $K_p = 1.50, K_i = 0.50$", evaluate=True)
+    #plt.add_data(dir_path="logs/2025_10_20_14_03_29/Water Level Control", label=f"MiL: $K_p = 1.50, K_i = 0.20$", evaluate=True)
+    #plt.add_data(dir_path="logs/2025_10_20_16_53_24/Water Level Control", label=f"MiL: $K_p = 1.50, K_i = 0.10$", evaluate=True)
 
     #create the panels from data
     plt.create_plots(title="Water Level Control Analysis")
