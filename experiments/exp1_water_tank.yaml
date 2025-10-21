@@ -41,7 +41,7 @@ experiment:
     TankLevel_PI:             
       timestep: 0.5
       SP_WaterLevel_in: 10             # Input for the TankLevel_PI - this stays constant during the simulation
-      Ki: 0.1                         # FMU parameter
+      Ki: 0.5                         # FMU parameter
       Kp: 1.5                          # FMU parameter
   
   # The system loop is made according to the block diagram  

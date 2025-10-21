@@ -8,28 +8,32 @@ import os
 DEFAULT_CONFIG = {
     "panel": {
         "dimensions": {
-            "width_cm": 15.0,
-            "height_cm": 6.0,
+            "width_cm": 13.76,
+            "height_cm": 5.0,
         },
         "margins": {
             "top_cm": 0.5,
             "bottom_cm": 1.0,
-            "left_cm": 1.5,
-            "right_cm": 0.5,
+            "left_cm": 1.2,
+            "right_cm": 0.3,
         },
         "axes_separation": {
-            "x_cm": 1.5,
-            "y_cm": 1.5,
+            "x_cm": 1.7,
+            "y_cm": 0.0,
         },
     },
     "style": {
         "rc_params": {
-            "font.size": 6,
+            "font.size": 8,
             "text.usetex": False,
             "font.family": "serif",
             "mathtext.fontset": "stix",
             "mathtext.default": "regular",
-            "legend.fontsize": 6,
+            "legend.fontsize": 8,
+            "axes.spines.top": False,
+            "axes.spines.right": False,
+            "axes.spines.left": True,
+            "axes.spines.bottom": True,
         }
     },
     "output": {
@@ -48,13 +52,13 @@ class LineStyles(BaseModel):
     line_styles: List[Literal["-", "--", "-.", ":"]] = Field(
         default_factory=lambda: ["-", "--", "-.", ":"]
     )
-    primary_color: str = Field(default="#1971c2")
-    width: float = Field(default=1.5)
+    primary_color: str = Field(default="#000000")
+    width: float = Field(default=1.0)
     alpha: float = Field(default=1.0)
 
 class ShadeStyles(BaseModel):
     color: str = Field(default="#F87272")
-    alpha: float = Field(default=0.5)
+    alpha: float = Field(default=0.40)
 
 class Styles(BaseModel):
     line_styles: LineStyles = Field(default_factory=LineStyles)
@@ -88,6 +92,7 @@ class Plotter:
         self.experiments = []
         self.panels: Optional[Panels] = None
         self.current_figure: Optional[plt.Figure] = None
+        self.error_figure: Optional[plt.Figure] = None
 
     def add_data(self, dir_path: str, label: str = None, evaluate: bool = True):
         """Load Values and Evaluation data from directory and store in Experiment model."""
@@ -179,6 +184,7 @@ class Plotter:
                         (exp_data["System"] == system) & (exp_data["Variable"] == variable)
                     ].sort_values("Time")
                     
+                    
                     if not plot_data.empty:
                         # Plot value
                         legend_added = self._plot_value(ax, plot_data, exp_name, primary_color, line_style, line_width, line_alpha, legend_added)
@@ -216,6 +222,8 @@ class Plotter:
         for col in df.columns:
             if df[col].dtype == 'object':
                 df[col] = df[col].str.strip()
+        
+        
         return df
     
     def _process_evaluation_data(self, eval_df):
@@ -376,13 +384,14 @@ class Plotter:
         print("Closed figure")
         return self
 
-
 def main():
     # example of plotting data from log files   
     
     plt = Plotter()
     # add data from log files
-    plt.add_data(dir_path="logs/2025_10_20_13_36_18/Water Level Control", label=f"MiL: $K_p = 1.50, K_i = 0.50$", evaluate=True)
+    plt.add_data(dir_path="logs/SoftwareX/MiL", label=f"MiL", evaluate=True)
+    plt.add_data(dir_path="logs/SoftwareX/Hil", label=f"HiL", evaluate=True)
+    #plt.add_data(dir_path="logs/SoftwareX/Simulink", label=f"Simulink", evaluate=False)
     #plt.add_data(dir_path="logs/2025_10_20_14_03_29/Water Level Control", label=f"MiL: $K_p = 1.50, K_i = 0.20$", evaluate=True)
     #plt.add_data(dir_path="logs/2025_10_20_16_53_24/Water Level Control", label=f"MiL: $K_p = 1.50, K_i = 0.10$", evaluate=True)
 
@@ -390,7 +399,7 @@ def main():
     plt.create_plots(title="Water Level Control Analysis")
 
     #save panels to file
-    plt.save_plots("water_level_analysis.pdf")
+    plt.save_plots("softwarex_results.pdf")
 
     #close panels
     plt.close_plots()
