@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import mpl_panel_builder as mpb
+from numpy._core.numeric import True_
 from pydantic import BaseModel, Field, ConfigDict
 from typing import List, Literal, Optional
 import pandas as pd
@@ -66,36 +67,47 @@ class Styles(BaseModel):
     alarms: AlarmColors = Field(default_factory=AlarmColors)
     panels_config: dict = Field(default_factory=dict)
 
-class Experiment(BaseModel):
+#### Panel axis model ####
+class AxisModel(BaseModel):
+    xlabel: str
+    ylabel: str
+    xlim: tuple
+    ylim: tuple
+    xtick_distance: float
+    ytick_distance: float
+
+#### Data model ####
+class DataModel(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
     
-    name: str
+    label: str
     path: str
     validation_data: pd.DataFrame = Field(default_factory=pd.DataFrame)
     evaluation_data: pd.DataFrame = Field(default_factory=pd.DataFrame)
-    label: str
     evaluate: bool = Field(default=True)
+    ax: Optional[AxisModel] = Field(default=None)
 
 class Panels(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
-    
     axes: List[plt.Axes]
     variables: List[str]
-
-STYLES = Styles(panels_config=DEFAULT_CONFIG)
 
 ########################################################
 class Plotter:
     def __init__(self, styles: Styles = None, path: str = None):
-        self.styles = styles or STYLES
+        self.styles = styles
         self.path = path
-        self.experiments = []
+        self.data = []
         self.panels: Optional[Panels] = None
         self.current_figure: Optional[plt.Figure] = None
         self.error_figure: Optional[plt.Figure] = None
 
-    def add_data(self, dir_path: str, label: str = None, evaluate: bool = True):
-        """Load Values and Evaluation data from directory and store in Experiment model."""
+    def add_data(self, data_model: DataModel):
+        """Add a DataModel with data and axis configuration."""
+        # Process the data from the data_model's path
+        dir_path = data_model.path
+        evaluate = data_model.evaluate
+        
         if not os.path.isdir(dir_path):
             raise ValueError(f"Expected directory with Values.csv: {dir_path}")
 
@@ -113,23 +125,17 @@ class Plotter:
             if not evaluation_data.empty:
                 evaluation_data = self._process_evaluation_data(evaluation_data)
 
-        # Create experiment name
-        experiment_name = label if label else os.path.basename(dir_path)
-
-        # Create and store experiment
-        experiment = Experiment(
-            name=experiment_name,
-            path=values_path or "",
-            validation_data=validation_data,
-            evaluation_data=evaluation_data,
-            label=label or experiment_name,
-            evaluate=evaluate
-        )
-        self.experiments.append(experiment)
+        # Update data_model with loaded data
+        data_model.validation_data = validation_data
+        data_model.evaluation_data = evaluation_data
+        data_model.path = values_path or ""
+        
+        self.data.append(data_model)
         return self
 
+
     def _create_panels(self):
-        """Create panels based on experiments and variables."""
+        """Create panels based on data models and variables."""
         # Get all unique variables
         all_variables = self._get_all_variables()
         if not all_variables:
@@ -161,11 +167,11 @@ class Plotter:
 
     def _plot_panel(self, ax, variable, show_legend):
         """Plot all experiments for a single variable panel."""
-        for exp_idx, exp in enumerate(self.experiments):
+        for exp_idx, exp in enumerate(self.data):
             if exp.validation_data.empty:
                 continue
                 
-            exp_name = exp.name
+            exp_name = exp.label
             exp_data = exp.validation_data
             exp_eval = exp.evaluation_data
             
@@ -338,7 +344,7 @@ class Plotter:
     def _get_all_variables(self):
         """Get all unique variables across experiments."""
         all_variables = set()
-        for exp in self.experiments:
+        for exp in self.data:
             if not exp.validation_data.empty:
                 variables = exp.validation_data['Variable'].unique()
                 all_variables.update(variables)
@@ -346,7 +352,7 @@ class Plotter:
 
     def create_plots(self, title: str = "All Experiments - Variable Analysis", 
                     show_legend: bool = True, legend_position: str = "upper right"):
-        if not self.experiments:
+        if not self.data:
             print("No experiments added. Call add_data() first.")
             return self
         
@@ -357,6 +363,10 @@ class Plotter:
         for var_idx, variable in enumerate(self.panels.variables):
             if var_idx < len(self.panels.axes):
                 self._plot_panel(self.panels.axes[var_idx], variable, show_legend)
+        
+        # Apply axis configurations from DataModels automatically
+        self.apply_axis_configs()
+        
         print(f"Created plot with {len(self.panels.variables)} variables")
         return self
 
@@ -375,6 +385,88 @@ class Plotter:
         
         return self
 
+    def update_ax(self, panel_id: int = None, xlabel: str = None, ylabel: str = None, 
+                   xlim: tuple = None, ylim: tuple = None, 
+                   xtick_distance: float = None, ytick_distance: float = None):
+        """Update axis properties for specific panel or all panels.
+        
+        Args:
+            panel_id: Panel index to update (0-based, if None, updates all panels)
+            xlabel: x-axis label
+            ylabel: y-axis label  
+            xlim: x-axis limits (xmin, xmax)
+            ylim: y-axis limits (ymin, ymax)
+            xtick_distance: Distance between x-axis ticks
+            ytick_distance: Distance between y-axis ticks
+        """
+        if not self.panels or not self.panels.axes:
+            print("No panels available. Call create_plots() first.")
+            return self
+            
+        # Determine which axes to update
+        if panel_id is not None:
+            if panel_id < 0 or panel_id >= len(self.panels.axes):
+                print(f"Panel ID {panel_id} is out of range. Available panels: 0-{len(self.panels.axes)-1}")
+                return self
+            axes_to_update = [self.panels.axes[panel_id]]
+        else:
+            axes_to_update = self.panels.axes
+            
+        # Update axis
+        for ax in axes_to_update:
+            #update x and y labels
+            if xlabel is not None:
+                ax.set_xlabel(xlabel)
+            if ylabel is not None:
+                ax.set_ylabel(ylabel)
+            # update x and y limits
+            if xlim is not None:
+                ax.set_xlim(xlim)
+            if ylim is not None:
+                ax.set_ylim(ylim)
+            # update ticks distance for x-axis
+            if xtick_distance is not None:
+                x_min, x_max = ax.get_xlim()
+                step = float(xtick_distance)
+                new_ticks = []
+                current_tick = x_min
+                while current_tick <= x_max:
+                    new_ticks.append(current_tick)
+                    current_tick += step
+                ax.set_xticks(new_ticks)
+            # update ticks distance for y-axis
+            if ytick_distance is not None:
+                y_min, y_max = ax.get_ylim()
+                step = float(ytick_distance)
+                new_ticks = []
+                current_tick = y_min
+                while current_tick <= y_max:
+                    new_ticks.append(current_tick)
+                    current_tick += step
+                ax.set_yticks(new_ticks)
+                
+        return self
+
+    def apply_axis_configs(self):
+        """Apply axis configurations from stored Experiments."""
+        if not self.panels or not self.panels.axes:
+            print("No panels available. Call create_plots() first.")
+            return self
+            
+        for panel_id, data_model in enumerate(self.data):
+            if panel_id < len(self.panels.axes) and data_model.ax:
+                ax_config = data_model.ax
+                self.update_ax(
+                    panel_id=panel_id,
+                    xlabel=ax_config.xlabel,
+                    ylabel=ax_config.ylabel,
+                    xlim=ax_config.xlim,
+                    ylim=ax_config.ylim,
+                    xtick_distance=ax_config.xtick_distance,
+                    ytick_distance=ax_config.ytick_distance
+                )
+        return self
+
     def close_plots(self):
         """Close the current figure to free memory."""
         if self.current_figure:
@@ -383,26 +475,3 @@ class Plotter:
         self.panels = None
         print("Closed figure")
         return self
-
-def main():
-    # example of plotting data from log files   
-    
-    plt = Plotter()
-    # add data from log files
-    plt.add_data(dir_path="logs/SoftwareX/MiL", label=f"MiL", evaluate=True)
-    plt.add_data(dir_path="logs/SoftwareX/Hil", label=f"HiL", evaluate=True)
-    #plt.add_data(dir_path="logs/SoftwareX/Simulink", label=f"Simulink", evaluate=False)
-    #plt.add_data(dir_path="logs/2025_10_20_14_03_29/Water Level Control", label=f"MiL: $K_p = 1.50, K_i = 0.20$", evaluate=True)
-    #plt.add_data(dir_path="logs/2025_10_20_16_53_24/Water Level Control", label=f"MiL: $K_p = 1.50, K_i = 0.10$", evaluate=True)
-
-    #create the panels from data
-    plt.create_plots(title="Water Level Control Analysis")
-
-    #save panels to file
-    plt.save_plots("softwarex_results.pdf")
-
-    #close panels
-    plt.close_plots()
-
-if __name__ == "__main__":
-    main()
