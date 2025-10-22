@@ -1,37 +1,69 @@
-from FMUiL.logger.plotting import Plotter, DataModel, AxisModel, Styles, DEFAULT_CONFIG
+from FMUiL.logger.plotting import Plotter, DataModel, AxisModel, Styles
 
-# Define data models with axis configurations
-DATA = [
-    DataModel(
-        label="MiL",
-        path="examples/plotting/SoftwareX/MiL", 
-        evaluate=True,
-        ax=AxisModel(
-            xlabel="Time (s)", 
-            ylabel="Control Signal (V)", 
-            xlim=(0, 60), 
-            ylim=(-2, 16), 
-            xtick_distance=10, 
-            ytick_distance=4
-        )
-    ),
-    DataModel(
-        label="HiL",
-        path="examples/plotting/SoftwareX/Hil", 
-        evaluate=True,
-        ax=AxisModel(
-            xlabel="Time (s)", 
-            ylabel="Water Level (m)", 
-            xlim=(0, 60), 
-            ylim=(0, 16), 
-            xtick_distance=10, 
-            ytick_distance=4
-        )
-    )
-]
+# Panel config
+PANEL_CONFIG = {
+    "panel": {
+        "dimensions": {
+            "width_cm": 13.76,
+            "height_cm": 5.0,
+        },
+        "margins": {
+            "top_cm": 0.5,
+            "bottom_cm": 1.0,
+            "left_cm": 1.2,
+            "right_cm": 0.3,
+        },
+        "axes_separation": {
+            "x_cm": 1.7,
+            "y_cm": 0.0,
+        },
+    },
+    "style": {
+        "rc_params": {
+            "font.size": 8,
+            "text.usetex": False,
+            "font.family": "serif",
+            "mathtext.fontset": "stix",
+            "mathtext.default": "regular",
+            "legend.fontsize": 8,
+            "axes.spines.top": False,
+            "axes.spines.right": False,
+            "axes.spines.left": True,
+            "axes.spines.bottom": True,
+        }
+    },
+    "output": {
+        "format": "pdf",
+        "dpi": 600,
+    }
+}
+
+# Define axis configurations
+mil_ax = AxisModel(
+    xlabel="Time (s)", 
+    ylabel="Control Signal (V)", 
+    xlim=(0, 60), 
+    ylim=(-2, 16), 
+    xtick_distance=10, 
+    ytick_distance=4
+)
+hil_ax = AxisModel(
+    xlabel="Time (s)", 
+    ylabel="Water Level (m)", 
+    xlim=(0, 60), 
+    ylim=(0, 16), 
+    xtick_distance=10, 
+    ytick_distance=4
+)
+
+# Data to be plotted
+mil_data = DataModel(label="MiL", path="examples/plotting/SoftwareX/MiL", evaluate=True, ax=mil_ax)
+hil_data = DataModel(label="HiL", path="examples/plotting/SoftwareX/Hil", evaluate=True, ax=hil_ax)
+
+data = [mil_data, hil_data]
 
 # Configure styles
-STYLES = Styles(panels_config=DEFAULT_CONFIG)
+STYLES = Styles(panels_config=PANEL_CONFIG)
 
 def main():
     """Example of plotting data from log files."""
@@ -40,11 +72,11 @@ def main():
     plt = Plotter(styles=STYLES)
     
     # Add data models with data and axis configuration
-    for data_model in DATA:
-        plt.add_data(data_model)
+    for d in data:
+        plt.add_data(d)
 
     # Create the panels from data (axis configs applied automatically)
-    plt.create_plots(title="Water Level Control Analysis")
+    plt.create_plots()
 
     # Save panels to file
     plt.save_plots("examples/plotting/softwarex.pdf")

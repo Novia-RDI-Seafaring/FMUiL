@@ -6,43 +6,6 @@ from typing import List, Literal, Optional
 import pandas as pd
 import os
 
-DEFAULT_CONFIG = {
-    "panel": {
-        "dimensions": {
-            "width_cm": 13.76,
-            "height_cm": 5.0,
-        },
-        "margins": {
-            "top_cm": 0.5,
-            "bottom_cm": 1.0,
-            "left_cm": 1.2,
-            "right_cm": 0.3,
-        },
-        "axes_separation": {
-            "x_cm": 1.7,
-            "y_cm": 0.0,
-        },
-    },
-    "style": {
-        "rc_params": {
-            "font.size": 8,
-            "text.usetex": False,
-            "font.family": "serif",
-            "mathtext.fontset": "stix",
-            "mathtext.default": "regular",
-            "legend.fontsize": 8,
-            "axes.spines.top": False,
-            "axes.spines.right": False,
-            "axes.spines.left": True,
-            "axes.spines.bottom": True,
-        }
-    },
-    "output": {
-        "format": "pdf",
-        "dpi": 600,
-    }
-}
-
 class AlarmColors(BaseModel):
     warning: str = Field(default="#FBBD23")
     alarm: str = Field(default="#F97316")
