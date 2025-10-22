@@ -391,20 +391,26 @@ class Plotter:
             if xtick_distance is not None:
                 x_min, x_max = ax.get_xlim()
                 step = float(xtick_distance)
+                # Start from a integer tick
+                start_tick = (x_min // step) * step
                 new_ticks = []
-                current_tick = x_min
+                current_tick = start_tick
                 while current_tick <= x_max:
-                    new_ticks.append(current_tick)
+                    if current_tick >= x_min:
+                        new_ticks.append(current_tick)
                     current_tick += step
                 ax.set_xticks(new_ticks)
             # update ticks distance for y-axis
             if ytick_distance is not None:
                 y_min, y_max = ax.get_ylim()
                 step = float(ytick_distance)
+                # Start from a nice round number
+                start_tick = (y_min // step) * step
                 new_ticks = []
-                current_tick = y_min
+                current_tick = start_tick
                 while current_tick <= y_max:
-                    new_ticks.append(current_tick)
+                    if current_tick >= y_min:
+                        new_ticks.append(current_tick)
                     current_tick += step
                 ax.set_yticks(new_ticks)
                 
