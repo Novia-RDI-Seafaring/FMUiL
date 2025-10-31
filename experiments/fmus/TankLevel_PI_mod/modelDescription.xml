@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<fmiModelDescription fmiVersion="2.0" generationDateAndTime="2025-09-04T09:13:51Z" generationTool="Simulink (R2024b)" guid="{e050b36e-f589-b302-adfb-50e54fc475bd}" modelName="TankLevel_PI" numberOfEventIndicators="0" variableNamingConvention="structured" version="15.2">
+  <CoSimulation canBeInstantiatedOnlyOncePerProcess="true" canGetAndSetFMUstate="true" canHandleVariableCommunicationStepSize="false" canNotUseMemoryManagementFunctions="true" canSerializeFMUstate="true" modelIdentifier="TankLevel_PI"/>
+  <UnitDefinitions>
+    <Unit name="V"/>
+    <Unit name="m"/>
+  </UnitDefinitions>
+  <DefaultExperiment startTime="0" stepSize="0.1" stopTime="200"/>
+  <VendorAnnotations>
+    <Tool name="Simulink">
+      <Simulink>
+        <ImportCompatibility FMUProduct="standalone FMU" requireMATLABOnPath="no" requireRelease="all"/>
+        <SimulinkModelInterface>
+          <Inport blockPath="TankLevel_PI/SP_WaterLevel_in" dataType="double" dimension="[1]" portName="SP_WaterLevel_in" portNumber="1" sampleTime="[0 0]" uniquePortName="SP_WaterLevel_in" unit=""/>
+          <Inport blockPath="TankLevel_PI/PV_WaterLevel_in" dataType="double" dimension="[1]" portName="PV_WaterLevel_in" portNumber="2" sampleTime="[0 0]" uniquePortName="PV_WaterLevel_in" unit="m"/>
+          <Outport blockPath="TankLevel_PI/CV_PumpCtrl_out" dataType="double" dimension="[1]" portName="CV_PumpCtrl_out" portNumber="1" sampleTime="[0 0]" uniquePortName="CV_PumpCtrl_out" unit="V"/>
+        </SimulinkModelInterface>
+      </Simulink>
+    </Tool>
+  </VendorAnnotations>
+  <ModelVariables>
+    <ScalarVariable causality="input" description="Setpoint signal for water level control loop." name="SP_WaterLevel_in" valueReference="0" variability="continuous">
+      <Real start="0"/>
+      <!--Index = 1-->
+    </ScalarVariable>
+    <ScalarVariable causality="input" description="Measured tank water level." name="PV_WaterLevel_in" valueReference="1" variability="continuous">
+      <Real start="0" unit="m"/>
+      <!--Index = 2-->
+	</ScalarVariable>
+	<ScalarVariable causality="output" description="Control voltage output to pump." initial="exact" name="CV_PumpCtrl_out" valueReference="2" variability="continuous">
+	  <Real unit="V" start="15.0"/>
+      <!--Index = 3-->
+    </ScalarVariable>
+    <ScalarVariable causality="independent" description="time" name="time" valueReference="3" variability="continuous">
+      <Real/>
+      <!--Index = 4-->
+    </ScalarVariable>
+    <ScalarVariable causality="parameter" description="Integral gain." initial="exact" name="Ki" valueReference="4" variability="tunable">
+      <Real start="0.079967"/>
+      <!--Index = 5-->
+    </ScalarVariable>
+    <ScalarVariable causality="parameter" description="Proportional gain." initial="exact" name="Kp" valueReference="5" variability="tunable">
+      <Real start="1.59934"/>
+      <!--Index = 6-->
+    </ScalarVariable>
+  </ModelVariables>
+  <ModelStructure>
+    <Outputs>
+      <Unknown index="3"/>
+    </Outputs>
+    <InitialUnknowns>
+      <Unknown index="3"/>
+    </InitialUnknowns>
+  </ModelStructure>
+</fmiModelDescription>

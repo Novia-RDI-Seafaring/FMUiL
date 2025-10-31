@@ -1,0 +1,14 @@
+url: opc.tcp://localhost:7500/freeopcua/server/
+
+objects:
+  sample_opc_object:
+    ControlValue: 
+      id: 2
+      ns: 2
+    ProcessValue: 
+      id: 3
+      ns: 2
+      
+
+
+

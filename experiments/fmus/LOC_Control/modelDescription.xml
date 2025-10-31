@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<fmiModelDescription fmiVersion="2.0" generationDateAndTime="2025-07-14T17:49:56Z" generationTool="Simulink (R2024b)" guid="{e015700f-b565-1e92-939c-2932653bc0b8}" modelName="LOC_Control" numberOfEventIndicators="0" variableNamingConvention="structured" version="2.2">
+  <CoSimulation canBeInstantiatedOnlyOncePerProcess="true" canGetAndSetFMUstate="true" canHandleVariableCommunicationStepSize="false" canNotUseMemoryManagementFunctions="true" canSerializeFMUstate="true" modelIdentifier="LOC_Control_2024a_dev"/>
+  <UnitDefinitions>
+    <Unit name="1"/>
+    <Unit name="1/s"/>
+    <Unit name="degC"/>
+  </UnitDefinitions>
+  <DefaultExperiment startTime="0" stepSize="0.1" stopTime="1000"/>
+  <VendorAnnotations>
+    <Tool name="Simulink">
+      <Simulink>
+        <ImportCompatibility FMUProduct="standalone FMU" requireMATLABOnPath="no" requireRelease="all"/>
+        <SimulinkModelInterface>
+          <Inport blockPath="LOC_Control_2024a_dev/temperature_oil_in" dataType="double" dimension="[1]" portName="temperature_oil_in" portNumber="1" sampleTime="[0 0]" uniquePortName="temperature_oil_in" unit="degC"/>
+          <Inport blockPath="LOC_Control_2024a_dev/setpoint_temperature_oil" dataType="double" dimension="[1]" portName="setpoint_temperature_oil" portNumber="2" sampleTime="[0 0]" uniquePortName="setpoint_temperature_oil" unit="degC"/>
+          <Outport blockPath="LOC_Control_2024a_dev/position_valve" dataType="double" dimension="[1]" portName="position_valve" portNumber="1" sampleTime="[0 0]" uniquePortName="position_valve" unit="1"/>
+        </SimulinkModelInterface>
+      </Simulink>
+    </Tool>
+  </VendorAnnotations>
+  <ModelVariables>
+    <ScalarVariable causality="input" description="Measured temperature of the oil" name="temperature_oil_in" valueReference="0" variability="continuous">
+      <Real max="100" min="0" start="0" unit="degC"/>
+      <!--Index = 1-->
+    </ScalarVariable>
+    <ScalarVariable causality="input" description="Setpoint temperature for oil." name="setpoint_temperature_oil" valueReference="1" variability="continuous">
+      <Real max="90" min="30" start="0" unit="degC"/>
+      <!--Index = 2-->
+    </ScalarVariable>
+    <ScalarVariable causality="output" description="Position of the flow control valve (0 = fully closed, 1 = fully open). When fully open, all flow bypasses the heat exchanger; when fully closed, all flow passes through the heat exchanger." initial="calculated" name="position_valve" valueReference="2" variability="continuous">
+      <Real max="1" min="0" unit="1"/>
+      <!--Index = 3-->
+    </ScalarVariable>
+    <ScalarVariable causality="independent" description="time" name="time" valueReference="3" variability="continuous">
+      <Real/>
+      <!--Index = 4-->
+    </ScalarVariable>
+    <ScalarVariable causality="parameter" description="Integral gain for PID controller (ideal form)" initial="exact" name="pid_ideal_I" valueReference="4" variability="tunable">
+      <Real start="0.008333333333333333" unit="1/s"/>
+      <!--Index = 5-->
+    </ScalarVariable>
+    <ScalarVariable causality="parameter" description="Proportional gain for PID controller (ideal form)" initial="exact" name="pid_ideal_P" valueReference="5" variability="tunable">
+      <Real start="0.05" unit="1"/>
+      <!--Index = 6-->
+    </ScalarVariable>
+  </ModelVariables>
+  <ModelStructure>
+    <Outputs>
+      <Unknown index="3"/>
+    </Outputs>
+    <InitialUnknowns>
+      <Unknown index="3"/>
+    </InitialUnknowns>
+  </ModelStructure>
+</fmiModelDescription>

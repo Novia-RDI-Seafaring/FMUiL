@@ -1,0 +1,32 @@
+fmu_files: ["experiments/FMUs/LOC_System.fmu"]
+
+external_servers: [experiments/servers/ECC_S7-1500.yaml]
+
+experiment:
+  experiment_name: PLC_test
+  timestep: 1     # seconds, communication timestep
+  timing: "real_time" # simulation_time or real_time 
+  stop_time: 600.0 # seconds 
+  initial_system_state:
+    
+    LOC_System:  
+      timestep: 0.1
+      temperature_cooling_liquid_in: 30
+      mass_flow_cooling_liquid_in: 15
+      engine_load: 1
+        
+  system_loop: 
+    - from: ECC_S7-1500.ControlValue
+      to:   LOC_System.position_valve_in
+    
+    - from: LOC_System.temperature_oil
+      to:   ECC_S7-1500.ProcessValue
+
+  ################# evaluation #################
+  evaluation: 
+    Alarm_temp_oil:
+      condition: "LOC_System.temperature_oil < 58"
+   
+  logging:
+    ["ECC_S7-1500.ControlValue", LOC_System.temperature_oil, LOC_System.temperature_cooling_liquid_out]
+    

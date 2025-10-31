@@ -1,0 +1,15 @@
+url: opc.tcp://192.168.0.1:4840
+
+objects:
+  sample_opc_object:
+    ProcessValue: 
+      id: 5
+      ns: 4
+    ControlValue: 
+      id: 6
+      ns: 4
+
+      
+
+
+

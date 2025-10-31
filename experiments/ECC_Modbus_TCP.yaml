@@ -1,0 +1,35 @@
+# Experiment for ECC paper || Lube oil cooling system connected to arduino via ModbusTCP
+
+fmu_files: ["experiments/fmus/LOC_System_ECC.fmu"]
+
+external_servers: [experiments/servers/ModbusTCPBridge.yaml]
+
+experiment:
+  experiment_name: Modbus_TCP_test
+  timestep: 1     # seconds, communication timestep
+  timing: "real_time" # simulation_time or real_time 
+  stop_time: 600.0 # seconds 
+  initial_system_state:
+    
+    LOC_System:  
+      timestep: 0.1
+      temperature_cooling_liquid_in: 30 
+      mass_flow_cooling_liquid_in: 15
+      engine_load: 1
+        
+  system_loop: 
+    - from: ModbusTCPBridge.ControlValue
+      to:   LOC_System.position_valve_in
+    
+    - from: LOC_System.temperature_oil
+      to:   ModbusTCPBridge.ProcessValue
+
+  ################# evaluation #################
+  evaluation: 
+    Alarm_temp_oil:
+      condition: "LOC_System.temperature_oil < 58"
+   
+  logging:
+    ["ModbusTCPBridge.ControlValue", LOC_System.temperature_oil, LOC_System.temperature_cooling_liquid_out]
+   
+    

@@ -19,18 +19,17 @@
 
 ################# FMUs and OPC UA Servers #################
 
-fmu_files: ["experiments/fmus/WaterTankSystemV2.fmu",
-            "experiments/fmus/TankLevel_PI.fmu"]
+fmu_files: ["experiments/fmus/WaterTankSystemV2.fmu"]
 
-external_servers: []
+external_servers: ["experiments/servers/S7-1500.yaml"]
 
 ################# Experiment #################
 
 experiment:
   experiment_name: Water Level Control # Experiment name for logs
-  timestep: 0.2                       # seconds, communication timestep
-  timing: "simulation_time"            # simulation_time or real_time 
-  stop_time: 60                        # seconds 
+  timestep: 0.1                          # seconds, communication timestep
+  timing: "real_time"              # simulation_time or real_time 
+  stop_time: 60                      # seconds 
 
   initial_system_state:                # Define timestep and initial conditions
     WaterTankSystem:                   # Model description -> "Model name"
@@ -38,36 +37,24 @@ experiment:
       A: 20                            # FMU parameter
       b: 5                             # FMU parameter
       a: 2                             # FMU parameter
-
-    TankLevel_PI:             
-      timestep: 0.1
-      SP_WaterLevel_in: 10             # Input for the TankLevel_PI - this stays constant during the simulation
-      Ki: 0.08                         # FMU parameter
-      Kp: 1.6                          # FMU parameter
-  
+           
   # The system loop is made according to the block diagram  
   system_loop: 
-    - from: TankLevel_PI.CV_PumpCtrl_out
+    - from: S7-1500.CV_PumpCtrl_out
       to:   WaterTankSystem.CV_PumpCtrl_in
     
     - from: WaterTankSystem.PV_WaterLevel_out
-      to:   TankLevel_PI.PV_WaterLevel_in
+      to:   S7-1500.PV_WaterLevel_in
 
   ################# evaluation & logging #################
-
-  start_evaluating_conditions: # Start evaluating conditions 
-    condition_01: "TankLevel_PI.CV_PumpCtrl_out > 0.01" # Logging starts, when this condition is met (Empty if no condition)
 
   # System evaluation functions, enable: true/false
   evaluation: 
     eval_1:
-      condition: "WaterTankSystem.PV_WaterLevel_out < 11.1"
-      enabled: false
-    eval_2: 
-      condition: "TankLevel_PI.CV_PumpCtrl_out < 20"
+      condition: "WaterTankSystem.PV_WaterLevel_out > 11.0"
       enabled: true
 
   # These values are logged in separate log
   logging:
-    ["WaterTankSystem.PV_WaterLevel_out", "TankLevel_PI.CV_PumpCtrl_out", "WaterTankSystem.CV_PumpCtrl_in"]
+    ["WaterTankSystem.PV_WaterLevel_out", "S7-1500.CV_PumpCtrl_out"]
     
