@@ -7,7 +7,7 @@ from .handlers.simulation_handler import SimulationHandler
 app = typer.Typer(help="Run FMUiL experiments and simulations.")
 
 # -----------------------------
-# Callback: global options
+# Global options
 # -----------------------------
 @app.callback(invoke_without_command=True)
 def main(
@@ -97,7 +97,7 @@ def run(ctx: typer.Context, experiment_name: str, port: int = typer.Option(7500,
 
 
 # -----------------------------
-# Entry point
+# Entry
 # -----------------------------
 if __name__ == "__main__":
     app()

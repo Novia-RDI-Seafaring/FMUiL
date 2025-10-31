@@ -155,7 +155,7 @@ class SimulationHandler:
             await object_node.call_method(ua.NodeId(1, 2), str(float(timestep)))
         return
     
-    ################### SYSTEM UPDATES ########################
+    ################### Passing values ########################
     async def run_single_loop(self):
         """
         update loop, passing outputs from one fmu to another
@@ -174,7 +174,7 @@ class SimulationHandler:
             # get the value using the nodeid
             value = await self.get_value(client_name= update.from_fmu, variable= value_nodid)
 
-            # write it to the targer value
+            # write it to the target value
             await self.write_value(
                 client_name = update.to_fmu,
                 variable    = update.to_var,
@@ -203,7 +203,7 @@ class SimulationHandler:
         return True
 
     ################################################
-    ############### SYSTEM TESTS ###################
+    ############## Simulation loop #################
     ################################################
     async def run_multi_step_experiment(self, experiment: dict):
         """
@@ -223,33 +223,37 @@ class SimulationHandler:
         Experiment: {self.experiment['experiment_name']}
         FMU's: {self.fmu_files}
         Simulating""", end="", flush=True)
+        
+        # Log the initial values/state
+        # TODO: fix to give the initial values (now 0)
+        await self.log_requested_values()
 
         while simulation_status:
             start_wall_time = time.time()
-
+            
             # Update all FMUs with one timestep into the future
             await self.run_system_updates(timestep=timestep)
-
-            # Pass data between FMUs
+            
+            # Pass data between servers (FMUs and external)
             await self.run_single_loop()
 
+            # global time advancement (FMUs have been stepped)
+            sim_time += timestep
+            self.simulation_time = sim_time
+            
             # Evaluation logic
             if await self.check_reading_conditions(experiment["start_evaluating_conditions"]):
                 await self.check_outputs(experiment["evaluation"], simulation_time=sim_time)
-            
-            # Value logging
+                       
+            # Log here to have correct time -> First log is at the first communication point
             await self.log_requested_values()
-
-            # Time advancement
-            sim_time += timestep
-            self.simulation_time = sim_time
 
             if self.timing == "real_time":
                 await self.regulate_timestep(start_time= start_wall_time, timestep= timestep)
             
             print(".", end="", flush=True)
 
-            if sim_time > experiment["stop_time"]:
+            if sim_time >= experiment["stop_time"]:
                 simulation_status = False
                 print("Simulation ended\n\n ")
 
@@ -279,7 +283,7 @@ class SimulationHandler:
         await self.run_multi_step_experiment(experiment=self.experiment)
 
     #######################################################################
-    ################   CHECK SYSTEM OUTPUTS   #############################
+    ################   Evaluation logic       #############################
     #######################################################################
     async def check_outputs(self, evaluation: dict[list[dict]], simulation_time) -> None:
         """
@@ -309,7 +313,7 @@ class SimulationHandler:
                 )
 
     ###########################################################################
-    #####################   INIT SYSTEM IDS   #################################
+    #################### INIT SYSTEM IDS AND VALUES ###########################
     ###########################################################################
     def gather_system_ids(self):
         """

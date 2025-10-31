@@ -90,6 +90,7 @@ class InternalServerSetup:
     #######################################################
     ####### STANDARD METHODS FOR ALL OF OJBECTS ###########
     #######################################################
+    
     async def setup_standard_methods(self, obj):
         ######### simulation #########
         await obj.add_method(
@@ -105,7 +106,7 @@ class InternalServerSetup:
             self.update_value_opc_and_fmu,           
         )
 
-        ######### value update for fmu and opc #########
+        ######### resetting (not used) #########
         await obj.add_method(
             ua.NodeId(1, 4),   
             "reset_fmu",          
@@ -129,7 +130,6 @@ class InternalServerSetup:
     @uamethod
     async def simulate_fmu(self, parent=None, value: str = None):
         try:
-            # Convert input timestep to Decimal with configured precision
             system_timestep = Decimal(value).quantize(Decimal(PRECISION_STR), rounding=ROUND_HALF_UP)
 
             self.server_time += system_timestep
@@ -138,8 +138,7 @@ class InternalServerSetup:
             # Step FMU until it catches up to system time
             while self.fmu_time < self.server_time:              
                 await self.single_simulation_loop()
-                print(f"FMU time updated to {self.fmu_time}")
-
+                
             # Measure wall-clock time and compare if the simulation takes longer || THIS IS NOT TESTED FUNCTIONALITY
             elapsed_wall_time = time.perf_counter() - start_wall_time
             simulated_time_advanced = float(system_timestep)
@@ -153,28 +152,6 @@ class InternalServerSetup:
 
         except Exception as e:
             logger.error(f"Exception in simulate_fmu: {e}")    
-    """
-    @uamethod
-    async def simulate_fmu(self, parent=None, value: str = None):
-        try:
-            # Convert inputs to Decimal with defined precision TODO: should add the precision to be configurable outside code
-            system_timestep = Decimal(value).quantize(Decimal(PRECISION_STR), rounding=ROUND_HALF_UP)
-            time_step = Decimal(await self.get_value(variable="timestep")).quantize(Decimal(PRECISION_STR), rounding=ROUND_HALF_UP)
-            self.server_time += system_timestep
-            time_diff = (self.server_time - self.fmu_time).quantize(Decimal(PRECISION_STR), rounding=ROUND_HALF_UP)
-            print(time_diff)
-            if time_diff <= time_step:
-                await self.single_simulation_loop()
-                print(self.fmu_time)
-            else:
-                logger.warning(
-                    f"DID !NOT! update due to {self.server_time} - {self.fmu_time}: "
-                    f"{self.server_time - self.fmu_time} < {time_step}"
-                )
-                
-        except Exception as e:
-            logger.error(f"Exception in simulate_fmu: {e}")
-    """
 
     async def update_opc_and_fmu(self, parent, value):
         variable = value["variable"]

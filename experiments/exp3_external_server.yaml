@@ -15,7 +15,7 @@ experiment:
   experiment_name: External server
   timestep: 1                   
   timing: "real_time"  
-  stop_time: 30.0  
+  stop_time: 300.0  
   initial_system_state:
     
     gain:

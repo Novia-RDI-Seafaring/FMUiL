@@ -1,6 +1,6 @@
 import os
 
-# This will be changed
+# TODO: Make this dynamic
 DEFAULT_LOGS = {"Evaluation":"experiment_name, evaluation_name, evaluation_function, measured_value, experiment_result, system_timestamp\n",
                 "Values":"Experiment_name, System, Variable, Value, Time\n"}
 
