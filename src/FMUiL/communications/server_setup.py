@@ -138,7 +138,11 @@ class InternalServerSetup:
             # Step FMU until it catches up to system time
             while self.fmu_time < self.server_time:              
                 await self.single_simulation_loop()
+<<<<<<< HEAD
                 
+=======
+
+>>>>>>> fe3b160d5840369dbf9434ae92b0c57ca18eb401
             # Measure wall-clock time and compare if the simulation takes longer || THIS IS NOT TESTED FUNCTIONALITY
             elapsed_wall_time = time.perf_counter() - start_wall_time
             simulated_time_advanced = float(system_timestep)
